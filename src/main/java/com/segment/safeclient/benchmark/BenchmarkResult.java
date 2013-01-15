@@ -1,6 +1,5 @@
 package com.segment.safeclient.benchmark;
 
-import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.lang.StringUtils;
@@ -52,10 +51,10 @@ public class BenchmarkResult {
 
 	public String toCSVLine() {
 
-		String line = StringUtils.join(Arrays.asList(
+		String line = StringUtils.join(new String[] {
 				"" + min,
 				"" + max,
-				"" + getAverage()), ",");
+				"" + getAverage()}, ",");
 		
 		return line;
 	}

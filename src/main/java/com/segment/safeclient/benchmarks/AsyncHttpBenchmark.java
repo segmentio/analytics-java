@@ -4,14 +4,10 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.List;
-import java.util.logging.Level;
 
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
@@ -22,10 +18,6 @@ import com.segment.safeclient.benchmark.ThreadedBenchmark.Operation;
 
 public class AsyncHttpBenchmark {
 
-	public void disableLogging() {
-		Logger root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-		root.setLevel(Level.INFO);
-	}
 	
 	public void testRequests() {
 
@@ -73,12 +65,12 @@ public class AsyncHttpBenchmark {
 						.replaceAll(",", "-")
 						.replaceAll("\n", "  ====   ");
 				
-				String line = StringUtils.join(Arrays.asList(
+				String line = StringUtils.join(new String[] {
 						"" + (index+1),
 						"" + result.getMin(),
 						"" + result.getMax(),
 						"" + result.getAverage(), 
-						"" + statistics), ",");
+						"" + statistics}, ",");
 				
 				System.out.println(line);
 				
@@ -114,7 +106,7 @@ public class AsyncHttpBenchmark {
 		@Override
 		public Request buildRequest(List<String> batch) {
 			
-			String payload = StringUtils.join(batch, "-");
+			String payload = StringUtils.join(batch.iterator(), "-");
 			
 			return new RequestBuilder()
 				.setMethod("POST")

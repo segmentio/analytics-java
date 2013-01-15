@@ -124,69 +124,31 @@ public class Analytics {
 	// Identify
 	//
 	
-	/**
-	 * Identifying a visitor ties all of their actions to an ID you 
-	 * recognize and records visitor traits you can segment by.
 
-	 * @param sessionId The visitor's anonymous identifier until they log in, or
-	 * until your system knows who they are. In web systems, this is usually
-	 * the ID of this user in the sessions table.  
-	 * 
-	 * @param visitorId The visitor's identifier after they log in, or you know
-	 * who they are. This is usually an email, but any unique ID will work. 
-	 * By explicitly identifying a user, you tie all of their actions to 
-	 * their identity. This makes it possible for you to run things like 
-	 * segment-based email campaigns.
-	 * 
-	 * @param context A dictionary with additional information thats related
-	 * to the visit. Examples are userAgent, and IP address of the visitor. Feel
-	 * free to pass in null if you don't have this information.
-	 * 
-	 * @param traits A dictionary with keys like “Subscription Plan” or 
-	 * “Favorite Genre”. You can segment your users by any trait you record. 
-	 * Pass in values in key-value format. String key, then its value { String,
-	 * Integer, Boolean, Double, or Date are acceptable types for a value. }
-	 * So, traits array could be: "Subscription Plan", "Premium", "Friend Count",
-	 * 13 , and so forth.  
-	 * 
-	 */
+	public void identify(String sessionId, String visitorId, Object ... traits) {
+		
+		identify(sessionId, visitorId, null, null, new Traits(traits));
+	}
+
+	
+	public void identify(String visitorId, Object ... traits) {
+		
+		identify(null, visitorId, null, null, new Traits(traits));
+	}
+	
+	public void identify(String visitorId, 
+			Context context, Object ... traits) {
+		
+		identify(null, visitorId, context, null, new Traits(traits));
+	}
+	
 	public void identify(String sessionId, String visitorId, 
 			Context context, Object ... traits) {
 		
 		identify(sessionId, visitorId, context, null, new Traits(traits));
-		
 	}
 	
-	/**
-	 * Identifying a visitor ties all of their actions to an ID you 
-	 * recognize and records visitor traits you can segment by.
 
-	 * @param sessionId The visitor's anonymous identifier until they log in, or
-	 * until your system knows who they are. In web systems, this is usually
-	 * the ID of this user in the sessions table.  
-	 * 
-	 * @param visitorId The visitor's identifier after they log in, or you know
-	 * who they are. This is usually an email, but any unique ID will work. 
-	 * By explicitly identifying a user, you tie all of their actions to 
-	 * their identity. This makes it possible for you to run things like 
-	 * segment-based email campaigns.
-	 *
-	 * @param context A dictionary with additional information thats related
-	 * to the visit. Examples are userAgent, and IP address of the visitor. Feel
-	 * free to pass in null if you don't have this information.
-	 * 
-	 * @param timestamp If this event happened in the past, the time stamp 
-	 * can be used to designate when the identification happened. Use null to 
-	 * let our server if it just happened.
-	 * 
-	 * @param traits A dictionary with keys like “Subscription Plan” or 
-	 * “Favorite Genre”. You can segment your users by any trait you record. 
-	 * Pass in values in key-value format. String key, then its value { String,
-	 * Integer, Boolean, Double, or Date are acceptable types for a value. }
-	 * So, traits array could be: "Subscription Plan", "Premium", "Friend Count",
-	 * 13 , and so forth.  
-	 * 
-	 */
 	public void identify(String sessionId, String visitorId, 
 			Context context, DateTime timestamp, Traits traits) {
 		
@@ -196,56 +158,30 @@ public class Analytics {
 	//
 	// Track
 	//
-	
-	/**
-	 * Whenever a user triggers an event on your site, you’ll want to track it 
-	 * so that you can analyze and segment by those events later.
-	 * 
-	 * @param visitorId The ID that you identified the visitor with. Use the best 
-	 * identification you have of the visitor. If the visitor is anonymous (not 
-	 * logged in), use the sessionId. If the visitor is logged in, use the 
-	 * visitorId, which is the email or their username.
-	 * 
-	 * @param event The event name you are tracking. It is recommended that it
-	 * is in human readable form. For example, "Bought T-Shirt" or 
-	 * "Started an exercise"
-	 * 
-	 * @param properties A dictionary with items that describe the event in 
-	 * more detail. This argument is optional, but highly recommended—you’ll 
-	 * find these properties extremely useful later.
-	 * 
-	 */
-	public void track(String visitorId, String event, Object ... properties) {
+
+	public void track(String visitorId, String event) {
 		
-		track(visitorId, event, null, new EventProperties(properties));
-		
+		track(null, visitorId, event, null, null, null);
 	}
 	
-	/**
-	 * Whenever a user triggers an event on your site, you’ll want to track it 
-	 * so that you can analyze and segment by those events later.
-	 * 
-	 * @param visitorId The ID that you identified the visitor with. Use the best 
-	 * identification you have of the visitor. If the visitor is anonymous (not 
-	 * logged in), use the sessionId. If the visitor is logged in, use the 
-	 * visitorId, which is the email or their username.
-	 * 
-	 * @param event The event name you are tracking. It is recommended that it
-	 * is in human readable form. For example, "Bought T-Shirt" or 
-	 * "Started an exercise"
-	 * 
-	 * @param timestamp If the user did this event in the past, use the timestamp
-	 * to specify when it happened. Use null to let our server if it just happened.
-	 * 
-	 * @param properties A dictionary with items that describe the event in 
-	 * more detail. This argument is optional, but highly recommended—you’ll 
-	 * find these properties extremely useful later.
-	 * 
-	 * 
-	 */
+	public void track(String visitorId, String event, Object ... properties) {
+		
+		track(null, visitorId, event, null, new EventProperties(properties));
+	}
+	
+	public void track(String sessionId, String visitorId, String event) {
+		
+		track(sessionId, visitorId, event, null, null);
+	}
+
 	public void track(String visitorId, String event, 
 			DateTime timestamp, EventProperties properties) {
 		
+		track(null, visitorId, event, null, new EventProperties(properties));
+	}
+	
+	public void track(String sessionId, String visitorId, String event, 
+			Context context, DateTime timestamp, EventProperties properties) {
 		
 	}
 	

@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.lang.RandomStringUtils;
@@ -96,11 +95,11 @@ public class BatchQueueBenchmark {
 				
 				queue.clear();
 				
-				String line = StringUtils.join(Arrays.asList(
+				String line = StringUtils.join(new String[] {
 						"" + (index+1),
 						"" + result.getMin(),
 						"" + result.getMax(),
-						"" + result.getAverage()), ",");
+						"" + result.getAverage()}, ",");
 				
 				System.out.println(line);
 				

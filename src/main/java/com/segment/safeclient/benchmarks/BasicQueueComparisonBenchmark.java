@@ -1,6 +1,5 @@
 package com.segment.safeclient.benchmarks;
 
-import java.util.Arrays;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -78,11 +77,11 @@ public class BasicQueueComparisonBenchmark {
 			
 			queue.clear();
 			
-			String line = StringUtils.join(Arrays.asList(
+			String line = StringUtils.join(new String[] {
 					"" + (index+1),
 					"" + result.getMin(),
 					"" + result.getMax(),
-					"" + result.getAverage()), ",");
+					"" + result.getAverage()}, ",");
 			
 			System.out.println(line);
 		}
