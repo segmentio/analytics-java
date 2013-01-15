@@ -8,6 +8,7 @@ public class Identify extends BasePayload {
 	
 	public Identify(String sessionId, String userId, DateTime timestamp,
 			Context context, Traits traits, Callback callback) {
+		
 		super(sessionId, userId, timestamp, context, callback);
 		
 		this.traits = traits;

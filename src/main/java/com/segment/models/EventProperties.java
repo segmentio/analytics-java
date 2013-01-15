@@ -8,4 +8,9 @@ public class EventProperties extends SafeProperties {
 		super(kvs);
 	}
 	
+	@Override
+	public EventProperties put(String key, Object value) {
+		super.put(key, value);
+		return this;
+	}
 }

@@ -2,8 +2,6 @@ package com.segment.models;
 
 import org.joda.time.DateTime;
 
-import com.ning.http.client.Response;
-
 /**
  * The base model for for Track / Identify payload
  *

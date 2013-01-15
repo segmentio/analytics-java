@@ -2,7 +2,6 @@ package com.segment.models;
 
 import org.joda.time.DateTime;
 
-
 public class Track extends BasePayload {
 
 	private String event;

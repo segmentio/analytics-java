@@ -252,9 +252,20 @@ public class Client {
 	public void identify(String sessionId, String userId, 
 			Context context, DateTime timestamp, Traits traits, Callback callback) {
 
+		if (context == null) context = new Context();
+		if (traits == null) traits = new Traits();
+		
 		Identify identify = new Identify(sessionId, userId, timestamp, context, traits, callback);
 
 		operation.perform(identify);
+	}
+	
+	/**
+	 * Enqueue an identify or track payload
+	 * @param payload
+	 */
+	public void enqueue(BasePayload payload) {
+		operation.perform(payload);
 	}
 
 	//
@@ -396,6 +407,9 @@ public class Client {
 	 */
 	public void track(String sessionId, String userId, String event, 
 			Context context, DateTime timestamp, EventProperties properties, Callback callback) {
+		
+		if (context == null) context = new Context();
+		if (properties == null) properties = new EventProperties();
 		
 		Track track = new Track(sessionId, userId, event, timestamp, context, properties, callback);
 		

@@ -12,4 +12,9 @@ public class Traits extends SafeProperties {
 		super(kvs);
 	}
 	
+	@Override
+	public Traits put(String key, Object value) {
+		super.put(key, value);
+		return this;
+	}
 }

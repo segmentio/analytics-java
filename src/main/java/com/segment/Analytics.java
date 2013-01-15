@@ -2,6 +2,7 @@ package com.segment;
 
 import org.joda.time.DateTime;
 
+import com.segment.models.BasePayload;
 import com.segment.models.Callback;
 import com.segment.models.Context;
 import com.segment.models.EventProperties;
@@ -355,6 +356,15 @@ public class Analytics {
 			Context context, DateTime timestamp, EventProperties properties, Callback callback) {
 		checkInitialized();
 		defaultClient.track(sessionId, userId, event, context, timestamp, properties, callback);
+	}
+	
+
+	/**
+	 * Enqueue an identify or track payload
+	 * @param payload
+	 */
+	public void enqueue(BasePayload payload) {
+		defaultClient.enqueue(payload);
 	}
 	
 	//
