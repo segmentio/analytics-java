@@ -56,7 +56,7 @@ public abstract class AsyncHttpBatchedOperation<M>
 	}
 	
 	@Override
-	public void performFlush(List<M> batch) {
+	public void performFlush(final List<M> batch) {
 		
 		Request request = buildRequest(batch);
 		
@@ -76,24 +76,20 @@ public abstract class AsyncHttpBatchedOperation<M>
 					outstanding.decrementAndGet();
 					
 					long duration = System.currentTimeMillis() - start;
-					
 					statistics.update("Request Duration (ms)", duration);
 					
 					int statusCode = response.getStatusCode(); 
-					
 					if (statusCode == 200) {
-						
 						statistics.update("Successful Requests", 1);
-						
 					} else {
-						
 						if (errorLoggingRateLimit.canPerform()) {
 							logger.error("Response [code = " + statusCode + 
 									"]. Response = " + response.getResponseBody());
 						}
-						
 						statistics.update("Failed Requests", 1);
 					}
+					
+					onFlush(batch, response);
 					
 					return response;
 				}
@@ -103,13 +99,21 @@ public abstract class AsyncHttpBatchedOperation<M>
 		} catch (IOException e) {
 			
 			if (errorLoggingRateLimit.canPerform()) {
-
 				logger.error("Async HTTP flush failed.", e);
 			}
 			
 			outstanding.decrementAndGet();
 			
 		}
+	}
+	
+	/**
+	 * Called when a flush occurs on a batch
+	 * @param batch
+	 * @param response
+	 */
+	public void onFlush(List<M> batch, Response response) {
+		// do nothing
 	}
 	
 }

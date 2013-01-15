@@ -2,6 +2,8 @@ package com.segment.models;
 
 import org.joda.time.DateTime;
 
+import com.ning.http.client.Response;
+
 /**
  * The base model for for Track / Identify payload
  *
@@ -13,13 +15,17 @@ public class BasePayload {
 	private Context context;
 	private DateTime timestamp;
 	
+	private transient Callback callback;
+	
 	public BasePayload(String sessionId, String userId, 
-			DateTime timestamp, Context context) {
+			DateTime timestamp, Context context, Callback callback) {
 		
 		this.sessionId = sessionId;
 		this.userId = userId;
 		this.timestamp = timestamp;
 		this.context = context;
+		
+		this.callback = callback;
 	}
 	
 	public String getSessionId() {
@@ -52,6 +58,14 @@ public class BasePayload {
 
 	public void setContext(Context context) {
 		this.context = context;
+	}
+	
+	public Callback getCallback() {
+		return callback;
+	}
+	
+	public void setCallback(Callback callback) {
+		this.callback = callback;
 	}
 
 }

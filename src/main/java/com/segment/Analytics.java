@@ -1,50 +1,15 @@
 package com.segment;
 
-import java.util.Arrays;
-import java.util.List;
-
-import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
 
-import com.google.gson.Gson;
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.Request;
-import com.ning.http.client.RequestBuilder;
-import com.ning.http.client.Response;
-import com.segment.models.BasePayload;
-import com.segment.models.Batch;
 import com.segment.models.Callback;
 import com.segment.models.Context;
 import com.segment.models.EventProperties;
-import com.segment.models.Identify;
-import com.segment.models.Track;
 import com.segment.models.Traits;
-import com.segment.safeclient.AsyncHttpBatchedOperation;
-import com.segment.safeclient.policy.flush.FlushAfterTimePolicy;
-import com.segment.safeclient.policy.flush.FlushAtSizePolicy;
-import com.segment.safeclient.policy.flush.IFlushPolicy;
-import com.segment.safeclient.utils.Statistics;
 
-/**
- * The Segment.io Client - Instantiate this to use the Segment.io API.
- * 
- * The client is an HTTP wrapper over the Segment.io REST API. 
- * It will allow you to conveniently consume the API without
- * making any HTTP requests yourself. 
- * 
- * This client is also designed to be 
- * thread-safe and to not block each of your calls to make a HTTP request.
- * It uses batching to efficiently send your requests on a separate 
- * resource-constrained thread pool.
- *
- */
-public class Client {
-	
-	private String secret;
-	private Options options;
-	
-	private Gson gson;
-	private AsyncHttpBatchedOperation<BasePayload> operation;
+public class Analytics {
+
+	private static Client defaultClient;
 	
 	/**
 	 * Creates a new Segment.io client. 
@@ -63,9 +28,9 @@ public class Client {
 	 * registering for a project at https://segment.io 
 	 * 
 	 */
-	public Client(String secret) {
+	public static void initialize(String secret) {
 		
-		this(secret, new Options());
+		defaultClient = new Client(secret, new Options());
 	}
 	
 	/**
@@ -88,25 +53,19 @@ public class Client {
 	 *
 	 * 
 	 */
-	public Client(String secret, Options options) {
-	
-		String errorPrefix = 
-				"analytics-java client must be initialized with a valid "; 
-		
-		if (StringUtils.isEmpty(secret))
-			throw new IllegalArgumentException(errorPrefix + "secret.");
-		
-		if (options == null)
-			throw new IllegalArgumentException(errorPrefix + "options.");
-		
-		this.secret = secret;
-		this.options = options;
-		
-		this.gson = new Gson();
-		this.operation = buildOperation(new AsyncHttpClient(options.getHttpConfig()));
+	public static void initialize(String secret, Options options) {
+
+		defaultClient = new Client(secret, options);
 	}
 
-	
+	private static void checkInitialized() {
+		
+		if (defaultClient == null) {
+			throw new IllegalStateException("Analytics client is " + 
+					"not initialized. Please call Analytics.iniitalize(..); " +
+					"before calling identify / track / or flush.");
+		}
+	}
 	
 	//
 	// API Calls
@@ -128,9 +87,9 @@ public class Client {
 	 * @param traits a dictionary with keys like subscriptionPlan or age. You only need to record 
 	 * a trait once, no need to send it again.
 	 */
-	public void identify(String sessionId, String userId, Object ... traits) {
-		
-		identify(sessionId, userId, null, null, new Traits(traits), null);
+	public static void identify(String sessionId, String userId, Object ... traits) {
+		checkInitialized();
+		defaultClient.identify(sessionId, userId, null, null, new Traits(traits), null);
 	}
 
 	/**
@@ -156,9 +115,9 @@ public class Client {
 	 * Note: this callback is fired on the same thread as the async event loop that made the request.
 	 * You should not perform any kind of long running operation on it. 
 	 */
-	public void identify(String userId, Object ... traits) {
-		
-		identify(null, userId, null, null, new Traits(traits), null);
+	public static void identify(String userId, Object ... traits) {
+		checkInitialized();
+		defaultClient.identify(null, userId, null, null, new Traits(traits), null);
 	}
 	
 	/**
@@ -173,10 +132,10 @@ public class Client {
 	 * @param traits a dictionary with keys like subscriptionPlan or age. You only need to record 
 	 * a trait once, no need to send it again. 
 	 */
-	public void identify(String userId, 
+	public static void identify(String userId, 
 			Context context, Object ... traits) {
-		
-		identify(null, userId, context, null, new Traits(traits), null);
+		checkInitialized();
+		defaultClient.identify(null, userId, context, null, new Traits(traits), null);
 	}
 	
 	/**
@@ -194,10 +153,10 @@ public class Client {
 	 * @param traits a dictionary with keys like subscriptionPlan or age. You only need to record 
 	 * a trait once, no need to send it again.
 	 */
-	public void identify(String sessionId, String userId, 
+	public static void identify(String sessionId, String userId, 
 			Context context, Object ... traits) {
-		
-		identify(sessionId, userId, context, null, new Traits(traits), null);
+		checkInitialized();
+		defaultClient.identify(sessionId, userId, context, null, new Traits(traits), null);
 	}
 
 	/**
@@ -220,10 +179,10 @@ public class Client {
 	 * a trait once, no need to send it again.
 	 * 
 	 */
-	public void identify(String sessionId, String userId, 
+	public static void identify(String sessionId, String userId, 
 			Context context, DateTime timestamp, Traits traits) {
-		
-		identify(sessionId, userId, context, timestamp, traits, null);
+		checkInitialized();
+		defaultClient.identify(sessionId, userId, context, timestamp, traits, null);
 	}
 
 	/**
@@ -249,12 +208,10 @@ public class Client {
 	 * Note: this callback is fired on the same thread as the async event loop that made the request.
 	 * You should not perform any kind of long running operation on it. 
 	 */
-	public void identify(String sessionId, String userId, 
+	public static void identify(String sessionId, String userId, 
 			Context context, DateTime timestamp, Traits traits, Callback callback) {
-
-		Identify identify = new Identify(sessionId, userId, timestamp, context, traits, callback);
-
-		operation.perform(identify);
+		checkInitialized();
+		defaultClient.identify(sessionId, userId, context, timestamp, traits, callback);
 	}
 
 	//
@@ -271,9 +228,9 @@ public class Client {
 	 * "Played a Song", "Printed a Report" or "Updated Status".
 	 * 
 	 */
-	public void track(String userId, String event) {
-		
-		track(null, userId, event, null, null, null, null);
+	public static void track(String userId, String event) {
+		checkInitialized();
+		defaultClient.track(null, userId, event, null, null, null, null);
 	}
 	
 	/**
@@ -289,9 +246,9 @@ public class Client {
 	 * This argument is optional, but highly recommended—you’ll find these properties 
 	 * extremely useful later.
 	 */
-	public void track(String userId, String event, Object ... properties) {
-		
-		track(null, userId, event, null, null, new EventProperties(properties), null);
+	public static void track(String userId, String event, Object ... properties) {
+		checkInitialized();
+		defaultClient.track(null, userId, event, null, null, new EventProperties(properties), null);
 	}
 	
 	/**
@@ -307,9 +264,9 @@ public class Client {
 	 * "Played a Song", "Printed a Report" or "Updated Status".
 	 * 
 	 */
-	public void track(String sessionId, String userId, String event) {
-		
-		track(sessionId, userId, event, null, null, null, null);
+	public static void track(String sessionId, String userId, String event) {
+		checkInitialized();
+		defaultClient.track(sessionId, userId, event, null, null, null, null);
 	}
 
 	/**
@@ -332,10 +289,10 @@ public class Client {
 	 * This argument is optional, but highly recommended—you’ll find these properties 
 	 * extremely useful later.
 	 */
-	public void track(String userId, String event, 
+	public static void track(String userId, String event, 
 			DateTime timestamp, EventProperties properties) {
-		
-		track(null, userId, event, null, timestamp, new EventProperties(properties), null);
+		checkInitialized();
+		defaultClient.track(null, userId, event, null, timestamp, new EventProperties(properties), null);
 	}
 
 	/**
@@ -361,10 +318,10 @@ public class Client {
 	 * This argument is optional, but highly recommended—you’ll find these properties 
 	 * extremely useful later.
 	 */
-	public void track(String sessionId, String userId, String event, 
+	public static void track(String sessionId, String userId, String event, 
 			Context context, DateTime timestamp, EventProperties properties) {
-
-		track(null, userId, event, context, timestamp, new EventProperties(properties), null);
+		checkInitialized();
+		defaultClient.track(null, userId, event, context, timestamp, new EventProperties(properties), null);
 	}
 	
 	/**
@@ -394,12 +351,10 @@ public class Client {
 	 * Note: this callback is fired on the same thread as the async event loop that made the request.
 	 * You should not perform any kind of long running operation on it. 
 	 */
-	public void track(String sessionId, String userId, String event, 
+	public static void track(String sessionId, String userId, String event, 
 			Context context, DateTime timestamp, EventProperties properties, Callback callback) {
-		
-		Track track = new Track(sessionId, userId, event, timestamp, context, properties, callback);
-		
-		operation.perform(track);
+		checkInitialized();
+		defaultClient.track(sessionId, userId, event, context, timestamp, properties, callback);
 	}
 	
 	//
@@ -409,75 +364,16 @@ public class Client {
 	/**
 	 * Flushes the current contents of the queue
 	 */
-	public void flush () {
-		operation.flush();
+	public static void flush () {
+		defaultClient.flush();
 	}
 	
-	//
-	// Getters and Setters
-	//
-	
-	public String getSecret() {
-		return secret;
+	/**
+	 * Fetches the default analytics client singleton
+	 * @return
+	 */
+	public static Client getDefaultClient() {
+		return defaultClient;
 	}
-	
-	public void setSecret(String secret) {
-		this.secret = secret;
-	}
-	
-	public Options getOptions() {
-		return options;
-	}
-	
-	public Statistics getStatistics() {
-		return operation.statistics;
-	}
-	
-	public AsyncHttpBatchedOperation<BasePayload> buildOperation(AsyncHttpClient client) { 
-		
-		return new AsyncHttpBatchedOperation<BasePayload>(client) {
-	
-			@Override
-			protected int getMaxQueueSize() {
-				return options.getQueueCapacity();
-			}
-			
-			@Override
-			protected Iterable<IFlushPolicy> createFlushPolicies() {
-
-				return Arrays.asList(		
-					new FlushAfterTimePolicy(options.getFlushAfter()),
-					new FlushAtSizePolicy(options.getFlushAt())
-				);
-			}
-			
-			@Override
-			public Request buildRequest(List<BasePayload> batch) {
-				
-				Batch model = new Batch(secret, batch);
-				
-				String json = gson.toJson(model);
-				
-				return new RequestBuilder()
-							.setMethod("POST")
-							.setBody(json)
-							.addHeader("Content-Type", "application/json")
-							.setUrl(Client.this.options.getHost() + "/v1/import")
-							.build();
-			}
-			
-			@Override
-			public void onFlush(List<BasePayload> batch, Response response) {
-				
-				for (BasePayload payload : batch) {
-					Callback callback = payload.getCallback();
-					
-					if (callback != null) {
-						callback.onResponse(response);
-					}
-				}
-			}
-		};
-	};
 	
 }
