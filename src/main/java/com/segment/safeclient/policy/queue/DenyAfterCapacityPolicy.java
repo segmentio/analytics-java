@@ -1,11 +1,11 @@
 package com.segment.safeclient.policy.queue;
 
-public class GreaterThanCapacityPolicy 
+public class DenyAfterCapacityPolicy 
 	implements IQueueDenyPolicy {
 
 	private int threshold;
 	
-	public GreaterThanCapacityPolicy(int threshold) {
+	public DenyAfterCapacityPolicy(int threshold) {
 		this.threshold = threshold;
 	}
 	

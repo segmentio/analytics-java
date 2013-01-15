@@ -11,10 +11,10 @@ import org.slf4j.LoggerFactory;
 
 import com.segment.safeclient.flusher.IFlusher;
 import com.segment.safeclient.flusher.ThreadPoolFlusher;
-import com.segment.safeclient.policy.flush.GreaterThanFlushPolicy;
+import com.segment.safeclient.policy.flush.FlushAtSizePolicy;
 import com.segment.safeclient.policy.flush.IFlushPolicy;
-import com.segment.safeclient.policy.flush.LastFlushedTimePolicy;
-import com.segment.safeclient.policy.queue.GreaterThanCapacityPolicy;
+import com.segment.safeclient.policy.flush.FlushAfterTimePolicy;
+import com.segment.safeclient.policy.queue.DenyAfterCapacityPolicy;
 import com.segment.safeclient.policy.queue.IQueueDenyPolicy;
 import com.segment.safeclient.queue.IBatchQueue;
 import com.segment.safeclient.queue.NonLockingQueue;
@@ -164,8 +164,8 @@ public abstract class BatchedOperation<M> {
 	protected Iterable<IFlushPolicy> createFlushPolicies() {
 		
 		return Arrays.asList(		
-			new LastFlushedTimePolicy(1000 * 10),
-			new GreaterThanFlushPolicy(getMaxFlushAmount())
+			new FlushAfterTimePolicy(1000 * 10),
+			new FlushAtSizePolicy(getMaxFlushAmount())
 		);
 		
 	}
@@ -175,7 +175,7 @@ public abstract class BatchedOperation<M> {
 		List<IQueueDenyPolicy> policies = 
 				new LinkedList<IQueueDenyPolicy>();
 		
-		policies.add(new GreaterThanCapacityPolicy(getMaxQueueSize()));
+		policies.add(new DenyAfterCapacityPolicy(getMaxQueueSize()));
 		
 		return policies;
 	}

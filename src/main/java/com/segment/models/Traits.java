@@ -1,4 +1,4 @@
-package com.segment;
+package com.segment.models;
 
 public class Traits extends SafeProperties {
 
@@ -11,7 +11,5 @@ public class Traits extends SafeProperties {
 	public Traits(Object... kvs) {
 		super(kvs);
 	}
-	
-	
 	
 }

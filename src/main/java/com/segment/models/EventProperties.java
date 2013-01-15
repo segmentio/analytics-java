@@ -1,4 +1,4 @@
-package com.segment;
+package com.segment.models;
 
 public class EventProperties extends SafeProperties {
 

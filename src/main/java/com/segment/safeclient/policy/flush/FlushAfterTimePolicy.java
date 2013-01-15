@@ -3,11 +3,11 @@ package com.segment.safeclient.policy.flush;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
-public class LastFlushedTimePolicy implements IFlushPolicy {
+public class FlushAfterTimePolicy implements IFlushPolicy {
 
 	private long thresholdMs;
 	
-	public LastFlushedTimePolicy(long thresholdMs) {
+	public FlushAfterTimePolicy(long thresholdMs) {
 		this.thresholdMs = thresholdMs; 
 	}
 	

@@ -2,11 +2,11 @@ package com.segment.safeclient.policy.flush;
 
 import org.joda.time.DateTime;
 
-public class GreaterThanFlushPolicy implements IFlushPolicy {
+public class FlushAtSizePolicy implements IFlushPolicy {
 
 	private int threshold;
 	
-	public GreaterThanFlushPolicy(int threshold) {
+	public FlushAtSizePolicy(int threshold) {
 		this.threshold = threshold;
 	}
 	
