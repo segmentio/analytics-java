@@ -89,16 +89,18 @@ public class Options {
 	 * Sets the amount of messages that need to be in the queue before it is flushed
 	 * @param flushAt
 	 */
-	public void setFlushAt(int flushAt) {
+	public Options setFlushAt(int flushAt) {
 		this.flushAt = flushAt;
+		return this;
 	}
 	
 	/**
 	 * Sets the maximum amount of time to queue before invoking a flush (in milliseconds)
 	 * @param flushAfter
 	 */
-	public void setFlushAfter(int flushAfter) {
+	public Options setFlushAfter(int flushAfter) {
 		this.flushAfter = flushAfter;
+		return this;
 	}
 	
 	/**
@@ -106,24 +108,27 @@ public class Options {
 	 * to flush messages fast enough, the queue will stop accepting messages after this capacity is reached.
 	 * @param queueCapacity
 	 */
-	public void setQueueCapacity(int queueCapacity) {
+	public Options setQueueCapacity(int queueCapacity) {
 		this.queueCapacity = queueCapacity;
+		return this;
 	}
 	
 	/**
 	 * Sets the REST API endpoint
 	 * @param host
 	 */
-	public void setHost(String host) {
+	public Options setHost(String host) {
 		this.host = host;
+		return this;
 	}
 	
 	/**
 	 * Sets the HTTP client async configuration
 	 * @param httpConfig
 	 */
-	public void setHttpConfig(AsyncHttpClientConfig httpConfig) {
+	public Options setHttpConfig(AsyncHttpClientConfig httpConfig) {
 		this.httpConfig = httpConfig;
+		return this;
 	}
 	
 	

@@ -132,10 +132,10 @@ public abstract class BatchedOperation<M> {
 				
 				statistics.update("Flush Batch Size", batch.size());
 				
+				lastFlush = new DateTime(DateTimeZone.UTC);
+				
 				return true;
 			}
-			
-			lastFlush = new DateTime(DateTimeZone.UTC);
 			
 		} else {
 			
@@ -181,7 +181,7 @@ public abstract class BatchedOperation<M> {
 	}
 	
 	protected IFlusher createFlusher() {
-		return new ThreadPoolFlusher(0, 1, 100);
+		return new ThreadPoolFlusher(0, 1, 1000);
 	}
 	
 	protected IBatchQueue<M> createQueue() {

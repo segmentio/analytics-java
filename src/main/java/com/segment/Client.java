@@ -7,10 +7,12 @@ import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.ning.http.client.AsyncHttpClient;
 import com.ning.http.client.Request;
 import com.ning.http.client.RequestBuilder;
 import com.ning.http.client.Response;
+import com.segment.gson.DateTimeTypeConverter;
 import com.segment.models.BasePayload;
 import com.segment.models.Batch;
 import com.segment.models.Callback;
@@ -102,7 +104,10 @@ public class Client {
 		this.secret = secret;
 		this.options = options;
 		
-		this.gson = new Gson();
+		this.gson = new GsonBuilder()
+			.registerTypeAdapter(DateTime.class, new DateTimeTypeConverter())
+			.create();
+		
 		this.operation = buildOperation(new AsyncHttpClient(options.getHttpConfig()));
 	}
 
@@ -128,9 +133,9 @@ public class Client {
 	 * @param traits a dictionary with keys like subscriptionPlan or age. You only need to record 
 	 * a trait once, no need to send it again.
 	 */
-	public void identify(String sessionId, String userId, Object ... traits) {
+	public void identify(String sessionId, String userId, Traits traits) {
 		
-		identify(sessionId, userId, null, null, new Traits(traits), null);
+		identify(sessionId, userId, null, null, traits, null);
 	}
 
 	/**
@@ -156,9 +161,9 @@ public class Client {
 	 * Note: this callback is fired on the same thread as the async event loop that made the request.
 	 * You should not perform any kind of long running operation on it. 
 	 */
-	public void identify(String userId, Object ... traits) {
+	public void identify(String userId, Traits traits) {
 		
-		identify(null, userId, null, null, new Traits(traits), null);
+		identify(null, userId, null, null, traits, null);
 	}
 	
 	/**
@@ -174,9 +179,9 @@ public class Client {
 	 * a trait once, no need to send it again. 
 	 */
 	public void identify(String userId, 
-			Context context, Object ... traits) {
+			Context context, Traits traits) {
 		
-		identify(null, userId, context, null, new Traits(traits), null);
+		identify(null, userId, context, null, traits, null);
 	}
 	
 	/**
@@ -195,9 +200,9 @@ public class Client {
 	 * a trait once, no need to send it again.
 	 */
 	public void identify(String sessionId, String userId, 
-			Context context, Object ... traits) {
+			Context context, Traits traits) {
 		
-		identify(sessionId, userId, context, null, new Traits(traits), null);
+		identify(sessionId, userId, context, null, traits, null);
 	}
 
 	/**
@@ -300,9 +305,9 @@ public class Client {
 	 * This argument is optional, but highly recommended—you’ll find these properties 
 	 * extremely useful later.
 	 */
-	public void track(String userId, String event, Object ... properties) {
+	public void track(String userId, String event, EventProperties properties) {
 		
-		track(null, userId, event, null, null, new EventProperties(properties), null);
+		track(null, userId, event, null, null, properties, null);
 	}
 	
 	/**
@@ -346,7 +351,7 @@ public class Client {
 	public void track(String userId, String event, 
 			DateTime timestamp, EventProperties properties) {
 		
-		track(null, userId, event, null, timestamp, new EventProperties(properties), null);
+		track(null, userId, event, null, timestamp, properties, null);
 	}
 
 	/**
@@ -417,7 +422,7 @@ public class Client {
 	}
 	
 	//
-	// Flush Actions
+	// Actions
 	//
 	
 	/**
@@ -425,6 +430,13 @@ public class Client {
 	 */
 	public void flush () {
 		operation.flush();
+	}
+	
+	/**
+	 * Closes the queue and the threads associated with flushing the queue
+	 */
+	public void close() {
+		operation.close();
 	}
 	
 	//

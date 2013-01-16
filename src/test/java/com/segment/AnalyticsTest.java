@@ -1,5 +1,6 @@
 package com.segment;
 
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -19,7 +20,7 @@ public class AnalyticsTest {
 	
 	@Test
 	public void identify() {
-		Analytics.identify("ilya@segment.io", "subscriptionPlan", "Free");
+		Analytics.identify("ilya@segment.io", new Traits("subscriptionPlan", "Free"));
 	}
 	
 
@@ -39,7 +40,7 @@ public class AnalyticsTest {
 
 	@Test
 	public void track() {
-		Analytics.track("ilya@segment.io", "Ran a marathan", "time", 1000*60*60*3);
+		Analytics.track("ilya@segment.io", "Ran a marathan", new EventProperties("time", 1000*60*60*3));
 	}
 	
 
@@ -50,6 +51,17 @@ public class AnalyticsTest {
 	
 	@Test
 	public void track3() {
-		Analytics.track("session_id", "ilya@segment.io", "Purchased an Item", new EventProperties("revenue", 10.12));
+		Analytics.track("ilya@segment.io", "Purchased an Item", new EventProperties("revenue", 10.12));
+	}
+	
+
+	@Test
+	public void flush() {
+		Analytics.flush();
+	}
+	
+	@AfterClass
+	public static void close() {
+		Analytics.close();
 	}
 }

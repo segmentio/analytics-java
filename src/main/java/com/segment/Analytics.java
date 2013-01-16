@@ -88,9 +88,9 @@ public class Analytics {
 	 * @param traits a dictionary with keys like subscriptionPlan or age. You only need to record 
 	 * a trait once, no need to send it again.
 	 */
-	public static void identify(String sessionId, String userId, Object ... traits) {
+	public static void identify(String sessionId, String userId, Traits traits) {
 		checkInitialized();
-		defaultClient.identify(sessionId, userId, null, null, new Traits(traits), null);
+		defaultClient.identify(sessionId, userId, null, null, traits, null);
 	}
 
 	/**
@@ -116,9 +116,9 @@ public class Analytics {
 	 * Note: this callback is fired on the same thread as the async event loop that made the request.
 	 * You should not perform any kind of long running operation on it. 
 	 */
-	public static void identify(String userId, Object ... traits) {
+	public static void identify(String userId, Traits traits) {
 		checkInitialized();
-		defaultClient.identify(null, userId, null, null, new Traits(traits), null);
+		defaultClient.identify(null, userId, null, null, traits, null);
 	}
 	
 	/**
@@ -134,9 +134,9 @@ public class Analytics {
 	 * a trait once, no need to send it again. 
 	 */
 	public static void identify(String userId, 
-			Context context, Object ... traits) {
+			Context context, Traits traits) {
 		checkInitialized();
-		defaultClient.identify(null, userId, context, null, new Traits(traits), null);
+		defaultClient.identify(null, userId, context, null, traits, null);
 	}
 	
 	/**
@@ -155,9 +155,9 @@ public class Analytics {
 	 * a trait once, no need to send it again.
 	 */
 	public static void identify(String sessionId, String userId, 
-			Context context, Object ... traits) {
+			Context context, Traits traits) {
 		checkInitialized();
-		defaultClient.identify(sessionId, userId, context, null, new Traits(traits), null);
+		defaultClient.identify(sessionId, userId, context, null, traits, null);
 	}
 
 	/**
@@ -247,9 +247,9 @@ public class Analytics {
 	 * This argument is optional, but highly recommended—you’ll find these properties 
 	 * extremely useful later.
 	 */
-	public static void track(String userId, String event, Object ... properties) {
+	public static void track(String userId, String event, EventProperties properties) {
 		checkInitialized();
-		defaultClient.track(null, userId, event, null, null, new EventProperties(properties), null);
+		defaultClient.track(null, userId, event, null, null, properties, null);
 	}
 	
 	/**
@@ -270,6 +270,7 @@ public class Analytics {
 		defaultClient.track(sessionId, userId, event, null, null, null, null);
 	}
 
+	
 	/**
 	 * Whenever a user triggers an event, you’ll want to track it.
 	 * 
@@ -293,7 +294,7 @@ public class Analytics {
 	public static void track(String userId, String event, 
 			DateTime timestamp, EventProperties properties) {
 		checkInitialized();
-		defaultClient.track(null, userId, event, null, timestamp, new EventProperties(properties), null);
+		defaultClient.track(null, userId, event, null, timestamp, properties, null);
 	}
 
 	/**
@@ -322,7 +323,7 @@ public class Analytics {
 	public static void track(String sessionId, String userId, String event, 
 			Context context, DateTime timestamp, EventProperties properties) {
 		checkInitialized();
-		defaultClient.track(null, userId, event, context, timestamp, new EventProperties(properties), null);
+		defaultClient.track(null, userId, event, context, timestamp, properties, null);
 	}
 	
 	/**
@@ -375,7 +376,16 @@ public class Analytics {
 	 * Flushes the current contents of the queue
 	 */
 	public static void flush () {
+		checkInitialized();
 		defaultClient.flush();
+	}
+
+	/**
+	 * Closes the threads associated with the client
+	 */
+	public static void close() {
+		checkInitialized();
+		defaultClient.close();
 	}
 	
 	/**
@@ -385,5 +395,6 @@ public class Analytics {
 	public static Client getDefaultClient() {
 		return defaultClient;
 	}
+
 	
 }

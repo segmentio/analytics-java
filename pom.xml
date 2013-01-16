@@ -4,11 +4,24 @@
 
   <groupId>com.segment</groupId>
   <artifactId>analytics</artifactId>
+  <description>The analytics API you've always wanted.</description>
   <version>0.0.1</version>
   <packaging>jar</packaging>
 
   <name>analytics</name>
-  <url>http://maven.apache.org</url>
+  <url>http://github.com/segmentio/analytics-java/tree/master</url>
+	
+   <scm>
+       <developerConnection>scm:git:ssh://git@github.com/segmentio/analytics-java.git</developerConnection>
+       <connection>scm:git:ssh://git@github.com/segmentio/analytics-java.git</connection>
+       <url>http://github.com/segmentio/analytics-java/tree/master</url>
+     </scm>
+
+  <licenses>
+    <license>
+      <name>The MIT License</name>
+    </license>
+  </licenses>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

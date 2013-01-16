@@ -6,7 +6,7 @@ analytics-java
 
 analytics-java is a java client for [Segment.io](https://segment.io). If you're using client-side javascript, check out [analytics.js](https://github.com/segmentio/analytics.js).
 
-### Node Analytics Made Simple
+### Java Analytics Made Simple
 
 [Segment.io](https://segment.io) is the cleanest, simplest API for recording analytics data.
 
@@ -15,9 +15,8 @@ Setting up a new analytics solution can be a real pain. The APIs from each analy
 [Segment.io](https://segment.io) wraps all those APIs in one beautiful, simple API. Then we route your analytics data wherever you want, whether it's Google Analytics, Mixpanel, Customer io, Chartbeat, or any of our other integrations. After you set up Segment.io you can swap or add analytics providers at any time with a single click. You won't need to touch code or push to production. You'll save valuable development time so that you can focus on what really matters: your product.
 
 ```javascript
-var analytics = require('analytics-node');
-analytics.init({secret: 'MY_API_SECRET'});
-analytics.track({userId: 'user@gmail.com', event: 'Played a Song'});
+Analytics.initialize("YOUR_SECRET_KEY");
+Analytics.track("ilya@segment.io", "Listened to a Song");
 ```
 
 and turn on integrations with just one click at [Segment.io](https://segment.io).

@@ -4,6 +4,9 @@ import org.joda.time.DateTime;
 
 public class Identify extends BasePayload {
 
+	@SuppressWarnings("unused")
+	private String action = "identify";
+	
 	private Traits traits;
 	
 	public Identify(String sessionId, String userId, DateTime timestamp,

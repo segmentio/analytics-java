@@ -38,6 +38,9 @@ public abstract class AsyncHttpBatchedOperation<M>
 	    		.setAllowPoolingConnection(true)
 	    		.build()
 	    );
+
+    	if (maximumOutstandingConnections < 1) 
+    		throw new IllegalArgumentException("Outstanding connections must be greater than 0.");
     }
     
     public AsyncHttpBatchedOperation(AsyncHttpClient client) {
@@ -46,6 +49,9 @@ public abstract class AsyncHttpBatchedOperation<M>
     	
     	maximumOutstandingConnections = client.getConfig().getMaxTotalConnections();
     	outstanding = new AtomicInteger(0);
+    	
+    	if (maximumOutstandingConnections < 1) 
+    		throw new IllegalArgumentException("Outstanding connections must be greater than 0.");
     }
 	
 	public abstract Request buildRequest(List<M> batch);
@@ -57,7 +63,7 @@ public abstract class AsyncHttpBatchedOperation<M>
 	
 	@Override
 	public void performFlush(final List<M> batch) {
-		
+	
 		Request request = buildRequest(batch);
 		
 		statistics.update("Request Body Size (bytes)", request.getContentLength());

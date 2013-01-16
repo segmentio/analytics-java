@@ -4,6 +4,9 @@ import org.joda.time.DateTime;
 
 public class Track extends BasePayload {
 
+	@SuppressWarnings("unused")
+	private String action = "track";
+	
 	private String event;
 	private EventProperties properties;
 	
