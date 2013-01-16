@@ -9,13 +9,13 @@
   <packaging>jar</packaging>
 
   <name>analytics</name>
-  <url>http://github.com/segmentio/analytics-java/tree/master</url>
+  <url>https://github.com/segmentio/analytics-java/tree/master</url>
 	
    <scm>
        <developerConnection>scm:git:ssh://git@github.com/segmentio/analytics-java.git</developerConnection>
        <connection>scm:git:ssh://git@github.com/segmentio/analytics-java.git</connection>
        <url>http://github.com/segmentio/analytics-java/tree/master</url>
-     </scm>
+   </scm>
 
   <licenses>
     <license>
