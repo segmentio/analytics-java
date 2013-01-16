@@ -26,7 +26,7 @@ public class Options {
 	/**
 	 * Stop accepting messages after the queue reaches this capacity
 	 */
-	private int queueCapacity;
+	private int maxQueueSize;
 	
 	/**
 	 * The HTTP Client used to flush
@@ -40,7 +40,7 @@ public class Options {
 		this(Defaults.HOST, 
 		     Defaults.FLUSH_AT, 
 		     Defaults.FLUSH_AFTER, 
-		     Defaults.QUEUE_CAPACITY,
+		     Defaults.MAX_QUEUE_SIZE,
 		     Defaults.CONFIG);
 	}
 	
@@ -48,19 +48,19 @@ public class Options {
 	 * Creates an option with the provided settings
 	 * @param flushAt
 	 * @param flushAfter
-	 * @param queueCapacity
+	 * @param maxQueueSize
 	 * @param httpConfig
 	 */
 	Options(String host,
 				   int flushAt,
 				   int flushAfter,
-				   int queueCapacity,
+				   int maxQueueSize,
 				   AsyncHttpClientConfig httpConfig) {
 		
 		this.host = host;
 		this.flushAt = flushAt;
 		this.flushAfter = flushAfter;
-		this.queueCapacity = queueCapacity;
+		this.maxQueueSize = maxQueueSize;
 		this.httpConfig = httpConfig;
 	}
 
@@ -77,8 +77,8 @@ public class Options {
 		return host;
 	}
 	
-	public int getQueueCapacity() {
-		return queueCapacity;
+	public int getMaxQueueSize() {
+		return maxQueueSize;
 	}
 	
 	public AsyncHttpClientConfig getHttpConfig() {
@@ -106,10 +106,10 @@ public class Options {
 	/**
 	 * Sets the maximum queue capacity, which is an emergency pressure relief valve. If we're unable
 	 * to flush messages fast enough, the queue will stop accepting messages after this capacity is reached.
-	 * @param queueCapacity
+	 * @param maxQueueSize
 	 */
-	public Options setQueueCapacity(int queueCapacity) {
-		this.queueCapacity = queueCapacity;
+	public Options setMaxQueueSize(int maxQueueSize) {
+		this.maxQueueSize = maxQueueSize;
 		return this;
 	}
 	

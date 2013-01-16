@@ -42,7 +42,10 @@ public class ClientTest {
 	
 	@BeforeClass
 	public static void setup() {
-		client = new Client("testsecret", new Options().setFlushAt(50));
+		client = new Client("testsecret", new Options()
+												.setFlushAt(50)
+												.setFlushAfter((int)TimeUnit.SECONDS.toMillis(10))
+												.setMaxQueueSize(10000));
 	}
 
 	@Test
@@ -66,7 +69,7 @@ public class ClientTest {
 						latch.countDown();
 					}
 				};
-
+				
 				if (payload instanceof Identify) {
 					Identify identify = (Identify) payload;
 					

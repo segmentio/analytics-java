@@ -39,30 +39,25 @@ If you haven't yet, get an API secret [here](https://segment.io).
 
 #### Install
 
-```javascript
-npm install analytics-node
-```
+Maven repository hosting coming soon. For now, clone the project and include it in your project dependencies in eclipse.
+
 #### Initialize the client
 
-The default and easiest method for most apps is to just use the API client as a module. To get started, just initialize it once:
+To get started, just initialize the `Analytics` singleton once:
 
-```javascript
-var analytics = require('analytics-node');
-analytics.init({secret: 'YOUR_API_SECRET'});
+```java
+Analytics.initialize("YOUR_SECRET_KEY");
 ```
-Then whenever you `require('analytics-node')` from any other file in your app, you'll have access to the same client.
 
 #### Identify a User
 
 Identifying a user ties all of their actions to an id, and associates user `traits` to that id.
 
 ```javascript
-analytics.identify({
-    sessionId : String
-    userId    : String
-    traits    : Object,
-    timestamp : Date
-});
+void identify(String sessionId,
+              String userId,
+              DateTime timestamp,
+              Traits traits);
 ```
 
 **sessionId** (String) is a unique id associated with an anonymous user **before** they are logged in. If the user
@@ -70,37 +65,28 @@ is logged in, you can just omit it.
 
 **userId** (String) is the user's id **after** they are logged in. It's the same id as which you would recognize a signed-in user in your system. Note: you must provide either a `sessionId` or a `userId`.
 
-**traits** (Object) is a dictionary with keys like `subscriptionPlan` or `age`. You only need to record a trait once, no need to send it again.
+**traits** (Traits) is a dictionary with keys like `subscriptionPlan` or `age`. You only need to record a trait once, no need to send it again.
 
-**timestamp** (Date, optional) is a Javascript date object representing when the track took place. If the **identify** just happened, leave it blank and we'll use the server's time. If you are importing data from the past, make sure you provide this argument.
+**timestamp** (DateTime, optional) is a jodatime `DateTime`representing when the track took place. If the **identify** just happened, leave it blank and we'll use the server's time. If you are importing data from the past, make sure you provide this argument.
 
-
-```javascript
-analytics.identify({
-    sessionId : 'DKGXt384hFDT82D',
-    userId    : '019mr8mf4r',
-    traits    : {
-        name             : 'Achilles',
-        email            : 'achilles@segment.io'
-        subscriptionPlan : 'Premium',
-        friendCount      : 29
-    }
-});
-
+```java
+Analytics.identify("507f1f77bcf8", new Traits()
+                    .put("name", "Achilles")
+                    .put("email", "achilles@segment.io")
+                    .put("subscriptionPlan", "Premium")
+                    .put("friendCount", 29));
 ```
 
 #### Track an Action
 
 Whenever a user triggers an event, you’ll want to track it.
 
-```javascript
-analytics.track({
-    sessionId  : String,
-    userId     : String,
-    event      : String,
-    properties : Object,
-    timestamp  : Date
-});
+```java
+void identify(String sessionId,
+              String userId,
+              String event,
+              DateTime timestamp,
+              EventProperties properties);
 ```
 
 **sessionId** (String) is a unique id associated with an anonymous user **before** they are logged in. Even if the user
@@ -110,21 +96,14 @@ is logged in, you can still send us the **sessionId** or you can just omit it.
 
 **event** (String) describes what this user just did. It's a human readable description like "Played a Song", "Printed a Report" or "Updated Status".
 
-**properties** (Object) is a dictionary with items that describe the event in more detail. This argument is optional, but highly recommended—you’ll find these properties extremely useful later.
+**timestamp** (DateTime, optional) is a Javascript date object representing when the track took place. If the event just happened, leave it blank and we'll use the server's time. If you are importing data from the past, make sure you provide this argument.
 
-**timestamp** (Date, optional) is a Javascript date object representing when the track took place. If the event just happened, leave it blank and we'll use the server's time. If you are importing data from the past, make sure you provide this argument.
+**properties** (EventProperties) is a dictionary with items that describe the event in more detail. This argument is optional, but highly recommended—you’ll find these properties extremely useful later.
 
-```javascript
-
-analytics.track({
-    sessionId  : 'DKGXt384hFDT82D',
-    userId     : '019mr8mf4r',
-    event      : 'Listened to a song',
-    properties : {
-        revenue        : 39.95,
-        shippingMethod : '2-day'
-    }
-});
+```java
+Analytics.track("507f1f77bcf8", "Purchased Item", new EventProperties()
+                    .put("revenue", 39.95)
+                    .put("shippingMethod", "2-day");
 ```
 
 That's it, just two functions!
@@ -138,7 +117,7 @@ There are two main modes of analytics integration: client-side and server-side. 
 * **Client-side analytics** - (via [analytics.js](https://github.com/segmentio/analytics.js)) works by loading in other integrations
 in the browser.
 
-* **Server-side analytics** - (via [analytics-node](https://github.com/segmentio/analytics-node) and other server-side libraries) works
+* **Server-side analytics** - (via [analytics-node](https://github.com/segmentio/analytics-node), [analytics-python](https://github.com/segmentio/analytics-python), [analytics-ruby](https://github.com/segmentio/analytics-ruby), [analytics-java](https://github.com/segmentio/analytics-java) and other server-side libraries) works
 by sending the analytics request to [Segment.io](https://segment.io). Our servers then route the message to your desired integrations.
 
 Some analytics services have REST APIs while others only support client-side integrations.
@@ -152,30 +131,28 @@ You can learn which integrations are supported server-side vs. client-side on yo
 By default, the client will flush:
 
 + the first time it gets a message
-+ every 20 messages (control with `flushAt`)
++ every message (control with `flushAt`)
 + if 10 seconds has passed since the last flush (control with `flushAfter`)
 
-#### Turn off Batching
+#### Enable Batching
 
-When debugging, or in short-lived programs, you might want the client to make the request right away. In this case, you can turn off batching by setting the `flushAt` argument to 1.
+Batching allows you to not send an HTTP request every time you submit a message. In high scale environments, it's a good ide to set `flushAt` to about 25, meaning the client will flush every 25 messages.
 
-```javascript
-analytics.init({ secret: 'MY_API_SECRET', flushAt: 1 });
+```java
+Analytics.iniitialize("YOUR_API_SECRET", new Options().setFlushAt(25));
 ````
 
 #### Flush Whenever You Want
 
 At the end of your program, you may want to flush to make sure there's nothing left in the queue.
 
-```javascript
-analytics.flush(function (err) {
-    console.log('Flushed, and now this program can exit!');
-});
+```java
+Analytics.flush();
 ```
 
 #### Why Batch?
 
-This client is built to support high performance environments. That means it is safe to use analytics-node in a web server that is serving hundreds of requests per second.
+This client is built to support high performance environments. That means it is safe to use analytics-java in a web server that is serving hundreds of requests per second.
 
 **How does the batching work?**
 
@@ -191,95 +168,64 @@ Batching means that your message might not get sent right away.
 
 **How do I know when this specific message is flushed?**
 
-Every `identify` and `track` returns a promise, which you can use to know when that message is flushed.
+Every `identify` and `track` accepts a Callback in its most verbose overload.
 
-```javascript
-var analytics = require('analytics-node');
+```java
+Analytics.identify("aksj2kdj2kj2kje", "507f1f77bcf8",
+                        new Context(), DateTime.now(),
+                        new Traits()
+                        .put("name", "Achilles")
+                        .put("email", "achilles@segment.io")
+                        .put("subscriptionPlan", "Premium")
+                        .put("friendCount", 29), new Callback() {
 
-var promise = analytics.track({ userId : 'calvin@segment.io',
-                                event  : 'Plays Ultimate' });
-
-promise.on('flush', function () {
-    console.log("I'm 2000 miles away now!");
-});
-
-promise.on('err', function (err) {
-    console.log('Error occured: ', err);
-    // [Error: We couldnt find an app with that "secret". Have you created it at segment.io? If so, please double check it.]
-});
+                            public void onResponse(Response response) {
+                                if (response.getStatusCode() == 200) {
+                                    // success
+                                } else {
+                                    // failure
+                                    // System.err.println(response.getResponseBody());
+                                }
+                            }
+                });
 ```
 
-**How do I know when __any__ messages are flushed?**
-
-You can use the `analytics` client as an event emitter to listen for any flushes or errors.
-
-```javascript
-var analytics = require('analytics-node');
-
-analytics.on('flush', function () {
-    console.log('I just got flushed. YAY!');
-});
-```
-
-### Error Handling
-
-In order to handle errors, the node client will emit every time an error occurs. To prevent analytics-node from crashing your server with an unhandled exception, it emits on `err` rather than the more conventional `error`.
-
-During integration, we recommend listening on the `err` event to make sure that all the data is being properly recorded.
-
-```javascript
-analytics.on('err', function (err) {
-    console.warn('Error occured', err);
-    // [Error: We couldnt find an app with that "secret". Have you created it at segment.io? If so, please double check it.]
-});
-```
-
-### Events
-
-You may also listen on `analytics` variable for the following events:
-
-* **initialize** - when the client is initialized and able to record events.
-* **flush** - after the client flushes part of its queue.
-* **err** - when an error in the tracking code or connection happens.
+Remember to use this only for debugging. The callback gets executed on the asynchronous
+event loop powering Netty's web client. If you run long running operations on the callback,
+then you risk breaking the client.
 
 ### Understanding the Client Options
 
-If you hate defaults, than you'll love how configurable the analytics-node is.
+If you hate defaults, than you'll love how configurable the analytics-java is.
 Check out these gizmos:
 
-```javascript
-var analytics = require('analytics-node');
-analytics.init({
-    secret        : 'MY_API_SECRET',
-
-    flushAt       : 20,
-    flushAfter    : 10000,
-
-    maxQueueSize  : 10000,
-    timerInterval : 10000,
-    triggers      : [analytics.triggers.size, analytics.triggers.time]
-});
+```java
+Analytics.initialize("MY_API_SECRET", new Options()
+                                        .setFlushAt(50)
+                                        .setFlushAfter((int)TimeUnit.SECONDS.toMillis(10))
+                                        .setMaxQueueSize(10000));
 ```
 
-* **flushAt** (Number) - Flush after this many messages are in the queue.
-* **flushAfter** (Number) - Flush after this many milliseconds have passed since the last flush.
-* **maxQueueSize** (Number) - Stop accepting messages into the queue after this many messages are backlogged in the queue.
-* **timerInterval** (Number) - Check this many milliseconds to see if there's anything to flush.
-* **triggers** (Array[Function]) - An array of trigger functions that determine when it's time to flush.
+* **flushAt** (int) - Flush after this many messages are in the queue.
+* **flushAfter** (int) - Flush after this many milliseconds have passed since the last flush.
+* **maxQueueSize** (int) - Stop accepting messages into the queue after this many messages are backlogged in the queue.
 
 ### Multiple Clients
 
-Different parts of your app may require different types of batching. In that case, you can initialize different `analytic-node` client instances. The API is exactly the same.
+Different parts of your app may require different types of batching. In that case, you can initialize different `analytic-java` client instances. `Analytics.initialize` becomes the `Client`'s constructor.
 
-```javascript
-var analytics = new require('analytics-node').Client();
-analytics.init({secret: 'MY_API_SECRET', ...});
+```java
+Client client = new Client("testsecret", new Options()
+                                    .setFlushAt(50)
+                                    .setFlushAfter((int)TimeUnit.SECONDS.toMillis(10))
+                                    .setMaxQueueSize(10000));
+client.track(..);
 ```
 
 ## Testing
 
 ```bash
-npm test
+mvn test
 ```
 
 ## License

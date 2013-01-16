@@ -465,7 +465,7 @@ public class Client {
 	
 			@Override
 			protected int getMaxQueueSize() {
-				return options.getQueueCapacity();
+				return options.getMaxQueueSize();
 			}
 			
 			@Override
