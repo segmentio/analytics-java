@@ -1,9 +1,6 @@
 analytics-java
 ==============
 
-[![Build Status](https://travis-ci.org/segmentio/analytics-java.png)](https://travis-ci.org/segmentio/analytics-java)
-
-
 analytics-java is a java client for [Segment.io](https://segment.io). If you're using client-side javascript, check out [analytics.js](https://github.com/segmentio/analytics.js).
 
 ### Java Analytics Made Simple
