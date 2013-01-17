@@ -2,30 +2,46 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.segment</groupId>
+  <parent>
+    <groupId>org.sonatype.oss</groupId>
+    <artifactId>oss-parent</artifactId>
+    <version>7</version>
+  </parent>
+	
+  <groupId>com.github.segmentio</groupId>
   <artifactId>analytics</artifactId>
   <description>The analytics API you've always wanted.</description>
-  <version>0.0.1</version>
+  <version>0.1.2-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>analytics</name>
   <url>https://github.com/segmentio/analytics-java/tree/master</url>
 	
    <scm>
-       <developerConnection>scm:git:ssh://git@github.com/segmentio/analytics-java.git</developerConnection>
-       <connection>scm:git:ssh://git@github.com/segmentio/analytics-java.git</connection>
-       <url>http://github.com/segmentio/analytics-java/tree/master</url>
+    <connection>scm:git:git@github.com:segmentio/analytics-java.git</connection>
+    <developerConnection>scm:git:git@github.com:segmentio/analytics-java.git</developerConnection>
+    <url>git@github.com:segmentio/analytics-java.git</url>
    </scm>
 
   <licenses>
     <license>
       <name>The MIT License</name>
+      <url> http://opensource.org/licenses/MIT</url>
+      <distribution>repo</distribution>
     </license>
   </licenses>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
   </properties>
+
+  <developers>
+    <developer>
+      <id>ivolo</id>
+      <name>Ilya Volodarsky</name>
+      <email>ilya@segment.io</email>
+    </developer>
+  </developers>
 
   <dependencies>
   	<dependency>

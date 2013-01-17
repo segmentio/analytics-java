@@ -12,3 +12,6 @@ target/
 .classpath
 .project
 .settings
+
+settings.xml
+release.properties
