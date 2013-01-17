@@ -1,9 +1,6 @@
 analytics-java
 ==============
 
-[![Build Status](https://travis-ci.org/segmentio/analytics-java.png)](https://travis-ci.org/segmentio/analytics-java)
-
-
 analytics-java is a java client for [Segment.io](https://segment.io). If you're using client-side javascript, check out [analytics.js](https://github.com/segmentio/analytics.js).
 
 ### Java Analytics Made Simple
@@ -136,10 +133,10 @@ By default, the client will flush:
 
 #### Enable Batching
 
-Batching allows you to not send an HTTP request every time you submit a message. In high scale environments, it's a good ide to set `flushAt` to about 25, meaning the client will flush every 25 messages.
+Batching allows you to not send an HTTP request every time you submit a message. In high scale environments, it's a good idea to set `flushAt` to about 25, meaning the client will flush every 25 messages.
 
 ```java
-Analytics.iniitialize("YOUR_API_SECRET", new Options().setFlushAt(25));
+Analytics.initialize("YOUR_API_SECRET", new Options().setFlushAt(25));
 ````
 
 #### Flush Whenever You Want
@@ -200,7 +197,7 @@ If you hate defaults, than you'll love how configurable the analytics-java is.
 Check out these gizmos:
 
 ```java
-Analytics.initialize("MY_API_SECRET", new Options()
+Analytics.initialize("YOUR_API_SECRET", new Options()
                                         .setFlushAt(50)
                                         .setFlushAfter((int)TimeUnit.SECONDS.toMillis(10))
                                         .setMaxQueueSize(10000));
@@ -215,7 +212,7 @@ Analytics.initialize("MY_API_SECRET", new Options()
 Different parts of your app may require different types of batching. In that case, you can initialize different `analytic-java` client instances. `Analytics.initialize` becomes the `Client`'s constructor.
 
 ```java
-Client client = new Client("testsecret", new Options()
+Client client = new Client("YOUR_API_SECRET", new Options()
                                     .setFlushAt(50)
                                     .setFlushAfter((int)TimeUnit.SECONDS.toMillis(10))
                                     .setMaxQueueSize(10000));
