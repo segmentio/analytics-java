@@ -31,7 +31,7 @@ public class AnalyticsTest {
 	
 	@Test
 	public void identify3() {
-		Analytics.identify("session_id", "ilya@segment.io", new Traits("subscriptionPlan", "Free"));
+		Analytics.identify("ilya@segment.io", new Traits("subscriptionPlan", "Free"));
 	}
 
 	//

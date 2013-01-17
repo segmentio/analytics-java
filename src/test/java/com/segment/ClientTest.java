@@ -23,18 +23,20 @@ public class ClientTest {
 
 	public static BasePayload[] CASES = new BasePayload[] {
 		
-		new Identify("DKGXt384hFDT82D", "019mr8mf4r", new DateTime(),
-				new Context().setIp("192.168.1.1"), 
+		new Identify("ilya@segment.io", 
 				new Traits().put("name", "Achilles")
 							.put("email", "achilles@segment.io")
 							.put("subscriptionPlan", "Premium")
-							.put("friendCount", 29), null),
+							.put("friendCount", 29), 
+							new DateTime(),
+							new Context().setIp("192.168.1.1"), null),
 							
-		new Track("DKGXt384hFDT82D", "019mr8mf4r", "Played a Song", new DateTime(),
-				new Context().setIp("192.168.1.1"), 
+		new Track("ilya@segment.io", "Played a Song", 
 				new EventProperties().put("name", "Achilles")
 							.put("revenue", 39.95)
-							.put("shippingMethod", "2-day"), null),
+							.put("shippingMethod", "2-day"), 
+							new DateTime(), 
+							new Context().setIp("192.168.1.1"), null),
 		
 	};
 	
@@ -73,22 +75,20 @@ public class ClientTest {
 				if (payload instanceof Identify) {
 					Identify identify = (Identify) payload;
 					
-					client.identify(identify.getSessionId(), 
-								 identify.getUserId(),
-								 identify.getContext(),
-								 identify.getTimestamp(),
-								 identify.getTraits(),
-								 callback);
+					client.identify(identify.getUserId(),
+							 		identify.getTraits(),
+							 		identify.getTimestamp(),
+							 		identify.getContext(),
+							 		callback);
 					
 				} else if (payload instanceof Track) {
 					Track track = (Track) payload;
 					
-					client.track(track.getSessionId(), 
-								 track.getUserId(),
+					client.track(track.getUserId(),
 								 track.getEvent(),
-								 track.getContext(),
-								 track.getTimestamp(),
 								 track.getProperties(),
+								 track.getTimestamp(),
+								 track.getContext(),
 								 callback);
 				}
 			}

@@ -9,10 +9,10 @@ public class Identify extends BasePayload {
 	
 	private Traits traits;
 	
-	public Identify(String sessionId, String userId, DateTime timestamp,
-			Context context, Traits traits, Callback callback) {
+	public Identify(String userId, Traits traits, DateTime timestamp,
+			Context context, Callback callback) {
 		
-		super(sessionId, userId, timestamp, context, callback);
+		super(userId, timestamp, context, callback);
 		
 		this.traits = traits;
 	}

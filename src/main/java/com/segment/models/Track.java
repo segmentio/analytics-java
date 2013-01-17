@@ -10,9 +10,14 @@ public class Track extends BasePayload {
 	private String event;
 	private EventProperties properties;
 	
-	public Track(String sessionId, String userId, String event, DateTime timestamp,
-			Context context, EventProperties properties, Callback callback) {
-		super(sessionId, userId, timestamp, context, callback);
+	public Track(String userId, 
+				 String event, 
+				 EventProperties properties, 
+				 DateTime timestamp,
+				 Context context, 
+				 Callback callback) {
+		
+		super(userId, timestamp, context, callback);
 
 		this.event = event;
 		this.properties = properties;
