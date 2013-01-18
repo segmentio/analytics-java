@@ -10,7 +10,7 @@
   <groupId>com.github.segmentio</groupId>
   <artifactId>analytics</artifactId>
   <description>The analytics API you've always wanted.</description>
-  <version>0.1.4-SNAPSHOT</version>
+  <version>0.1.4</version>
   <packaging>jar</packaging>
 
   <name>analytics</name>
