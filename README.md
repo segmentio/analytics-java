@@ -36,7 +36,19 @@ If you haven't yet, get an API secret [here](https://segment.io).
 
 #### Install
 
-Maven repository hosting coming soon. For now, clone the project and include it in your project dependencies in eclipse.
+Add to pom.xml:
+```
+<dependency>
+  <groupId>com.github.segmentio</groupId>
+  <artifactId>analytics</artifactId>
+  <version>0.1.3</version>
+</dependency>
+```
+
+or to build.gradle:
+```
+compile 'com.github.segmentio:analytics:0.1.3'
+```
 
 #### Initialize the client
 
