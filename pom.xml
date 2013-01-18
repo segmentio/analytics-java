@@ -22,6 +22,14 @@
     <url>https://github.com/segmentio/analytics-java.git</url>
    </scm>
 
+ <distributionManagement>
+    <repository>
+      <id>sonatype-nexus-staging</id>
+      <name>Nexus Staging Repository</name>
+      <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+    </repository>
+  </distributionManagement>
+
   <licenses>
     <license>
       <name>The MIT License</name>
@@ -87,4 +95,5 @@
     </dependency>
 
   </dependencies>
+  
 </project>
