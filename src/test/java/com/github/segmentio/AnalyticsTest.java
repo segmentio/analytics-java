@@ -22,7 +22,7 @@ public class AnalyticsTest {
 	@Test
 	public void identify() {
 		// with an accented character
-		Analytics.identify("ben@agorapulse.com", new Traits("lastName", "Hédiard"));
+		Analytics.identify("ilya@segment.io", new Traits("lastName", "Hédiard"));
 	}
 	
 	@Test
