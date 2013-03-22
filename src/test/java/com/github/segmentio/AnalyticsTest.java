@@ -12,7 +12,7 @@ public class AnalyticsTest {
 
 	@BeforeClass
 	public static void setup() {
-		Analytics.initialize("testsecret");
+		Analytics.initialize("testsecret", new Options().setFlushAt(1));
 	}
 	
 	//
@@ -21,17 +21,23 @@ public class AnalyticsTest {
 	
 	@Test
 	public void identify() {
-		Analytics.identify("ilya@segment.io", new Traits("subscriptionPlan", "Free"));
+		// with an accented character
+		Analytics.identify("ben@agorapulse.com", new Traits("lastName", "Hédiard"));
 	}
 	
-
 	@Test
 	public void identify2() {
 		Analytics.identify("ilya@segment.io", new Traits("subscriptionPlan", "Free"));
 	}
 	
+
 	@Test
 	public void identify3() {
+		Analytics.identify("ilya@segment.io", new Traits("subscriptionPlan", "Free"));
+	}
+	
+	@Test
+	public void identify4() {
 		Analytics.identify("ilya@segment.io", new Traits("subscriptionPlan", "Free"));
 	}
 

@@ -1,5 +1,6 @@
 package com.github.segmentio;
 
+import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -459,10 +460,23 @@ public class Client {
 
 				String json = gson.toJson(model);
 
-				return new RequestBuilder().setMethod("POST").setBody(json)
-						.addHeader("Content-Type", "application/json")
-						.setUrl(Client.this.options.getHost() + "/v1/import")
-						.build();
+				try {
+					
+					return new RequestBuilder().setMethod("POST")
+							// need to provide UTF-8 bytes straight, otherwise AsyncHttpClient
+							// will send overflowed unicode bytes
+							.setBody(json.getBytes("UTF-8"))
+							.addHeader("Content-Type", "application/json; charset=utf-8")
+							.setUrl(Client.this.options.getHost() + "/v1/import")
+							.build();
+					
+				} catch (IllegalArgumentException e) {
+					e.printStackTrace();
+				} catch (UnsupportedEncodingException e) {
+					e.printStackTrace();
+				}
+				
+				return null;
 			}
 
 			@Override
