@@ -1,12 +1,13 @@
 package com.github.segmentio.models;
 
 
-public class Context extends SafeProperties {
+public class Context extends Props {
 
 	private static final long serialVersionUID = 2042634726363431396L;
 
 	private static final String IP_KEY = "ip";
 	private static final String LIBRARY_KEY = "library";
+	private static final String PROVIDERS_KEY = "providers";
 	
 	public Context() {
 		super();
@@ -27,12 +28,17 @@ public class Context extends SafeProperties {
 		return this;
 	}
 	
+	public Context setProviders(Providers providers) {
+		this.put(PROVIDERS_KEY, providers);
+		return this;
+	}
+	
 	public String getIp() {
 		return (String)this.get(IP_KEY);
 	}
 	
 	@Override
-	public SafeProperties put(String key, Object value) {
+	public Props put(String key, Object value) {
 		super.put(key, value);
 		return this;
 	}

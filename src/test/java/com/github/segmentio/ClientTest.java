@@ -10,13 +10,13 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import com.github.segmentio.Client;
-import com.github.segmentio.Options;
 import com.github.segmentio.models.BasePayload;
 import com.github.segmentio.models.Callback;
 import com.github.segmentio.models.Context;
 import com.github.segmentio.models.EventProperties;
 import com.github.segmentio.models.Identify;
+import com.github.segmentio.models.Props;
+import com.github.segmentio.models.Providers;
 import com.github.segmentio.models.Track;
 import com.github.segmentio.models.Traits;
 import com.ning.http.client.Response;
@@ -29,16 +29,25 @@ public class ClientTest {
 				new Traits().put("name", "Achilles")
 							.put("email", "achilles@segment.io")
 							.put("subscriptionPlan", "Premium")
-							.put("friendCount", 29), 
+							.put("friendCount", 29)
+							.put("company", new Props()
+								.put("name", "Company, inc.")),
 							new DateTime(),
 							new Context().setIp("192.168.1.1"), null),
 							
 		new Track("ilya@segment.io", "Played a Song", 
 				new EventProperties().put("name", "Achilles")
 							.put("revenue", 39.95)
-							.put("shippingMethod", "2-day"), 
+							.put("shippingMethod", "2-day"),
 							new DateTime(), 
-							new Context().setIp("192.168.1.1"), null),
+							new Context()
+								.setIp("192.168.1.1")
+								.setProviders(new Providers()
+									.setDefault(true)
+									.setEnabled("Mixpanel", false)
+									.setEnabled("KISSMetrics", true)
+									.setEnabled("Google Analytics", true)
+								), null),
 		
 	};
 	

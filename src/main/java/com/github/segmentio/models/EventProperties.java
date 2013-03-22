@@ -1,6 +1,6 @@
 package com.github.segmentio.models;
 
-public class EventProperties extends SafeProperties {
+public class EventProperties extends Props {
 
 	private static final long serialVersionUID = -946938748259365871L;
 

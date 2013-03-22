@@ -6,18 +6,18 @@ import java.util.HashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SafeProperties extends HashMap<String, Object> {
+public class Props extends HashMap<String, Object> {
 
 	private static final long serialVersionUID = -3751430322294788170L;
 
 	private static final Logger logger = 
-			LoggerFactory.getLogger(SafeProperties.class);
+			LoggerFactory.getLogger(Props.class);
 	
-	public SafeProperties() {
+	public Props() {
 		super(1);
 	}
 	
-	public SafeProperties(Object... kvs) {
+	public Props(Object... kvs) {
 		
 		super(kvs == null ? 1 : kvs.length / 2);
 		
@@ -37,7 +37,7 @@ public class SafeProperties extends HashMap<String, Object> {
 	}
 	
 
-	public SafeProperties put(String key, Object value) {
+	public Props put(String key, Object value) {
 		
 		if (allowed(value)) {
 			super.put(key, value);
@@ -57,7 +57,8 @@ public class SafeProperties extends HashMap<String, Object> {
 			value instanceof Boolean || 
 			value instanceof Integer || 
 			value instanceof Double || 
-			value instanceof Date) {
+			value instanceof Date || 
+			value instanceof Props) {
 			return true;
 		} else {
 			return false;

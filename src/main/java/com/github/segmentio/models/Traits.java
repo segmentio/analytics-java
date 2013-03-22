@@ -1,6 +1,6 @@
 package com.github.segmentio.models;
 
-public class Traits extends SafeProperties {
+public class Traits extends Props {
 
 	private static final long serialVersionUID = 5446264732089518289L;
 
