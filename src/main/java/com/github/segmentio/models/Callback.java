@@ -1,6 +1,5 @@
 package com.github.segmentio.models;
 
-import com.ning.http.client.Response;
 
 
 /**
@@ -11,5 +10,5 @@ public interface Callback {
 	 * Called when a response is received from the server.
 	 * @param response
 	 */
-	public void onResponse(Response response);
+	public void onResponse(boolean success, String message);
 }

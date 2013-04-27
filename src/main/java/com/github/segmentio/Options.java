@@ -1,6 +1,7 @@
 package com.github.segmentio;
 
-import com.ning.http.client.AsyncHttpClientConfig;
+import org.apache.commons.lang.StringUtils;
+
 
 /**
  * Segment.io client options
@@ -14,31 +15,20 @@ public class Options {
 	private String host;
 
 	/**
-	 * Flush after these many messages are added to the queue
-	 */
-	private int flushAt;
-
-	/**
-	 * Flush after this many milliseconds have passed without a flush
-	 */
-	private int flushAfter;
-
-	/**
 	 * Stop accepting messages after the queue reaches this capacity
 	 */
 	private int maxQueueSize;
 
 	/**
-	 * The HTTP Client used to flush
+	 * The amount of milliseconds that passes before a request is marked as timed out
 	 */
-	private AsyncHttpClientConfig httpConfig;
+	private int timeout;
 
 	/**
 	 * Creates a default options
 	 */
 	public Options() {
-		this(Defaults.HOST, Defaults.FLUSH_AT, Defaults.FLUSH_AFTER,
-				Defaults.MAX_QUEUE_SIZE, Defaults.CONFIG);
+		this(Defaults.HOST, Defaults.MAX_QUEUE_SIZE, Defaults.TIMEOUT);
 	}
 
 	/**
@@ -49,22 +39,10 @@ public class Options {
 	 * @param maxQueueSize
 	 * @param httpConfig
 	 */
-	Options(String host, int flushAt, int flushAfter, int maxQueueSize,
-			AsyncHttpClientConfig httpConfig) {
-
-		this.host = host;
-		this.flushAt = flushAt;
-		this.flushAfter = flushAfter;
-		this.maxQueueSize = maxQueueSize;
-		this.httpConfig = httpConfig;
-	}
-
-	public int getFlushAt() {
-		return flushAt;
-	}
-
-	public int getFlushAfter() {
-		return flushAfter;
+	Options(String host, int maxQueueSize, int timeout) {
+		setHost(host);
+		setMaxQueueSize(maxQueueSize);
+		setTimeout(timeout);
 	}
 
 	public String getHost() {
@@ -75,32 +53,10 @@ public class Options {
 		return maxQueueSize;
 	}
 
-	public AsyncHttpClientConfig getHttpConfig() {
-		return httpConfig;
+	public int getTimeout() {
+		return timeout;
 	}
-
-	/**
-	 * Sets the amount of messages that need to be in the queue before it is
-	 * flushed
-	 * 
-	 * @param flushAt
-	 */
-	public Options setFlushAt(int flushAt) {
-		this.flushAt = flushAt;
-		return this;
-	}
-
-	/**
-	 * Sets the maximum amount of time to queue before invoking a flush (in
-	 * milliseconds)
-	 * 
-	 * @param flushAfter
-	 */
-	public Options setFlushAfter(int flushAfter) {
-		this.flushAfter = flushAfter;
-		return this;
-	}
-
+	
 	/**
 	 * Sets the maximum queue capacity, which is an emergency pressure relief
 	 * valve. If we're unable to flush messages fast enough, the queue will stop
@@ -109,6 +65,9 @@ public class Options {
 	 * @param maxQueueSize
 	 */
 	public Options setMaxQueueSize(int maxQueueSize) {
+		if (maxQueueSize < 1)
+			throw new IllegalArgumentException("Analytics#option#maxQueueSize must be greater than 0.");
+		
 		this.maxQueueSize = maxQueueSize;
 		return this;
 	}
@@ -119,18 +78,25 @@ public class Options {
 	 * @param host
 	 */
 	public Options setHost(String host) {
+		if (StringUtils.isEmpty(host))
+			throw new IllegalArgumentException("Analytics#option#host must be a valid host, like 'https://api.segment.io'.");
+		
 		this.host = host;
 		return this;
 	}
 
+	
 	/**
-	 * Sets the HTTP client async configuration
-	 * 
-	 * @param httpConfig
+	 * Sets the milliseconds to wait before a flush is marked as timed out.
+	 * @param timeout timeout in milliseconds.
 	 */
-	public Options setHttpConfig(AsyncHttpClientConfig httpConfig) {
-		this.httpConfig = httpConfig;
+	public Options setTimeout(int timeout) {
+		if (timeout < 1000)
+			throw new IllegalArgumentException("Analytics#option#timeout must be at least 1000 milliseconds.");
+		
+		this.timeout = timeout;
 		return this;
 	}
+
 
 }

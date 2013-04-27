@@ -1,8 +1,6 @@
 package com.github.segmentio;
 
 import java.util.Iterator;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import junit.framework.Assert;
 
@@ -12,14 +10,11 @@ import org.junit.Test;
 
 import com.github.segmentio.models.Alias;
 import com.github.segmentio.models.BasePayload;
-import com.github.segmentio.models.Callback;
 import com.github.segmentio.models.Identify;
 import com.github.segmentio.models.Track;
 
-public class ClientTest {
+public class BlockingFlushTest {
 
-
-	
 	private static Client client;
 	
 	@BeforeClass
@@ -30,9 +25,7 @@ public class ClientTest {
 	@Test
 	public void testSending() {
 		
-		int trials = (int)(Math.random() * 100);
-		
-		final CountDownLatch latch = new CountDownLatch(trials);
+		int trials = (int)(Math.random() * 500);
 		
 		Iterator<BasePayload> iterator = new PayloadGenerator().iterator();
 		
@@ -41,13 +34,6 @@ public class ClientTest {
 		for (int i = 0; i < trials; i += 1) {
 			BasePayload payload = iterator.next();
 			
-			Callback callback = new Callback() {
-				public void onResponse(boolean success, String message) {
-					Assert.assertEquals(true, success);
-					latch.countDown();
-				}
-			};
-			
 			if (payload instanceof Identify) {
 				Identify identify = (Identify) payload;
 				
@@ -55,7 +41,7 @@ public class ClientTest {
 						 		identify.getTraits(),
 						 		identify.getTimestamp(),
 						 		identify.getContext(),
-						 		callback);
+						 		null);
 				
 			} else if (payload instanceof Track) {
 				Track track = (Track) payload;
@@ -65,7 +51,7 @@ public class ClientTest {
 							 track.getProperties(),
 							 track.getTimestamp(),
 							 track.getContext(),
-							 callback);
+							 null);
 				
 			} else if (payload instanceof Alias) {
 				Alias alias = (Alias) payload;
@@ -74,19 +60,16 @@ public class ClientTest {
 							 alias.getTo(),
 							 alias.getTimestamp(),
 							 alias.getContext(),
-							 callback);
+							 null);
 			} else {
 				System.err.println(payload.getClass() + " is unexpected.");
 			}
 		}
 		
+		// do a blocking flush
 		client.flush();
 		
-		try {
-			Assert.assertTrue(latch.await(40, TimeUnit.SECONDS));
-		} catch (InterruptedException e) {
-			Assert.fail();
-		}
+		Assert.assertEquals(trials, client.getStatistics().getSuccessful().getCount());
 	}
 	
 	@AfterClass

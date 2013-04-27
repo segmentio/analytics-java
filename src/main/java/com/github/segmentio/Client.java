@@ -1,13 +1,13 @@
 package com.github.segmentio;
 
-import java.io.UnsupportedEncodingException;
-import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
 
-import com.github.segmentio.gson.DateTimeTypeConverter;
+import com.github.segmentio.flush.Flusher;
+import com.github.segmentio.flush.IBatchFactory;
+import com.github.segmentio.models.Alias;
 import com.github.segmentio.models.BasePayload;
 import com.github.segmentio.models.Batch;
 import com.github.segmentio.models.Callback;
@@ -16,17 +16,8 @@ import com.github.segmentio.models.EventProperties;
 import com.github.segmentio.models.Identify;
 import com.github.segmentio.models.Track;
 import com.github.segmentio.models.Traits;
-import com.github.segmentio.safeclient.AsyncHttpBatchedOperation;
-import com.github.segmentio.safeclient.policy.flush.FlushAfterTimePolicy;
-import com.github.segmentio.safeclient.policy.flush.FlushAtSizePolicy;
-import com.github.segmentio.safeclient.policy.flush.IFlushPolicy;
-import com.github.segmentio.safeclient.utils.Statistics;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.ning.http.client.AsyncHttpClient;
-import com.ning.http.client.Request;
-import com.ning.http.client.RequestBuilder;
-import com.ning.http.client.Response;
+import com.github.segmentio.request.BlockingRequester;
+import com.github.segmentio.stats.AnalyticsStatistics;
 
 /**
  * The Segment.io Client - Instantiate this to use the Segment.io API.
@@ -43,9 +34,10 @@ public class Client {
 
 	private String secret;
 	private Options options;
-
-	private Gson gson;
-	private AsyncHttpBatchedOperation<BasePayload> operation;
+	
+	private Flusher flusher;
+	private BlockingRequester requester;
+	private AnalyticsStatistics statistics;
 
 	/**
 	 * Creates a new Segment.io client.
@@ -102,13 +94,19 @@ public class Client {
 
 		this.secret = secret;
 		this.options = options;
-
-		this.gson = new GsonBuilder().registerTypeAdapter(DateTime.class,
-				new DateTimeTypeConverter()).create();
-
-		this.operation = buildOperation(new AsyncHttpClient(
-				options.getHttpConfig()));
+		this.statistics = new AnalyticsStatistics();
+		
+		this.requester = new BlockingRequester(this);
+		this.flusher = new Flusher(this, factory, requester);
+		this.flusher.start();
 	}
+	
+	private IBatchFactory factory = new IBatchFactory() {
+		
+		public Batch create(List<BasePayload> batch) {
+			return new Batch(secret, batch);
+		}
+	};
 
 	//
 	// API Calls
@@ -226,16 +224,9 @@ public class Client {
 		Identify identify = new Identify(userId, traits, timestamp, context,
 				callback);
 
-		operation.perform(identify);
-	}
-
-	/**
-	 * Enqueue an identify or track payload
-	 * 
-	 * @param payload
-	 */
-	public void enqueue(BasePayload payload) {
-		operation.perform(payload);
+		flusher.enqueue(identify);
+		
+		statistics.updateIdentifies(1);
 	}
 
 	//
@@ -394,25 +385,156 @@ public class Client {
 		Track track = new Track(userId, event, properties, timestamp, context,
 				callback);
 
-		operation.perform(track);
+		flusher.enqueue(track);
+		
+		statistics.updateTracks(1);
 	}
 
+	
+	//
+	// Alias
+	//
+
+	/**
+	 * Aliases an anonymous user into an identified user.
+	 * 
+	 * @param from
+	 *            the anonymous user's id before they are logged in.
+	 * 
+	 * @param to
+	 *            the identified user's id after they're logged in.
+	 *           
+	 */
+	public void alias(String from, String to) {
+		alias(from, to, null, null, null);
+	}
+
+	/**
+	 * Aliases an anonymous user into an identified user.
+	 * 
+	 * @param from
+	 *            the anonymous user's id before they are logged in.
+	 * 
+	 * @param to
+	 *            the identified user's id after they're logged in.
+	 * 
+	 * 
+	 * @param timestamp
+	 *            a {@link DateTime} object representing when the track took
+	 *            place. If the event just happened, leave it blank and we'll
+	 *            use the server's time. If you are importing data from the
+	 *            past, make sure you provide this argument.
+	 * 
+	 *           
+	 */
+	public void alias(String from, String to, DateTime timestamp) {
+		alias(from, to, timestamp, null, null);
+	}
+
+	/**
+	 * Aliases an anonymous user into an identified user.
+	 * 
+	 * @param from
+	 *            the anonymous user's id before they are logged in.
+	 * 
+	 * @param to
+	 *            the identified user's id after they're logged in.
+	 * 
+	 * 
+	 * @param context
+	 *            an object that describes anything that doesn't fit into this
+	 *            event's properties (such as the user's IP)
+	 *           
+	 */
+	public void alias(String from, String to, Context context) {
+		alias(from, to, null, context, null);
+	}
+
+	/**
+	 * Aliases an anonymous user into an identified user.
+	 * 
+	 * @param from
+	 *            the anonymous user's id before they are logged in.
+	 * 
+	 * @param to
+	 *            the identified user's id after they're logged in.
+	 * 
+	 * 
+	 * @param timestamp
+	 *            a {@link DateTime} object representing when the track took
+	 *            place. If the event just happened, leave it blank and we'll
+	 *            use the server's time. If you are importing data from the
+	 *            past, make sure you provide this argument.
+	 * 
+	 * @param context
+	 *            an object that describes anything that doesn't fit into this
+	 *            event's properties (such as the user's IP)
+	 *           
+	 */
+	public void alias(String from, String to, DateTime timestamp, Context context) {
+		alias(from, to, timestamp, context, null);
+	}
+	
+
+	/**
+	 * Aliases an anonymous user into an identified user.
+	 * 
+	 * @param from
+	 *            the anonymous user's id before they are logged in.
+	 * 
+	 * @param to
+	 *            the identified user's id after they're logged in.
+	 * 
+	 * 
+	 * @param timestamp
+	 *            a {@link DateTime} object representing when the track took
+	 *            place. If the event just happened, leave it blank and we'll
+	 *            use the server's time. If you are importing data from the
+	 *            past, make sure you provide this argument.
+	 * 
+	 * @param context
+	 *            an object that describes anything that doesn't fit into this
+	 *            event's properties (such as the user's IP)
+	 *
+	 * @param callback
+	 *            a callback that is fired when this track's batch is flushed to
+	 *            the server. Note: this callback is fired on the same thread as
+	 *            the async event loop that made the request. You should not
+	 *            perform any kind of long running operation on it.
+	 *             
+	 */
+	public void alias(String from, String to, DateTime timestamp, Context context, Callback callback) {
+		
+		if (context == null)
+			context = new Context();
+
+		Alias alias = new Alias(from, to, timestamp, context, callback);
+
+		flusher.enqueue(alias);
+		
+		statistics.updateAlias(1);
+	}
+
+	
+	
 	//
 	// Actions
 	//
 
+
 	/**
-	 * Flushes the current contents of the queue
+	 * Blocks until all messages in the queue are flushed.
 	 */
 	public void flush() {
-		operation.flush();
+		this.flusher.flush();
 	}
 
 	/**
 	 * Closes the queue and the threads associated with flushing the queue
 	 */
 	public void close() {
-		operation.close();
+		this.flusher.close();
+		this.requester.close();
 	}
 
 	//
@@ -431,66 +553,8 @@ public class Client {
 		return options;
 	}
 
-	public Statistics getStatistics() {
-		return operation.statistics;
+	public AnalyticsStatistics getStatistics() {
+		return statistics;
 	}
-
-	public AsyncHttpBatchedOperation<BasePayload> buildOperation(
-			AsyncHttpClient client) {
-
-		return new AsyncHttpBatchedOperation<BasePayload>(client) {
-
-			@Override
-			protected int getMaxQueueSize() {
-				return options.getMaxQueueSize();
-			}
-
-			@Override
-			protected Iterable<IFlushPolicy> createFlushPolicies() {
-
-				return Arrays.asList(
-						new FlushAfterTimePolicy(options.getFlushAfter()),
-						new FlushAtSizePolicy(options.getFlushAt()));
-			}
-
-			@Override
-			public Request buildRequest(List<BasePayload> batch) {
-
-				Batch model = new Batch(secret, batch);
-
-				String json = gson.toJson(model);
-
-				try {
-					
-					return new RequestBuilder().setMethod("POST")
-							// need to provide UTF-8 bytes straight, otherwise AsyncHttpClient
-							// will send overflowed unicode bytes
-							.setBody(json.getBytes("UTF-8"))
-							.addHeader("Content-Type", "application/json; charset=utf-8")
-							.setUrl(Client.this.options.getHost() + "/v1/import")
-							.build();
-					
-				} catch (IllegalArgumentException e) {
-					e.printStackTrace();
-				} catch (UnsupportedEncodingException e) {
-					e.printStackTrace();
-				}
-				
-				return null;
-			}
-
-			@Override
-			public void onFlush(List<BasePayload> batch, Response response) {
-
-				for (BasePayload payload : batch) {
-					Callback callback = payload.getCallback();
-
-					if (callback != null) {
-						callback.onResponse(response);
-					}
-				}
-			}
-		};
-	};
 
 }

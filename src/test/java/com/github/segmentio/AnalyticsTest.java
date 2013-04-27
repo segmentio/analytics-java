@@ -12,7 +12,7 @@ public class AnalyticsTest {
 
 	@BeforeClass
 	public static void setup() {
-		Analytics.initialize("testsecret", new Options().setFlushAt(1));
+		Analytics.initialize("testsecret");
 	}
 	
 	//
@@ -23,22 +23,26 @@ public class AnalyticsTest {
 	public void identify() {
 		// with an accented character
 		Analytics.identify("ilya@segment.io", new Traits("lastName", "Hédiard"));
+		Analytics.flush();
 	}
 	
 	@Test
 	public void identify2() {
 		Analytics.identify("ilya@segment.io", new Traits("subscriptionPlan", "Free"));
+		Analytics.flush();
 	}
 	
 
 	@Test
 	public void identify3() {
 		Analytics.identify("ilya@segment.io", new Traits("subscriptionPlan", "Free"));
+		Analytics.flush();
 	}
 	
 	@Test
 	public void identify4() {
 		Analytics.identify("ilya@segment.io", new Traits("subscriptionPlan", "Free"));
+		Analytics.flush();
 	}
 
 	//
@@ -48,18 +52,33 @@ public class AnalyticsTest {
 	@Test
 	public void track() {
 		Analytics.track("ilya@segment.io", "Ran a marathan", new EventProperties("time", 1000*60*60*3));
+		Analytics.flush();
 	}
 	
 
 	@Test
 	public void track2() {
 		Analytics.track("ilya@segment.io", "Hates Java");
+		Analytics.flush();
 	}
 	
 	@Test
 	public void track3() {
 		Analytics.track("ilya@segment.io", "Purchased an Item", new EventProperties("revenue", 10.12));
+		Analytics.flush();
 	}
+	
+	//
+	// Alias
+	//
+
+	@Test
+	public void alias() {
+		Analytics.alias("from", "ilya@segment.io");
+		Analytics.flush();
+	}
+	
+
 	
 
 	@Test

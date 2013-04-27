@@ -2,11 +2,11 @@ package com.github.segmentio;
 
 import org.joda.time.DateTime;
 
-import com.github.segmentio.models.BasePayload;
 import com.github.segmentio.models.Callback;
 import com.github.segmentio.models.Context;
 import com.github.segmentio.models.EventProperties;
 import com.github.segmentio.models.Traits;
+import com.github.segmentio.stats.AnalyticsStatistics;
 
 public class Analytics {
 
@@ -23,15 +23,17 @@ public class Analytics {
 	 * your calls to make a HTTP request. It uses batching to efficiently send
 	 * your requests on a separate resource-constrained thread pool.
 	 * 
+	 * This method is thread-safe.
 	 * 
 	 * @param secret
 	 *            Your segment.io secret. You can get one of these by
 	 *            registering for a project at https://segment.io
 	 * 
 	 */
-	public static void initialize(String secret) {
+	public static synchronized void initialize(String secret) {
 
-		defaultClient = new Client(secret, new Options());
+		if (defaultClient == null)
+			defaultClient = new Client(secret, new Options());
 	}
 
 	/**
@@ -45,6 +47,7 @@ public class Analytics {
 	 * your calls to make a HTTP request. It uses batching to efficiently send
 	 * your requests on a separate resource-constrained thread pool.
 	 * 
+	 * This method is thread-safe.
 	 * 
 	 * @param secret
 	 *            Your segment.io secret. You can get one of these by
@@ -55,9 +58,10 @@ public class Analytics {
 	 * 
 	 * 
 	 */
-	public static void initialize(String secret, Options options) {
-
-		defaultClient = new Client(secret, options);
+	public static synchronized void initialize(String secret, Options options) {
+		
+		if (defaultClient == null)
+			defaultClient = new Client(secret, options);
 	}
 
 	private static void checkInitialized() {
@@ -334,26 +338,144 @@ public class Analytics {
 				callback);
 	}
 
+	
+	//
+	// Alias
+	//
+	
+
 	/**
-	 * Enqueue an identify or track payload
+	 * Aliases an anonymous user into an identified user.
 	 * 
-	 * @param payload
+	 * @param from
+	 *            the anonymous user's id before they are logged in.
+	 * 
+	 * @param to
+	 *            the identified user's id after they're logged in.
+	 *           
 	 */
-	public void enqueue(BasePayload payload) {
-		defaultClient.enqueue(payload);
+	public static void alias(String from, String to) {
+		checkInitialized();
+		defaultClient.alias(from, to, null, null, null);
 	}
+
+	/**
+	 * Aliases an anonymous user into an identified user.
+	 * 
+	 * @param from
+	 *            the anonymous user's id before they are logged in.
+	 * 
+	 * @param to
+	 *            the identified user's id after they're logged in.
+	 * 
+	 * 
+	 * @param timestamp
+	 *            a {@link DateTime} object representing when the track took
+	 *            place. If the event just happened, leave it blank and we'll
+	 *            use the server's time. If you are importing data from the
+	 *            past, make sure you provide this argument.
+	 * 
+	 *           
+	 */
+	public static void alias(String from, String to, DateTime timestamp) {
+		checkInitialized();
+		defaultClient.alias(from, to, timestamp, null, null);
+	}
+
+	/**
+	 * Aliases an anonymous user into an identified user.
+	 * 
+	 * @param from
+	 *            the anonymous user's id before they are logged in.
+	 * 
+	 * @param to
+	 *            the identified user's id after they're logged in.
+	 * 
+	 * 
+	 * @param context
+	 *            an object that describes anything that doesn't fit into this
+	 *            event's properties (such as the user's IP)
+	 *           
+	 */
+	public static void alias(String from, String to, Context context) {
+		checkInitialized();
+		defaultClient.alias(from, to, null, context, null);
+	}
+
+	/**
+	 * Aliases an anonymous user into an identified user.
+	 * 
+	 * @param from
+	 *            the anonymous user's id before they are logged in.
+	 * 
+	 * @param to
+	 *            the identified user's id after they're logged in.
+	 * 
+	 * 
+	 * @param timestamp
+	 *            a {@link DateTime} object representing when the track took
+	 *            place. If the event just happened, leave it blank and we'll
+	 *            use the server's time. If you are importing data from the
+	 *            past, make sure you provide this argument.
+	 * 
+	 * @param context
+	 *            an object that describes anything that doesn't fit into this
+	 *            event's properties (such as the user's IP)
+	 *           
+	 */
+	public static void alias(String from, String to, DateTime timestamp, Context context) {
+		checkInitialized();
+		defaultClient.alias(from, to, timestamp, context, null);
+	}
+	
+
+	/**
+	 * Aliases an anonymous user into an identified user.
+	 * 
+	 * @param from
+	 *            the anonymous user's id before they are logged in.
+	 * 
+	 * @param to
+	 *            the identified user's id after they're logged in.
+	 * 
+	 * 
+	 * @param timestamp
+	 *            a {@link DateTime} object representing when the track took
+	 *            place. If the event just happened, leave it blank and we'll
+	 *            use the server's time. If you are importing data from the
+	 *            past, make sure you provide this argument.
+	 * 
+	 * @param context
+	 *            an object that describes anything that doesn't fit into this
+	 *            event's properties (such as the user's IP)
+	 *
+	 * @param callback
+	 *            a callback that is fired when this track's batch is flushed to
+	 *            the server. Note: this callback is fired on the same thread as
+	 *            the async event loop that made the request. You should not
+	 *            perform any kind of long running operation on it.
+	 *             
+	 */
+	public static void alias(String from, String to, DateTime timestamp, Context context, Callback callback) {
+		checkInitialized();
+		defaultClient.alias(from, to, timestamp, context, callback);
+	}
+	
+
 
 	//
 	// Flush Actions
 	//
 
+	
 	/**
-	 * Flushes the current contents of the queue
+	 * Blocks until all messages in the queue are flushed.
 	 */
 	public static void flush() {
 		checkInitialized();
 		defaultClient.flush();
 	}
+
 
 	/**
 	 * Closes the threads associated with the client
@@ -363,6 +485,16 @@ public class Analytics {
 		defaultClient.close();
 	}
 
+
+
+	/**
+	 * Returns statistics for the analytics client
+	 */
+	public static AnalyticsStatistics getStatistics() {
+		checkInitialized();
+		return defaultClient.getStatistics();
+	}
+	
 	/**
 	 * Fetches the default analytics client singleton
 	 * 

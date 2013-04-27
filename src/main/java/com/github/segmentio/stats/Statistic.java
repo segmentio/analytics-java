@@ -1,11 +1,13 @@
-package com.github.segmentio.safeclient.utils;
+package com.github.segmentio.stats;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import com.google.common.util.concurrent.AtomicDouble;
-
-
+/**
+ * A statistic that captures properties {min, max, avg, sum, std.dev} of 
+ * a series of numeric values.
+ *
+ */
 public class Statistic {
 
 	private AtomicDouble sum;
@@ -34,6 +36,10 @@ public class Statistic {
 		lock = new AtomicBoolean(false);
 	}
 	
+	/**
+	 * Add another value to this statistic
+	 * @param val
+	 */
 	public void update(double val) {
 
 		int n = count.addAndGet(1);
@@ -93,34 +99,66 @@ public class Statistic {
 		
 	}
 	
+	/**
+	 * Get the sum of the values representing this statistic
+	 * @return
+	 */
 	public double getSum() {
 		return sum.get();
 	}
 	
+	/**
+	 * Get the total amount of values that represent this statistic
+	 * @return
+	 */
 	public int getCount() {
 		return count.get();
 	}
 	
+	/**
+	 * Get the average value
+	 * @return
+	 */
 	public double getAverage() {
 		return count.get() > 0 ? (sum.get() / count.get()) : 0.0;
 	}
 	
+	/**
+	 * Get the variance
+	 * @return
+	 */
 	public double getVariance() {
 		return (count.get() > 1) ? newS / (count.get() - 1) : 1.0;
 	}
 	
+	/**
+	 * Get the standard deviation of the stream of values
+	 * @return
+	 */
 	public double getStandardDeviation() {
 		return Math.sqrt(getVariance());
 	}
 	
+	/**
+	 * Get the minimum value
+	 * @return
+	 */
 	public double getMin() {
 		return min;
 	}
 	
+	/**
+	 * Get the maximum value
+	 * @return
+	 */
 	public double getMax() {
 		return max;
 	}
 	
+	/**
+	 * Gets the latest value
+	 * @return
+	 */
 	public double getLast() {
 		return last.get();
 	}

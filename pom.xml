@@ -10,7 +10,7 @@
   <groupId>com.github.segmentio</groupId>
   <artifactId>analytics</artifactId>
   <description>The analytics API you've always wanted.</description>
-  <version>0.1.8-SNAPSHOT</version>
+  <version>0.2.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>analytics</name>
@@ -68,18 +68,12 @@
 		<artifactId>joda-time</artifactId>
 		<version>2.1</version>
 	</dependency>
-
+	
 	<dependency>
-		<groupId>com.ning</groupId>
-		<artifactId>async-http-client</artifactId>
-		<version>1.7.9</version>
-	</dependency>
-
-	<dependency>
-		<groupId>com.google.guava</groupId>
-		<artifactId>guava</artifactId>
-		<version>14.0-rc1</version>
-	</dependency>
+		<groupId>org.apache.httpcomponents</groupId>
+		<artifactId>httpclient</artifactId>
+		<version>4.2.4</version>
+	</dependency>    
 
 	<dependency>
 		<groupId>com.google.code.gson</groupId>

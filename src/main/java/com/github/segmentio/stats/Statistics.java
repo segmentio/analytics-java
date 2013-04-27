@@ -1,10 +1,18 @@
-package com.github.segmentio.safeclient.utils;
+package com.github.segmentio.stats;
 
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Statistics extends ConcurrentHashMap<String, Statistic> {
 
 	private static final long serialVersionUID = -8837006750327885446L;
+	
+	public Statistic ensure(String key) {
+		if (this.containsKey(key)) return this.get(key);
+
+		Statistic statistic = new Statistic();
+		this.put(key, statistic);
+		return statistic;
+	}
 	
 	public void update(String operation, double val) {
 		if (!this.containsKey(operation)) {
