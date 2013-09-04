@@ -21,7 +21,15 @@ public class Flusher extends Thread {
 	
 	private LinkedBlockingQueue<BasePayload> queue;
 	
-	private boolean go;
+	// volatile protects the flushing thread from caching the go variable in its
+	// own thread context (register)
+	// http://stackoverflow.com/questions/2423622/volatile-vs-static-in-java
+	// http://stackoverflow.com/questions/4569338/how-is-thread-context-switching-done
+	private volatile boolean go;
+	/**
+	 * An event that helps synchronize when the flusher is idle, so that clients can
+	 * block until the flushing thread is done.
+	 */
 	private ManualResetEvent idle;
 	
 	private Client client;
