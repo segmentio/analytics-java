@@ -10,6 +10,8 @@ import com.github.segmentio.stats.AnalyticsStatistics;
 
 public class Analytics {
 
+	public final static String VERSION = "0.3.0"; 
+	
 	private static AnalyticsClient defaultClient;
 
 	/**

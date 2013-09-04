@@ -4,6 +4,7 @@
 * Fixing bug where Flusher thread can continue without realizing that flushing should stop
 * Renaming `Client` to `AnalyticsClient
 * Adding statistics around messages dropped during high queue conditions
+* Adding Analytics.VERSION to payload
 
 0.2.0 / 2013-04-23
 =================

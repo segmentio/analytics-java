@@ -10,6 +10,7 @@
   <groupId>com.github.segmentio</groupId>
   <artifactId>analytics</artifactId>
   <description>The analytics API you've always wanted.</description>
+  <!--  IMPORTANT: DON'T FORGET TO UPDATE Analytics.VERSION EVERYTIME !!! -->
   <version>0.3.0</version>
   <packaging>jar</packaging>
 
