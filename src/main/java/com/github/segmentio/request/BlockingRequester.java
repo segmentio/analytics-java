@@ -15,7 +15,7 @@ import org.apache.http.params.HttpParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.segmentio.Client;
+import com.github.segmentio.AnalyticsClient;
 import com.github.segmentio.Constants;
 import com.github.segmentio.models.BasePayload;
 import com.github.segmentio.models.Batch;
@@ -29,12 +29,12 @@ public class BlockingRequester implements IRequester {
 	private static final Logger logger = LoggerFactory
 			.getLogger(Constants.LOGGER);
 
-	private Client client;
+	private AnalyticsClient client;
 	private Gson gson;
 
 	private HttpClient httpClient;
 
-	public BlockingRequester(Client client) {
+	public BlockingRequester(AnalyticsClient client) {
 
 		this.client = client;
 

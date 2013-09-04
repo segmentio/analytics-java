@@ -1,3 +1,9 @@
+0.3.0 / 2013-09-04
+=================
+* Adding support for `List`, `Array`, and `BigDecimal` for `Props` which means traits and event properties can now contain these items
+* Fixing bug where Flusher thread can continue without realizing that flushing should stop
+* Renaming `Client` to `AnalyticsClient`
+
 0.2.0 / 2013-04-23
 =================
 * Updating flush mechanism to a single thread that flushes in the background, and in batches when it can

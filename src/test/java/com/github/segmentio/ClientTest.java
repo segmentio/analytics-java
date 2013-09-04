@@ -18,11 +18,11 @@ import com.github.segmentio.models.Track;
 
 public class ClientTest {
 	
-	private static Client client;
+	private static AnalyticsClient client;
 	
 	@BeforeClass
 	public static void setup() {
-		client = new Client("testsecret");
+		client = new AnalyticsClient("testsecret");
 	}
 
 	@Test
