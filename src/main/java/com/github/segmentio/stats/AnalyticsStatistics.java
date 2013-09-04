@@ -16,6 +16,7 @@ public class AnalyticsStatistics extends Statistics {
 
 	private static String QUEUED_KEY = "Queued";
 	private static String INSERTED_KEY = "Inserted";
+	private static String DROPPED_KEY = "Dropped";
 	
 	private static String SUCCESSFUL_KEY = "Successful";
 	private static String FAILED_KEY = "Failed";
@@ -67,6 +68,19 @@ public class AnalyticsStatistics extends Statistics {
 
 	public void updateQueued(double val) {
 		update(QUEUED_KEY, val);
+	}
+	
+	/**
+	 * Get the amount of messages that were dropped because
+	 * the queue was too high
+	 * @return
+	 */
+	public Statistic getDropped() {
+		return ensure(DROPPED_KEY);
+	}
+
+	public void updateDropped(double val) {
+		update(DROPPED_KEY, val);
 	}
 
 

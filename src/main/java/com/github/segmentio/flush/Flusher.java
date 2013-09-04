@@ -113,6 +113,11 @@ public class Flusher extends Thread {
 			
 			this.client.getStatistics().updateInserted(1);
 			this.client.getStatistics().updateQueued(this.queue.size());
+		} else {
+			// the queue is too high, we can't risk memory overflow
+			// add dropped message to statistics, but don't log
+			// because the system is likely very resource strapped
+			this.client.getStatistics().updateDropped(1);
 		}
 	}
 	
