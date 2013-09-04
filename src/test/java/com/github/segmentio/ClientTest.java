@@ -17,8 +17,6 @@ import com.github.segmentio.models.Identify;
 import com.github.segmentio.models.Track;
 
 public class ClientTest {
-
-
 	
 	private static Client client;
 	

@@ -12,19 +12,17 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
-import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.segmentio.Client;
 import com.github.segmentio.Constants;
-import com.github.segmentio.gson.DateTimeTypeConverter;
 import com.github.segmentio.models.BasePayload;
 import com.github.segmentio.models.Batch;
 import com.github.segmentio.models.Callback;
 import com.github.segmentio.stats.AnalyticsStatistics;
+import com.github.segmentio.utils.GSONUtils;
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
 public class BlockingRequester implements IRequester {
 
@@ -44,8 +42,7 @@ public class BlockingRequester implements IRequester {
 	    HttpConnectionParams.setConnectionTimeout(httpParams, client.getOptions().getTimeout());
 		this.httpClient = new DefaultHttpClient(httpParams);
 		
-		this.gson = new GsonBuilder().registerTypeAdapter(DateTime.class,
-				new DateTimeTypeConverter()).create();
+		this.gson = GSONUtils.BUILDER.create();
 	}
 
 	public void send(Batch batch) {

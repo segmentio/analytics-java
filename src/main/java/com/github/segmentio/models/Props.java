@@ -1,7 +1,10 @@
 package com.github.segmentio.models;
 
+import java.math.BigDecimal;
+import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,7 +61,12 @@ public class Props extends HashMap<String, Object> {
 			value instanceof Integer || 
 			value instanceof Double || 
 			value instanceof Date || 
-			value instanceof Props) {
+			value instanceof Props || 
+			value instanceof BigDecimal ||
+			// http://stackoverflow.com/questions/2651632/how-to-check-if-an-object-is-a-collection-type-in-java
+			value instanceof Collection || 
+			value instanceof Map ||
+			value instanceof Object[]) {
 			return true;
 		} else {
 			return false;
