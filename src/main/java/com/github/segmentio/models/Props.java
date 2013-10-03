@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.lang.ClassUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,12 +55,23 @@ public class Props extends HashMap<String, Object> {
 		return this;
 	}
 	
+	private boolean isPrimitive (Object value) {
+		
+		boolean primitive = false;
+		
+		if (value != null) {
+			Class<?> clazz = value.getClass();
+			// http://stackoverflow.com/questions/709961/determining-if-an-object-is-of-primitive-type
+			primitive = clazz.isPrimitive() || ClassUtils.wrapperToPrimitive(clazz) != null;
+		}
+		
+		return primitive;
+	}
+	
 	public boolean allowed(Object value) {
 		
-		if (value instanceof String ||
-			value instanceof Boolean || 
-			value instanceof Integer || 
-			value instanceof Double || 
+		if (isPrimitive(value) || 
+			value instanceof String ||
 			value instanceof Date || 
 			value instanceof Props || 
 			value instanceof BigDecimal ||
