@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.segmentio.Client;
+import com.github.segmentio.AnalyticsClient;
 import com.github.segmentio.Constants;
 import com.github.segmentio.models.BasePayload;
 import com.github.segmentio.models.Batch;
@@ -21,14 +21,22 @@ public class Flusher extends Thread {
 	
 	private LinkedBlockingQueue<BasePayload> queue;
 	
-	private boolean go;
+	// volatile protects the flushing thread from caching the go variable in its
+	// own thread context (register)
+	// http://stackoverflow.com/questions/2423622/volatile-vs-static-in-java
+	// http://stackoverflow.com/questions/4569338/how-is-thread-context-switching-done
+	private volatile boolean go;
+	/**
+	 * An event that helps synchronize when the flusher is idle, so that clients can
+	 * block until the flushing thread is done.
+	 */
 	private ManualResetEvent idle;
 	
-	private Client client;
+	private AnalyticsClient client;
 	private IBatchFactory factory;
 	private IRequester requester;
 	
-	public Flusher(Client client, IBatchFactory factory, IRequester requester) {
+	public Flusher(AnalyticsClient client, IBatchFactory factory, IRequester requester) {
 		this.client = client;
 		this.factory = factory;
 		this.requester = requester;
@@ -105,6 +113,11 @@ public class Flusher extends Thread {
 			
 			this.client.getStatistics().updateInserted(1);
 			this.client.getStatistics().updateQueued(this.queue.size());
+		} else {
+			// the queue is too high, we can't risk memory overflow
+			// add dropped message to statistics, but don't log
+			// because the system is likely very resource strapped
+			this.client.getStatistics().updateDropped(1);
 		}
 	}
 	

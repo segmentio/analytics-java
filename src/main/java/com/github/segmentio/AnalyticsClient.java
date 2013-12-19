@@ -30,7 +30,7 @@ import com.github.segmentio.stats.AnalyticsStatistics;
  * requests on a separate resource-constrained thread pool.
  * 
  */
-public class Client {
+public class AnalyticsClient {
 
 	private String secret;
 	private Options options;
@@ -56,7 +56,7 @@ public class Client {
 	 *            registering for a project at https://segment.io
 	 * 
 	 */
-	public Client(String secret) {
+	public AnalyticsClient(String secret) {
 
 		this(secret, new Options());
 	}
@@ -82,7 +82,7 @@ public class Client {
 	 * 
 	 * 
 	 */
-	public Client(String secret, Options options) {
+	public AnalyticsClient(String secret, Options options) {
 
 		String errorPrefix = "analytics-java client must be initialized with a valid ";
 

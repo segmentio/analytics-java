@@ -1,3 +1,15 @@
+0.3.1 / 2013-10-02
+=================
+* Adding support for `Long`, and now generally any primitive or wrapper.
+
+0.3.0 / 2013-09-04
+=================
+* Adding support for `List`, `Array`, and `BigDecimal` for `Props` which means traits and event properties can now contain these items
+* Fixing bug where Flusher thread can continue without realizing that flushing should stop
+* Renaming `Client` to `AnalyticsClient
+* Adding statistics around messages dropped during high queue conditions
+* Adding Analytics.VERSION to payload
+
 0.2.0 / 2013-04-23
 =================
 * Updating flush mechanism to a single thread that flushes in the background, and in batches when it can

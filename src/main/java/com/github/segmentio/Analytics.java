@@ -10,7 +10,9 @@ import com.github.segmentio.stats.AnalyticsStatistics;
 
 public class Analytics {
 
-	private static Client defaultClient;
+	public final static String VERSION = "0.3.1"; 
+	
+	private static AnalyticsClient defaultClient;
 
 	/**
 	 * Creates a new Segment.io client.
@@ -33,7 +35,7 @@ public class Analytics {
 	public static synchronized void initialize(String secret) {
 
 		if (defaultClient == null)
-			defaultClient = new Client(secret, new Options());
+			defaultClient = new AnalyticsClient(secret, new Options());
 	}
 
 	/**
@@ -61,7 +63,7 @@ public class Analytics {
 	public static synchronized void initialize(String secret, Options options) {
 		
 		if (defaultClient == null)
-			defaultClient = new Client(secret, options);
+			defaultClient = new AnalyticsClient(secret, options);
 	}
 
 	private static void checkInitialized() {
@@ -500,7 +502,7 @@ public class Analytics {
 	 * 
 	 * @return
 	 */
-	public static Client getDefaultClient() {
+	public static AnalyticsClient getDefaultClient() {
 		return defaultClient;
 	}
 
