@@ -1,8 +1,6 @@
 package com.github.segmentio.request;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -52,16 +50,11 @@ public class BlockingRequester implements IRequester {
 
 		AnalyticsStatistics statistics = client.getStatistics();
 		
-		String json = gson.toJson(batch);
-
 		try {
 			
 			long start = System.currentTimeMillis();
 			
-			HttpPost post = new HttpPost(client.getOptions().getHost()
-					+ "/v1/import");
-			post.addHeader("Content-Type", "application/json; charset=utf-8");
-			post.setEntity(new ByteArrayEntity(json.getBytes("UTF-8")));
+			HttpPost post = buildPostRequest(batch);
 			
 			HttpResponse response = httpClient.execute(post);
 
@@ -106,6 +99,17 @@ public class BlockingRequester implements IRequester {
 		}
 
 	}
+
+    public HttpPost buildPostRequest(Batch batch) throws UnsupportedEncodingException {
+        
+        String json = gson.toJson(batch);
+        
+        HttpPost post = new HttpPost(client.getOptions().getHost()
+        		+ "/v1/import");
+        post.addHeader("Content-Type", "application/json; charset=utf-8");
+        post.setEntity(new ByteArrayEntity(json.getBytes("UTF-8")));
+        return post;
+    }
 	
 	private void report(AnalyticsStatistics statistics, Batch batch, boolean success, String message) {
 		for (BasePayload payload : batch.getBatch()) {
