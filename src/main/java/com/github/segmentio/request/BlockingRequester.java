@@ -3,21 +3,18 @@ package com.github.segmentio.request;
 import java.io.*;
 
 import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.CookieSpecs;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.params.HttpParams;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.segmentio.AnalyticsClient;
 import com.github.segmentio.Constants;
-import com.github.segmentio.models.BasePayload;
-import com.github.segmentio.models.Batch;
-import com.github.segmentio.models.Callback;
+import com.github.segmentio.models.*;
 import com.github.segmentio.stats.AnalyticsStatistics;
 import com.github.segmentio.utils.GSONUtils;
 import com.google.gson.Gson;
@@ -30,15 +27,21 @@ public class BlockingRequester implements IRequester {
 	private AnalyticsClient client;
 	private Gson gson;
 
-	private HttpClient httpClient;
+	private CloseableHttpClient httpClient;
+	
+	private RequestConfig defaultRequestConfig;
 
 	public BlockingRequester(AnalyticsClient client) {
 
 		this.client = client;
-
-		final HttpParams httpParams = new BasicHttpParams();
-	    HttpConnectionParams.setConnectionTimeout(httpParams, client.getOptions().getTimeout());
-		this.httpClient = new DefaultHttpClient(httpParams);
+		
+		httpClient = HttpClients.createDefault();
+		
+		defaultRequestConfig = 
+		        RequestConfig.custom()
+		        .setCookieSpec(CookieSpecs.BEST_MATCH)
+		        .setExpectContinueEnabled(true)
+		        .setStaleConnectionCheckEnabled(true).build();
 		
 		this.gson = GSONUtils.BUILDER.create();
 	}
@@ -99,11 +102,18 @@ public class BlockingRequester implements IRequester {
 
     public HttpPost buildPostRequest(Batch batch) throws UnsupportedEncodingException {
         
-        String json = gson.toJson(batch);
+        RequestConfig requestConfig = 
+                RequestConfig.copy(defaultRequestConfig)
+                    .setSocketTimeout(client.getOptions().getTimeout())
+                    .setConnectTimeout(client.getOptions().getTimeout())
+                    .setConnectionRequestTimeout(client.getOptions().getTimeout()).build();
         
-        HttpPost post = new HttpPost(client.getOptions().getHost()
-        		+ "/v1/import");
+        HttpPost post =
+                new HttpPost(client.getOptions().getHost() + "/v1/import");
+        post.setConfig(requestConfig);
         post.addHeader("Content-Type", "application/json; charset=utf-8");
+        
+        String json = gson.toJson(batch);
         post.setEntity(new ByteArrayEntity(json.getBytes("UTF-8")));
         return post;
     }
@@ -125,7 +135,11 @@ public class BlockingRequester implements IRequester {
 	}
 
 	public void close() {
-		httpClient.getConnectionManager().shutdown();
+		try {
+            httpClient.close();
+        } catch (IOException e) {
+            logger.error("Error while closing", e);
+        }
 	}
 
 }
