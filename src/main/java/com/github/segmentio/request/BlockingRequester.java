@@ -122,6 +122,10 @@ public class BlockingRequester implements IRequester {
         
         post.setEntity(new ByteArrayEntity(json.getBytes("UTF-8")));
         
+        if (logger.isTraceEnabled()) {
+            logger.trace("Posting analytics data");
+        }
+        
         return httpClient.execute(post);
     }
 	

@@ -49,6 +49,7 @@ public class AsyncRequester implements IRequester {
 	public void send(Batch batch) {
 	    HttpRequestCallable callable = new HttpRequestCallable(batch);
 	    Future<Void> submit = executor.submit(callable);
+	    
 	}
 	
 	public void close() {
