@@ -33,14 +33,15 @@ public class BlockingRequesterTest {
     @Before
     public void setup() throws IOException {
         
-        options.setHost("http://localhost:8080");
+        server = new StubHttpServer();
+        
         options.setTimeout(HTTP_TIMEOUT);
+        options.setHost("http://localhost:" + server.getServerPort());
         
         Mockito.when(client.getOptions()).thenReturn(options);
         
         requester = new BlockingRequester(client);
         
-        server = new StubHttpServer();        
     }
     
     @After

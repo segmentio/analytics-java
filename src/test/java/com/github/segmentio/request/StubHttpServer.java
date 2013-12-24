@@ -22,6 +22,8 @@ public class StubHttpServer {
     private int responseDelay = 0;
     private String responseText = "StubHttpServer";
     
+    private int serverPort = 8081;
+    
     public class RequestHandler implements Container {
         public void handle(Request request, Response response) {
             try {
@@ -49,7 +51,7 @@ public class StubHttpServer {
         server = new ContainerServer(requestHandler);
         connection = new SocketConnection(server);
 
-        SocketAddress address = new InetSocketAddress(8080);
+        SocketAddress address = new InetSocketAddress(serverPort);
         connection.connect(address);
     }
 
@@ -64,6 +66,10 @@ public class StubHttpServer {
     
     public void setResponseText(String r) {
         responseText = r;
+    }
+    
+    public int getServerPort() {
+        return serverPort;
     }
     
 }
