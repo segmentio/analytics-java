@@ -3,6 +3,7 @@ package com.github.segmentio.request;
 import java.io.*;
 
 import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.config.CookieSpecs;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpPost;
@@ -37,11 +38,16 @@ public class BlockingRequester implements IRequester {
 		
 		httpClient = HttpClients.createDefault();
 		
-		defaultRequestConfig = 
+		final int requestTimeout = client.getOptions().getTimeout();
+		
+        defaultRequestConfig = 
 		        RequestConfig.custom()
 		        .setCookieSpec(CookieSpecs.BEST_MATCH)
 		        .setExpectContinueEnabled(true)
-		        .setStaleConnectionCheckEnabled(true).build();
+		        .setStaleConnectionCheckEnabled(true)
+                .setSocketTimeout(requestTimeout)
+                .setConnectTimeout(requestTimeout)
+                .setConnectionRequestTimeout(requestTimeout).build();
 		
 		this.gson = GSONUtils.BUILDER.create();
 	}
@@ -54,20 +60,11 @@ public class BlockingRequester implements IRequester {
 			
 			long start = System.currentTimeMillis();
 			
-			HttpPost post = buildPostRequest(batch);
+			String json = gson.toJson(batch);
 			
-			HttpResponse response = httpClient.execute(post);
+			HttpResponse response = executeRequest(json);
 
-			BufferedReader rd = new BufferedReader(new InputStreamReader(
-					response.getEntity().getContent()));
-			
-			StringBuilder responseBuilder = new StringBuilder();
-			String line;
-			while ((line = rd.readLine()) != null) {
-				responseBuilder.append(line);
-			}
-			
-			String responseBody = responseBuilder.toString();
+			String responseBody = readResponseBody(response);
 			int statusCode = response.getStatusLine().getStatusCode();
 			
 			long duration = System.currentTimeMillis() - start;
@@ -100,22 +97,32 @@ public class BlockingRequester implements IRequester {
 
 	}
 
-    public HttpPost buildPostRequest(Batch batch) throws UnsupportedEncodingException {
+    public String readResponseBody(HttpResponse response) throws IOException {
+        BufferedReader rd 
+            = new BufferedReader(
+                new InputStreamReader(
+                        response.getEntity().getContent()));
         
-        RequestConfig requestConfig = 
-                RequestConfig.copy(defaultRequestConfig)
-                    .setSocketTimeout(client.getOptions().getTimeout())
-                    .setConnectTimeout(client.getOptions().getTimeout())
-                    .setConnectionRequestTimeout(client.getOptions().getTimeout()).build();
+        StringBuilder responseBuilder = new StringBuilder();
+        String line;
+        while ((line = rd.readLine()) != null) {
+        	responseBuilder.append(line);
+        }
+        
+        String responseBody = responseBuilder.toString();
+        return responseBody;
+    }
+
+    public HttpResponse executeRequest(String json) throws ClientProtocolException, IOException {
         
         HttpPost post =
                 new HttpPost(client.getOptions().getHost() + "/v1/import");
-        post.setConfig(requestConfig);
+        post.setConfig(defaultRequestConfig);
         post.addHeader("Content-Type", "application/json; charset=utf-8");
         
-        String json = gson.toJson(batch);
         post.setEntity(new ByteArrayEntity(json.getBytes("UTF-8")));
-        return post;
+        
+        return httpClient.execute(post);
     }
 	
 	private void report(AnalyticsStatistics statistics, Batch batch, boolean success, String message) {
