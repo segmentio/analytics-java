@@ -16,7 +16,7 @@ import com.github.segmentio.models.EventProperties;
 import com.github.segmentio.models.Identify;
 import com.github.segmentio.models.Track;
 import com.github.segmentio.models.Traits;
-import com.github.segmentio.request.BlockingRequester;
+import com.github.segmentio.request.*;
 import com.github.segmentio.stats.AnalyticsStatistics;
 
 /**
@@ -36,7 +36,7 @@ public class AnalyticsClient {
 	private Options options;
 	
 	private Flusher flusher;
-	private BlockingRequester requester;
+	private IRequester requester;
 	private AnalyticsStatistics statistics;
 
 	/**
@@ -96,7 +96,15 @@ public class AnalyticsClient {
 		this.options = options;
 		this.statistics = new AnalyticsStatistics();
 		
-		this.requester = new BlockingRequester(this);
+		switch (options.getRequesterType()) {
+		case ASYNCHRONOUS:
+		    this.requester = new AsyncRequester(this);
+		    break;
+		case BLOCKING:
+	    default:
+	        this.requester = new BlockingRequester(this);
+		}
+		
 		this.flusher = new Flusher(this, factory, requester);
 		this.flusher.start();
 	}

@@ -94,7 +94,7 @@ public class BlockingRequester implements IRequester {
 			logger.error(message, e);
 			report(statistics, batch, false, message);
 		}
-
+		
 	}
 
     public String readResponseBody(HttpResponse response) throws IOException {
