@@ -1,20 +1,35 @@
 package com.github.segmentio;
 
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import java.io.IOException;
+
+import org.junit.*;
 
 import com.github.segmentio.models.Traits;
+import com.github.segmentio.request.StubHttpServer;
 
 public class AliasTest {
 
+    static StubHttpServer server;
+    
 	@BeforeClass
-	public static void setup() {
-		Analytics.initialize("testsecret");
+	public static void setup() throws IOException {
+	    
+        server = new StubHttpServer();
+        
+        Options options = new Options();
+        options.setHost("http://localhost:" + server.getServerPort());
+        
+		Analytics.initialize("testsecret", options);
+		
+	}
+	
+	@AfterClass
+	public static void teardown() throws IOException {
+	    server.stop();
 	}
 	
 	@Test
-	public void testAlias() {
+	public void testAlias() throws InterruptedException {
 		
 		int random = (int)Math.floor((Math.random() * 99999) + 50);
 		
