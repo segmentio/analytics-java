@@ -9,25 +9,13 @@ import com.github.segmentio.request.StubHttpServer;
 
 public class AliasTest {
 
-    static StubHttpServer server;
-    
 	@BeforeClass
 	public static void setup() throws IOException {
 	    
-        server = new StubHttpServer();
-        
-        Options options = new Options();
-        options.setHost("http://localhost:" + server.getServerPort());
-        
-		Analytics.initialize("testsecret", options);
+		Analytics.initialize("testsecret");
 		
 	}
-	
-	@AfterClass
-	public static void teardown() throws IOException {
-	    server.stop();
-	}
-	
+		
 	@Test
 	public void testAlias() throws InterruptedException {
 		
