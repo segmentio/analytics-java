@@ -1,25 +1,21 @@
 package com.github.segmentio.request;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 
 import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.config.CookieSpecs;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.params.HttpParams;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.segmentio.AnalyticsClient;
 import com.github.segmentio.Constants;
-import com.github.segmentio.models.BasePayload;
-import com.github.segmentio.models.Batch;
-import com.github.segmentio.models.Callback;
+import com.github.segmentio.models.*;
 import com.github.segmentio.stats.AnalyticsStatistics;
 import com.github.segmentio.utils.GSONUtils;
 import com.google.gson.Gson;
@@ -32,15 +28,26 @@ public class BlockingRequester implements IRequester {
 	private AnalyticsClient client;
 	private Gson gson;
 
-	private HttpClient httpClient;
+	private CloseableHttpClient httpClient;
+	
+	private RequestConfig defaultRequestConfig;
 
 	public BlockingRequester(AnalyticsClient client) {
 
 		this.client = client;
-
-		final HttpParams httpParams = new BasicHttpParams();
-	    HttpConnectionParams.setConnectionTimeout(httpParams, client.getOptions().getTimeout());
-		this.httpClient = new DefaultHttpClient(httpParams);
+		
+		httpClient = HttpClients.createDefault();
+		
+		final int requestTimeout = client.getOptions().getTimeout();
+		
+        defaultRequestConfig = 
+		        RequestConfig.custom()
+		        .setCookieSpec(CookieSpecs.BEST_MATCH)
+		        .setExpectContinueEnabled(true)
+		        .setStaleConnectionCheckEnabled(true)
+                .setSocketTimeout(requestTimeout)
+                .setConnectTimeout(requestTimeout)
+                .setConnectionRequestTimeout(requestTimeout).build();
 		
 		this.gson = GSONUtils.BUILDER.create();
 	}
@@ -49,29 +56,15 @@ public class BlockingRequester implements IRequester {
 
 		AnalyticsStatistics statistics = client.getStatistics();
 		
-		String json = gson.toJson(batch);
-
 		try {
 			
 			long start = System.currentTimeMillis();
 			
-			HttpPost post = new HttpPost(client.getOptions().getHost()
-					+ "/v1/import");
-			post.addHeader("Content-Type", "application/json; charset=utf-8");
-			post.setEntity(new ByteArrayEntity(json.getBytes("UTF-8")));
+			String json = gson.toJson(batch);
 			
-			HttpResponse response = httpClient.execute(post);
+			HttpResponse response = executeRequest(json);
 
-			BufferedReader rd = new BufferedReader(new InputStreamReader(
-					response.getEntity().getContent()));
-			
-			StringBuilder responseBuilder = new StringBuilder();
-			String line;
-			while ((line = rd.readLine()) != null) {
-				responseBuilder.append(line);
-			}
-			
-			String responseBody = responseBuilder.toString();
+			String responseBody = readResponseBody(response);
 			int statusCode = response.getStatusLine().getStatusCode();
 			
 			long duration = System.currentTimeMillis() - start;
@@ -101,8 +94,40 @@ public class BlockingRequester implements IRequester {
 			logger.error(message, e);
 			report(statistics, batch, false, message);
 		}
-
+		
 	}
+
+    public String readResponseBody(HttpResponse response) throws IOException {
+        BufferedReader rd 
+            = new BufferedReader(
+                new InputStreamReader(
+                        response.getEntity().getContent()));
+        
+        StringBuilder responseBuilder = new StringBuilder();
+        String line;
+        while ((line = rd.readLine()) != null) {
+        	responseBuilder.append(line);
+        }
+        
+        String responseBody = responseBuilder.toString();
+        return responseBody;
+    }
+
+    public HttpResponse executeRequest(String json) throws ClientProtocolException, IOException {
+        
+        HttpPost post =
+                new HttpPost(client.getOptions().getHost() + "/v1/import");
+        post.setConfig(defaultRequestConfig);
+        post.addHeader("Content-Type", "application/json; charset=utf-8");
+        
+        post.setEntity(new ByteArrayEntity(json.getBytes("UTF-8")));
+        
+        if (logger.isTraceEnabled()) {
+            logger.trace("Posting analytics data");
+        }
+        
+        return httpClient.execute(post);
+    }
 	
 	private void report(AnalyticsStatistics statistics, Batch batch, boolean success, String message) {
 		for (BasePayload payload : batch.getBatch()) {
@@ -121,7 +146,11 @@ public class BlockingRequester implements IRequester {
 	}
 
 	public void close() {
-		httpClient.getConnectionManager().shutdown();
+		try {
+            httpClient.close();
+        } catch (IOException e) {
+            logger.error("Error while closing", e);
+        }
 	}
 
 }

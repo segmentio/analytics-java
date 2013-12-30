@@ -1,20 +1,23 @@
 package com.github.segmentio;
 
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import java.io.IOException;
+
+import org.junit.*;
 
 import com.github.segmentio.models.Traits;
+import com.github.segmentio.request.StubHttpServer;
 
 public class AliasTest {
 
 	@BeforeClass
-	public static void setup() {
+	public static void setup() throws IOException {
+	    
 		Analytics.initialize("testsecret");
+		
 	}
-	
+		
 	@Test
-	public void testAlias() {
+	public void testAlias() throws InterruptedException {
 		
 		int random = (int)Math.floor((Math.random() * 99999) + 50);
 		

@@ -6,4 +6,5 @@ public interface IRequester {
 
 	public void send(Batch batch);
 	
+	public void close();
 }

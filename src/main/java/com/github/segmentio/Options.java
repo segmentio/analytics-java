@@ -23,12 +23,14 @@ public class Options {
 	 * The amount of milliseconds that passes before a request is marked as timed out
 	 */
 	private int timeout;
+	
+	private RequesterType requesterType;
 
 	/**
 	 * Creates a default options
 	 */
 	public Options() {
-		this(Defaults.HOST, Defaults.MAX_QUEUE_SIZE, Defaults.TIMEOUT);
+		this(Defaults.HOST, Defaults.MAX_QUEUE_SIZE, Defaults.TIMEOUT, Defaults.REQUESTER_TYPE);
 	}
 
 	/**
@@ -39,10 +41,11 @@ public class Options {
 	 * @param maxQueueSize
 	 * @param httpConfig
 	 */
-	Options(String host, int maxQueueSize, int timeout) {
+	Options(String host, int maxQueueSize, int timeout, RequesterType requesterType) {
 		setHost(host);
 		setMaxQueueSize(maxQueueSize);
 		setTimeout(timeout);
+		setRequesterType(requesterType);
 	}
 
 	public String getHost() {
@@ -55,6 +58,10 @@ public class Options {
 
 	public int getTimeout() {
 		return timeout;
+	}
+	
+	public RequesterType getRequesterType() {
+	    return requesterType;
 	}
 	
 	/**
@@ -98,5 +105,8 @@ public class Options {
 		return this;
 	}
 
-
+	public Options setRequesterType(RequesterType requesterType) {
+	    this.requesterType = requesterType;
+	    return this;
+	}
 }
