@@ -2,22 +2,25 @@ package com.github.segmentio.models;
 
 import java.util.List;
 
+import org.joda.time.DateTime;
+
 public class Batch {
 
-	private String secret;
+	private String writeKey;
 	private List<BasePayload> batch;
+	private DateTime requestTimestamp;
 	
-	public Batch(String secret, List<BasePayload> batch) {
-		this.secret = secret;
+	public Batch(String writeKey, List<BasePayload> batch) {
+		this.writeKey = writeKey;
 		this.batch = batch;
 	}
 	
-	public String getSecret() {
-		return secret;
+	public String getWriteKey() {
+		return writeKey;
 	}
 	
-	public void setSecret(String secret) {
-		this.secret = secret;
+	public void setWriteKey(String writeKey) {
+		this.writeKey = writeKey;
 	}
 	
 	public List<BasePayload> getBatch() {
@@ -26,6 +29,14 @@ public class Batch {
 	
 	public void setBatch(List<BasePayload> batch) {
 		this.batch = batch;
+	}
+	
+	public DateTime getRequestTimestamp() {
+		return requestTimestamp;
+	}
+	
+	public void setRequestTimestamp(DateTime requestTimestamp) {
+		this.requestTimestamp = requestTimestamp;
 	}
 	
 }

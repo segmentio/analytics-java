@@ -27,15 +27,15 @@ public class Analytics {
 	 * 
 	 * This method is thread-safe.
 	 * 
-	 * @param secret
-	 *            Your segment.io secret. You can get one of these by
+	 * @param writeKey
+	 *            Your segment.io writeKey. You can get one of these by
 	 *            registering for a project at https://segment.io
 	 * 
 	 */
-	public static synchronized void initialize(String secret) {
+	public static synchronized void initialize(String writeKey) {
 
 		if (defaultClient == null)
-			defaultClient = new AnalyticsClient(secret, new Options());
+			defaultClient = new AnalyticsClient(writeKey, new Options());
 	}
 
 	/**
@@ -51,8 +51,8 @@ public class Analytics {
 	 * 
 	 * This method is thread-safe.
 	 * 
-	 * @param secret
-	 *            Your segment.io secret. You can get one of these by
+	 * @param writeKey
+	 *            Your segment.io writeKey. You can get one of these by
 	 *            registering for a project at https://segment.io
 	 * 
 	 * @param options
@@ -60,10 +60,10 @@ public class Analytics {
 	 * 
 	 * 
 	 */
-	public static synchronized void initialize(String secret, Options options) {
+	public static synchronized void initialize(String writeKey, Options options) {
 		
 		if (defaultClient == null)
-			defaultClient = new AnalyticsClient(secret, options);
+			defaultClient = new AnalyticsClient(writeKey, options);
 	}
 
 	private static void checkInitialized() {

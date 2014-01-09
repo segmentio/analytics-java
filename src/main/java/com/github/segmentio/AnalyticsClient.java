@@ -32,7 +32,7 @@ import com.github.segmentio.stats.AnalyticsStatistics;
  */
 public class AnalyticsClient {
 
-	private String secret;
+	private String writeKey;
 	private Options options;
 	
 	private Flusher flusher;
@@ -51,14 +51,14 @@ public class AnalyticsClient {
 	 * your requests on a separate resource-constrained thread pool.
 	 * 
 	 * 
-	 * @param secret
-	 *            Your segment.io secret. You can get one of these by
+	 * @param writeKey
+	 *            Your segment.io writeKey. You can get one of these by
 	 *            registering for a project at https://segment.io
 	 * 
 	 */
-	public AnalyticsClient(String secret) {
+	public AnalyticsClient(String writeKey) {
 
-		this(secret, new Options());
+		this(writeKey, new Options());
 	}
 
 	/**
@@ -73,8 +73,8 @@ public class AnalyticsClient {
 	 * your requests on a separate resource-constrained thread pool.
 	 * 
 	 * 
-	 * @param secret
-	 *            Your segment.io secret. You can get one of these by
+	 * @param writeKey
+	 *            Your segment.io writeKey. You can get one of these by
 	 *            registering for a project at https://segment.io
 	 * 
 	 * @param options
@@ -82,17 +82,17 @@ public class AnalyticsClient {
 	 * 
 	 * 
 	 */
-	public AnalyticsClient(String secret, Options options) {
+	public AnalyticsClient(String writeKey, Options options) {
 
 		String errorPrefix = "analytics-java client must be initialized with a valid ";
 
-		if (StringUtils.isEmpty(secret))
-			throw new IllegalArgumentException(errorPrefix + "secret.");
+		if (StringUtils.isEmpty(writeKey))
+			throw new IllegalArgumentException(errorPrefix + "writeKey.");
 
 		if (options == null)
 			throw new IllegalArgumentException(errorPrefix + "options.");
 
-		this.secret = secret;
+		this.writeKey = writeKey;
 		this.options = options;
 		this.statistics = new AnalyticsStatistics();
 	    this.requester = new BlockingRequester(this);
@@ -104,7 +104,7 @@ public class AnalyticsClient {
 	private IBatchFactory factory = new IBatchFactory() {
 		
 		public Batch create(List<BasePayload> batch) {
-			return new Batch(secret, batch);
+			return new Batch(writeKey, batch);
 		}
 	};
 
@@ -541,12 +541,12 @@ public class AnalyticsClient {
 	// Getters and Setters
 	//
 
-	public String getSecret() {
-		return secret;
+	public String getWriteKey() {
+		return writeKey;
 	}
 
-	public void setSecret(String secret) {
-		this.secret = secret;
+	public void setWriteKey(String writeKey) {
+		this.writeKey = writeKey;
 	}
 
 	public Options getOptions() {

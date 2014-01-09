@@ -10,6 +10,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,6 +52,8 @@ public class BlockingRequester implements IRequester {
 		AnalyticsStatistics statistics = client.getStatistics();
 		try {
 			long start = System.currentTimeMillis();
+			
+			batch.setRequestTimestamp(DateTime.now());
 			
 			String json = gson.toJson(batch);
 			

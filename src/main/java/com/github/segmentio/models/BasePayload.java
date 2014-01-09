@@ -1,5 +1,7 @@
 package com.github.segmentio.models;
 
+import java.util.UUID;
+
 import org.joda.time.DateTime;
 
 /**
@@ -11,6 +13,7 @@ public class BasePayload {
 	private String userId;
 	private Context context;
 	private DateTime timestamp;
+	private String requestId;
 	
 	private transient Callback callback;
 	
@@ -22,6 +25,7 @@ public class BasePayload {
 		this.userId = userId;
 		this.timestamp = timestamp;
 		this.context = context;
+		this.requestId = UUID.randomUUID().toString();
 		
 		this.callback = callback;
 	}
@@ -56,6 +60,14 @@ public class BasePayload {
 	
 	public void setCallback(Callback callback) {
 		this.callback = callback;
+	}
+	
+	public String getRequestId() {
+		return requestId;
+	}
+	
+	public void setRequestId(String requestId) {
+		this.requestId = requestId;
 	}
 
 }
