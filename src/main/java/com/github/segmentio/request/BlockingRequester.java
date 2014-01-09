@@ -27,18 +27,13 @@ public class BlockingRequester implements IRequester {
 
 	private AnalyticsClient client;
 	private Gson gson;
-
 	private CloseableHttpClient httpClient;
-	
 	private RequestConfig defaultRequestConfig;
 
 	public BlockingRequester(AnalyticsClient client) {
-
 		this.client = client;
-		
 		httpClient = HttpClients.createDefault();
-		
-		final int requestTimeout = client.getOptions().getTimeout();
+		int requestTimeout = client.getOptions().getTimeout();
 		
         defaultRequestConfig = 
 		        RequestConfig.custom()
@@ -53,22 +48,17 @@ public class BlockingRequester implements IRequester {
 	}
 
 	public void send(Batch batch) {
-
 		AnalyticsStatistics statistics = client.getStatistics();
-		
 		try {
-			
 			long start = System.currentTimeMillis();
 			
 			String json = gson.toJson(batch);
 			
 			HttpResponse response = executeRequest(json);
-
 			String responseBody = readResponseBody(response);
 			int statusCode = response.getStatusLine().getStatusCode();
 			
 			long duration = System.currentTimeMillis() - start;
-			
 			statistics.updateRequestTime(duration);
 			
 			if (statusCode == 200) {
@@ -78,23 +68,19 @@ public class BlockingRequester implements IRequester {
 				
 				logger.debug(message);
 				report(statistics, batch, true, message);
-				
 			} else {
 
-				
 				String message = "Failed analytics response [code = " + statusCode + 
 						"]. Response = " + responseBody;
 				
 				logger.error(message);
 				report(statistics, batch, false, message);
 			}
-
 		} catch (IOException e) {
 			String message = "Failed analytics response." + e.getMessage();
 			logger.error(message, e);
 			report(statistics, batch, false, message);
 		}
-		
 	}
 
     public String readResponseBody(HttpResponse response) throws IOException {
@@ -132,7 +118,6 @@ public class BlockingRequester implements IRequester {
 	private void report(AnalyticsStatistics statistics, Batch batch, boolean success, String message) {
 		for (BasePayload payload : batch.getBatch()) {
 			Callback callback = payload.getCallback();
-			
 			if (success) {
 				statistics.updateSuccessful(1);
 			} else {

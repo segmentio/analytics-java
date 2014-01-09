@@ -2,23 +2,21 @@ package com.github.segmentio;
 
 import java.io.IOException;
 
-import org.junit.*;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import com.github.segmentio.models.Traits;
-import com.github.segmentio.request.StubHttpServer;
 
 public class AliasTest {
 
 	@BeforeClass
 	public static void setup() throws IOException {
-	    
 		Analytics.initialize("testsecret");
-		
 	}
 		
 	@Test
 	public void testAlias() throws InterruptedException {
-		
 		int random = (int)Math.floor((Math.random() * 99999) + 50);
 		
 		String anonymous = "anonymous_user" + random;
@@ -39,5 +37,4 @@ public class AliasTest {
 		
 		Assert.assertEquals(4, Analytics.getStatistics().getSuccessful().getCount());
 	}
-	
 }

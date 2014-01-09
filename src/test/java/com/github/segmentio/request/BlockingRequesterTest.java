@@ -21,25 +21,18 @@ public class BlockingRequesterTest {
 
     @Mock
     private AnalyticsClient client;
-    
     private Options options = new Options();
-    
     private BlockingRequester requester;
-
     private static final String RESPONSE = "Timeout Test!";
 
     private StubHttpServer server;
     
     @Before
     public void setup() throws IOException {
-        
         server = new StubHttpServer();
-        
         options.setTimeout(HTTP_TIMEOUT);
         options.setHost("http://localhost:" + server.getServerPort());
-        
         Mockito.when(client.getOptions()).thenReturn(options);
-        
         requester = new BlockingRequester(client);
         
     }
@@ -51,12 +44,9 @@ public class BlockingRequesterTest {
 
     @Test
     public void testHttpRequest() throws ClientProtocolException, IOException {
-       
         // this should execute quickly with no timeout
         String responseText = executeHttpRequest(HTTP_TIMEOUT/2);
-        
         Assert.assertEquals(RESPONSE, responseText);
-
     }   
     
     @Test(expected = SocketTimeoutException.class)
@@ -65,14 +55,11 @@ public class BlockingRequesterTest {
     }   
         
     private String executeHttpRequest(int serverTimeout) throws IOException {
-        
         // delay a good long time
         server.setResponseDelay(serverTimeout);
         server.setResponseText(RESPONSE);
         
         HttpResponse response = requester.executeRequest("{\"key\":\"value\"");
-        
-        
         
         return requester.readResponseBody(response);
     }

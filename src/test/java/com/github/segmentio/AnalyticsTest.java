@@ -32,7 +32,6 @@ public class AnalyticsTest {
 		Analytics.flush();
 	}
 	
-
 	@Test
 	public void identify3() {
 		Analytics.identify("ilya@segment.io", new Traits("subscriptionPlan", "Free"));
@@ -77,10 +76,11 @@ public class AnalyticsTest {
 		Analytics.alias("from", "ilya@segment.io");
 		Analytics.flush();
 	}
-	
 
+	//
+	// Flush
+	//
 	
-
 	@Test
 	public void flush() {
 		Analytics.flush();

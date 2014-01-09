@@ -95,15 +95,7 @@ public class AnalyticsClient {
 		this.secret = secret;
 		this.options = options;
 		this.statistics = new AnalyticsStatistics();
-		
-		switch (options.getRequesterType()) {
-		case ASYNCHRONOUS:
-		    this.requester = new AsyncRequester(this);
-		    break;
-		case BLOCKING:
-	    default:
-	        this.requester = new BlockingRequester(this);
-		}
+	    this.requester = new BlockingRequester(this);
 		
 		this.flusher = new Flusher(this, factory, requester);
 		this.flusher.start();
