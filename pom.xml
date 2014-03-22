@@ -11,7 +11,7 @@
   <artifactId>analytics</artifactId>
   <description>The analytics API you've always wanted.</description>
   <!--  IMPORTANT: DON'T FORGET TO UPDATE Analytics.VERSION EVERYTIME !!! -->
-  <version>0.4.2</version>
+  <version>0.4.3-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>analytics</name>
@@ -41,7 +41,7 @@
 
   <properties> 
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
+  </properties> 
 
   <developers>
     <developer>
