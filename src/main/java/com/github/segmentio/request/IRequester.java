@@ -4,7 +4,7 @@ import com.github.segmentio.models.Batch;
 
 public interface IRequester {
 
-	public void send(Batch batch);
+	public boolean send(Batch batch);
 	
 	public void close();
 }

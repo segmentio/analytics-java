@@ -16,7 +16,8 @@ import com.github.segmentio.models.EventProperties;
 import com.github.segmentio.models.Identify;
 import com.github.segmentio.models.Track;
 import com.github.segmentio.models.Traits;
-import com.github.segmentio.request.*;
+import com.github.segmentio.request.IRequester;
+import com.github.segmentio.request.RetryingRequester;
 import com.github.segmentio.stats.AnalyticsStatistics;
 
 /**
@@ -95,7 +96,7 @@ public class AnalyticsClient {
 		this.writeKey = writeKey;
 		this.options = options;
 		this.statistics = new AnalyticsStatistics();
-	    this.requester = new BlockingRequester(this);
+	    this.requester = new RetryingRequester(this);
 		
 		this.flusher = new Flusher(this, factory, requester);
 		this.flusher.start();
