@@ -1,3 +1,8 @@
+0.4.2 / March 21, 2014
+=================
+* Adding retries to flushing
+* Adding timeout to flush
+
 0.3.1 / 2013-10-02
 =================
 * Adding support for `Long`, and now generally any primitive or wrapper.
