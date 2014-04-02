@@ -23,26 +23,41 @@ public class Options {
 	 * The amount of milliseconds that passes before a request is marked as timed out
 	 */
 	private int timeout;
-
+	
+	/**
+	 * How many times to retry the request.
+	 */
+	
+	private int retries;
+	
+	/**
+	 * Backoff in milliseconds between retries.
+	 */
+	
+	private int backoff;
+	
 	/**
 	 * Creates a default options
 	 */
 	public Options() {
-		this(Defaults.HOST, Defaults.MAX_QUEUE_SIZE, Defaults.TIMEOUT);
+		this(Defaults.HOST, Defaults.MAX_QUEUE_SIZE, Defaults.TIMEOUT, Defaults.RETRIES, Defaults.BACKOFF);
 	}
 
 	/**
 	 * Creates an option with the provided settings
 	 * 
-	 * @param flushAt
-	 * @param flushAfter
+	 * @param host
 	 * @param maxQueueSize
-	 * @param httpConfig
+	 * @param timeout
+	 * @param retries
+	 * @param backoff
 	 */
-	Options(String host, int maxQueueSize, int timeout) {
+	Options(String host, int maxQueueSize, int timeout, int retries, int backoff) {
 		setHost(host);
 		setMaxQueueSize(maxQueueSize);
 		setTimeout(timeout);
+		setRetries(retries);
+		setBackoff(backoff);
 	}
 
 	public String getHost() {
@@ -55,6 +70,14 @@ public class Options {
 
 	public int getTimeout() {
 		return timeout;
+	}
+
+	public int getRetries() {
+		return retries;
+	}
+
+	public int getBackoff() {
+		return backoff;
 	}
 	
 	/**
@@ -95,6 +118,30 @@ public class Options {
 			throw new IllegalArgumentException("Analytics#option#timeout must be at least 1000 milliseconds.");
 		
 		this.timeout = timeout;
+		return this;
+	}
+	
+	/**
+	 * Sets the amount of request retries.
+	 * @param retries number of times to retry the request
+	 */
+	public Options setRetries(int retries) {
+		if (timeout < 0)
+			throw new IllegalArgumentException("Analytics#option#retries must be greater or equal to 0.");
+		
+		this.retries = retries;
+		return this;
+	}
+
+	/**
+	 * Sets the milliseconds to wait between request retries
+	 * @param timeout backoff in milliseconds.
+	 */
+	public Options setBackoff(int backoff) {
+		if (timeout < 0)
+			throw new IllegalArgumentException("Analytics#option#timeout must be greater or equal to 0 milliseconds.");
+		
+		this.backoff = backoff;
 		return this;
 	}
 }

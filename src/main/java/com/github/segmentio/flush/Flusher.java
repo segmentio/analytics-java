@@ -123,7 +123,7 @@ public class Flusher extends Thread {
 	
 	public void flush() {
 		try {
-			idle.waitOne();
+			idle.waitOne(2, TimeUnit.MINUTES);
 		} catch (InterruptedException e) {
 			logger.error("Interrupted while waiting for the thread to flush.", e);
 		}

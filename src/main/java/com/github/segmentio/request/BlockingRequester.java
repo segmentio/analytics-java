@@ -26,7 +26,7 @@ public class BlockingRequester implements IRequester {
 	private static final Logger logger = LoggerFactory
 			.getLogger(Constants.LOGGER);
 
-	private AnalyticsClient client;
+	protected AnalyticsClient client;
 	private Gson gson;
 	private CloseableHttpClient httpClient;
 	private RequestConfig defaultRequestConfig;
@@ -48,7 +48,7 @@ public class BlockingRequester implements IRequester {
 		this.gson = GSONUtils.BUILDER.create();
 	}
 
-	public void send(Batch batch) {
+	public boolean send(Batch batch) {
 		AnalyticsStatistics statistics = client.getStatistics();
 		try {
 			long start = System.currentTimeMillis();
@@ -69,8 +69,9 @@ public class BlockingRequester implements IRequester {
 				String message = "Successful analytics request. [code = "
 						+ statusCode + "]. Response = " + responseBody;
 				
-				logger.debug(message);
+				logger.info(message);
 				report(statistics, batch, true, message);
+				return true;
 			} else {
 
 				String message = "Failed analytics response [code = " + statusCode + 
@@ -84,6 +85,8 @@ public class BlockingRequester implements IRequester {
 			logger.error(message, e);
 			report(statistics, batch, false, message);
 		}
+		
+		return false;
 	}
 
     public String readResponseBody(HttpResponse response) throws IOException {
