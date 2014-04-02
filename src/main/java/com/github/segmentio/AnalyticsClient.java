@@ -2,20 +2,12 @@ package com.github.segmentio;
 
 import java.util.List;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 
 import com.github.segmentio.flush.Flusher;
 import com.github.segmentio.flush.IBatchFactory;
-import com.github.segmentio.models.Alias;
-import com.github.segmentio.models.BasePayload;
-import com.github.segmentio.models.Batch;
-import com.github.segmentio.models.Callback;
-import com.github.segmentio.models.Context;
-import com.github.segmentio.models.EventProperties;
-import com.github.segmentio.models.Identify;
-import com.github.segmentio.models.Track;
-import com.github.segmentio.models.Traits;
+import com.github.segmentio.models.*;
 import com.github.segmentio.request.IRequester;
 import com.github.segmentio.request.RetryingRequester;
 import com.github.segmentio.stats.AnalyticsStatistics;
