@@ -82,15 +82,18 @@ public class Flusher extends Thread {
 			if (current.size() > 0) {
 				// we have something to send in this batch
 				
-				logger.debug("Preparing to send batch.. [ " + current.size() +  " items]");
+				logger.debug("Preparing to send batch.. [ {} items]", current.size());
 				
 				Batch batch = factory.create(current);
 				
 				client.getStatistics().updateFlushAttempts(1);
 
-				requester.send(batch);
+				if (requester.send(batch)) {
+				    logger.debug("Successfully sent batch request .. [ {} items]", current.size());
+				} else {
+				    logger.error("Failed to send batch of [ {} items]", current.size());
+				}
 				
-				logger.debug("Initiated batch request .. [ " + current.size() +  " items]");
 				
 				current = new LinkedList<BasePayload>();
 			}
@@ -115,9 +118,15 @@ public class Flusher extends Thread {
 			this.client.getStatistics().updateQueued(this.queue.size());
 		} else {
 			// the queue is too high, we can't risk memory overflow
-			// add dropped message to statistics, but don't log
-			// because the system is likely very resource strapped
-			this.client.getStatistics().updateDropped(1);
+			// add dropped message to statistics, 
+		    this.client.getStatistics().updateDropped(1);
+
+		    // by default don't log because the system is likely very resource strapped
+		    // but logging can be enabled in the options.
+		    if (client.getOptions().getLogDroppedPayload()) {
+		        logger.error("Queue has reached maxSize, dropping payload");
+		    }
+
 		}
 	}
 	

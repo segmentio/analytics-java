@@ -8,4 +8,5 @@ public class Defaults {
 	public static final int TIMEOUT = 10000;
 	public static final int RETRIES = 2;
 	public static final int BACKOFF = 1000;
+	public static final boolean LOG_DROPPED_PAYLOAD = false;
 }

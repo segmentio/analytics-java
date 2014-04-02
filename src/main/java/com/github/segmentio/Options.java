@@ -36,11 +36,16 @@ public class Options {
 	
 	private int backoff;
 	
+	/** 
+	 * Log if there is a queue overflow
+	 */
+	private boolean logDroppedPayload;
+	
 	/**
 	 * Creates a default options
 	 */
 	public Options() {
-		this(Defaults.HOST, Defaults.MAX_QUEUE_SIZE, Defaults.TIMEOUT, Defaults.RETRIES, Defaults.BACKOFF);
+		this(Defaults.HOST, Defaults.MAX_QUEUE_SIZE, Defaults.TIMEOUT, Defaults.RETRIES, Defaults.BACKOFF, Defaults.LOG_DROPPED_PAYLOAD);
 	}
 
 	/**
@@ -52,12 +57,13 @@ public class Options {
 	 * @param retries
 	 * @param backoff
 	 */
-	Options(String host, int maxQueueSize, int timeout, int retries, int backoff) {
+	Options(String host, int maxQueueSize, int timeout, int retries, int backoff, boolean logDroppedPayload) {
 		setHost(host);
 		setMaxQueueSize(maxQueueSize);
 		setTimeout(timeout);
 		setRetries(retries);
 		setBackoff(backoff);
+		setLogDroppedPayload(logDroppedPayload);
 	}
 
 	public String getHost() {
@@ -78,6 +84,10 @@ public class Options {
 
 	public int getBackoff() {
 		return backoff;
+	}
+	
+	public boolean getLogDroppedPayload() {
+	    return logDroppedPayload;
 	}
 	
 	/**
@@ -144,4 +154,14 @@ public class Options {
 		this.backoff = backoff;
 		return this;
 	}
+	
+    /**
+     * Sets the milliseconds to wait between request retries
+     * @param timeout backoff in milliseconds.
+     */
+    public Options setLogDroppedPayload(boolean logDroppedPayload) {
+        
+        this.logDroppedPayload = logDroppedPayload;
+        return this;
+    }
 }
