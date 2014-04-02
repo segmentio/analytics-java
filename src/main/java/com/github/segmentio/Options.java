@@ -126,7 +126,7 @@ public class Options {
 	 * @param retries number of times to retry the request
 	 */
 	public Options setRetries(int retries) {
-		if (timeout < 0)
+		if (retries < 0)
 			throw new IllegalArgumentException("Analytics#option#retries must be greater or equal to 0.");
 		
 		this.retries = retries;
@@ -138,8 +138,8 @@ public class Options {
 	 * @param timeout backoff in milliseconds.
 	 */
 	public Options setBackoff(int backoff) {
-		if (timeout < 0)
-			throw new IllegalArgumentException("Analytics#option#timeout must be greater or equal to 0 milliseconds.");
+		if (backoff < 0)
+			throw new IllegalArgumentException("Analytics#option#backoff must be greater or equal to 0 milliseconds.");
 		
 		this.backoff = backoff;
 		return this;
