@@ -66,18 +66,17 @@ public class BlockingRequester implements IRequester {
 			
 			if (statusCode == 200) {
 
-				String message = "Successful analytics request. [code = "
-						+ statusCode + "]. Response = " + responseBody;
+				String message = "Successful analytics request. [code = {}]. Response = {}";
+				logger.debug(message, statusCode, responseBody);
 				
-				logger.info(message);
 				report(statistics, batch, true, message);
 				return true;
 			} else {
 
-				String message = "Failed analytics response [code = " + statusCode + 
-						"]. Response = " + responseBody;
+				String message = "Failed analytics response [code = {}]. Response = {}";
 				
-				logger.error(message);
+				logger.error(message, statusCode, responseBody);
+				
 				report(statistics, batch, false, message);
 			}
 		} catch (IOException e) {

@@ -10,5 +10,5 @@ public class Constants {
 	/**
 	 * The amount of items we send in each batch
 	 */
-	public static final int BATCH_INCREMENT = 20;;	
+	public static final int BATCH_INCREMENT = 20;
 }

@@ -1,6 +1,6 @@
 package com.github.segmentio;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 
 /**
@@ -36,11 +36,16 @@ public class Options {
 	
 	private int backoff;
 	
+	/** 
+	 * Log if there is a queue overflow
+	 */
+	private boolean logDroppedPayload;
+	
 	/**
 	 * Creates a default options
 	 */
 	public Options() {
-		this(Defaults.HOST, Defaults.MAX_QUEUE_SIZE, Defaults.TIMEOUT, Defaults.RETRIES, Defaults.BACKOFF);
+		this(Defaults.HOST, Defaults.MAX_QUEUE_SIZE, Defaults.TIMEOUT, Defaults.RETRIES, Defaults.BACKOFF, Defaults.LOG_DROPPED_PAYLOAD);
 	}
 
 	/**
@@ -52,12 +57,13 @@ public class Options {
 	 * @param retries
 	 * @param backoff
 	 */
-	Options(String host, int maxQueueSize, int timeout, int retries, int backoff) {
+	Options(String host, int maxQueueSize, int timeout, int retries, int backoff, boolean logDroppedPayload) {
 		setHost(host);
 		setMaxQueueSize(maxQueueSize);
 		setTimeout(timeout);
 		setRetries(retries);
 		setBackoff(backoff);
+		setLogDroppedPayload(logDroppedPayload);
 	}
 
 	public String getHost() {
@@ -78,6 +84,10 @@ public class Options {
 
 	public int getBackoff() {
 		return backoff;
+	}
+	
+	public boolean getLogDroppedPayload() {
+	    return logDroppedPayload;
 	}
 	
 	/**
@@ -126,7 +136,7 @@ public class Options {
 	 * @param retries number of times to retry the request
 	 */
 	public Options setRetries(int retries) {
-		if (timeout < 0)
+		if (retries < 0)
 			throw new IllegalArgumentException("Analytics#option#retries must be greater or equal to 0.");
 		
 		this.retries = retries;
@@ -138,10 +148,20 @@ public class Options {
 	 * @param timeout backoff in milliseconds.
 	 */
 	public Options setBackoff(int backoff) {
-		if (timeout < 0)
-			throw new IllegalArgumentException("Analytics#option#timeout must be greater or equal to 0 milliseconds.");
+		if (backoff < 0)
+			throw new IllegalArgumentException("Analytics#option#backoff must be greater or equal to 0 milliseconds.");
 		
 		this.backoff = backoff;
 		return this;
 	}
+	
+    /**
+     * Sets the milliseconds to wait between request retries
+     * @param timeout backoff in milliseconds.
+     */
+    public Options setLogDroppedPayload(boolean logDroppedPayload) {
+        
+        this.logDroppedPayload = logDroppedPayload;
+        return this;
+    }
 }
