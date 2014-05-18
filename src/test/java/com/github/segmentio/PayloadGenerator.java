@@ -26,7 +26,8 @@ public class PayloadGenerator implements Iterable<BasePayload> {
 							.put("company", new Props()
 								.put("name", "Company, inc.")),
 							new DateTime(),
-							new Context().setIp("192.168.1.1"), null),
+							new Context()
+								.put("ip", "192.168.1.1"), null),
 							
 		new Track("ilya@segment.io", "Played a Song", 
 				new EventProperties().put("name", "Achilles")
