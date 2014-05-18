@@ -59,7 +59,7 @@ public class BlockingRequesterTest {
         server.setResponseDelay(serverTimeout);
         server.setResponseText(RESPONSE);
         
-        HttpResponse response = requester.executeRequest("{\"key\":\"value\"");
+        HttpResponse response = requester.executeRequest("write-key", "{\"key\":\"value\"");
         
         return requester.readResponseBody(response);
     }

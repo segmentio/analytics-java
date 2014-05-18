@@ -2,6 +2,7 @@ package com.github.segmentio.request;
 
 import java.io.*;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.config.CookieSpecs;
@@ -57,7 +58,7 @@ public class BlockingRequester implements IRequester {
 			
 			String json = gson.toJson(batch);
 			
-			HttpResponse response = executeRequest(json);
+			HttpResponse response = executeRequest(batch.getWriteKey(), json);
 			String responseBody = readResponseBody(response);
 			int statusCode = response.getStatusLine().getStatusCode();
 			
@@ -105,12 +106,18 @@ public class BlockingRequester implements IRequester {
         return responseBody;
     }
 
-    public HttpResponse executeRequest(String json) throws ClientProtocolException, IOException {
-        
+    public HttpResponse executeRequest(String writeKey, String json) 
+    		throws ClientProtocolException, IOException {  
+    	
         HttpPost post =
                 new HttpPost(client.getOptions().getHost() + "/v1/import");
         post.setConfig(defaultRequestConfig);
         post.addHeader("Content-Type", "application/json; charset=utf-8");
+       
+		// Basic Authentication
+		// https://segment.io/docs/tracking-api/reference/#authentication
+		post.addHeader("Authorization", 
+				"Basic " + Base64.encodeBase64((writeKey+":").getBytes()));
         
         post.setEntity(new ByteArrayEntity(json.getBytes("UTF-8")));
         
@@ -135,7 +142,7 @@ public class BlockingRequester implements IRequester {
 			}
 		}
 	}
-
+	
 	public void close() {
 		try {
             httpClient.close();
@@ -143,5 +150,6 @@ public class BlockingRequester implements IRequester {
             logger.error("Error while closing", e);
         }
 	}
+
 
 }
