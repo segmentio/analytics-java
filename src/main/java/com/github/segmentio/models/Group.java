@@ -2,17 +2,19 @@ package com.github.segmentio.models;
 
 import com.github.segmentio.Options;
 
-public class Identify extends BasePayload {
+public class Group extends BasePayload {
 
 	private String userId;
+	private String groupId;
 	private Traits traits;
 	
-	public Identify(String userId, Traits traits, Options options) {
-		super("identify", options);
+	public Group(String userId, String groupId, Traits traits, Options options) {
+		super("group", options);
 		
 		if (traits == null) traits = new Traits();
 		
 		this.userId = userId;
+		this.groupId = groupId;
 		this.traits = traits;
 	}
 	
@@ -22,6 +24,14 @@ public class Identify extends BasePayload {
 	
 	public void setUserId(String userId) {
 		this.userId = userId;
+	}
+	
+	public String getGroupId() {
+		return groupId;
+	}
+	
+	public void setGroupId(String groupId) {
+		this.groupId = groupId;
 	}
 	
 	public Traits getTraits() {

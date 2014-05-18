@@ -8,7 +8,8 @@ public class AnalyticsStatistics extends Statistics {
 
 	private static String IDENTIFY_KEY = "Identify";
 	private static String TRACK_KEY = "Track";
-	private static String ALiAS_KEY = "Alias";
+	private static String ALIAS_KEY = "Alias";
+	private static String GROUP_KEY = "GROUP";
 
 	private static String FLUSHED_ATTEMPTS_KEY = "Flushed Attempts";
 
@@ -47,12 +48,21 @@ public class AnalyticsStatistics extends Statistics {
 
 
 	public Statistic getAlias() {
-		return ensure(ALiAS_KEY);
+		return ensure(ALIAS_KEY);
 	}
 
 	public void updateAlias(double val) {
-		update(ALiAS_KEY, val);
+		update(ALIAS_KEY, val);
 	}
+
+	public Statistic getGroup() {
+		return ensure(GROUP_KEY);
+	}
+
+	public void updateGroup(double val) {
+		update(GROUP_KEY, val);
+	}
+
 
 	public Statistic getInserted() {
 		return ensure(INSERTED_KEY);

@@ -10,6 +10,7 @@ import com.github.segmentio.models.Alias;
 import com.github.segmentio.models.BasePayload;
 import com.github.segmentio.models.Batch;
 import com.github.segmentio.models.EventProperties;
+import com.github.segmentio.models.Group;
 import com.github.segmentio.models.Identify;
 import com.github.segmentio.models.Track;
 import com.github.segmentio.models.Traits;
@@ -165,6 +166,55 @@ public class AnalyticsClient {
 		statistics.updateIdentifies(1);
 	}
 
+	//
+	// Group
+	//
+
+	/**
+	 * The `group` method lets you associate a user with a group. Be it a company, 
+	 * organization, account, project or team! It also lets you record custom traits about the 
+     * group, like industry or number of employees.
+	 * 
+	 * @param userId
+	 *            the user's id after they are logged in. It's the same id as
+	 *            which you would recognize a signed-in user in your system.
+	 * 
+	 * @param groupId
+	 *            the group's id as it would appear in your database.
+	 * 
+	 * @param traits
+	 *            a dictionary with keys like subscriptionPlan or age. You only
+	 *            need to record a trait once, no need to send it again.
+	 */
+	public void group(String userId, String groupId, Traits traits) {
+		group(userId, groupId, traits, null);
+	}
+	
+	/**
+	 * The `group` method lets you associate a user with a group. Be it a company, 
+	 * organization, account, project or team! It also lets you record custom traits about the 
+     * group, like industry or number of employees.
+	 * 
+	 * @param userId
+	 *            the user's id after they are logged in. It's the same id as
+	 *            which you would recognize a signed-in user in your system.
+	 * 
+	 * @param groupId
+	 *            the group's id as it would appear in your database.
+	 * 
+	 * @param traits
+	 *            a dictionary with keys like subscriptionPlan or age. You only
+	 *            need to record a trait once, no need to send it again.
+	 * 
+	 * @param options
+	 *            an options object that allows you to set a timestamp, 
+     *            an anonymousId, a context, and target integrations.
+	 */
+	public void group(String userId, String groupId, Traits traits, Options options) {
+		flusher.enqueue(new Group(userId, groupId, traits, options));
+		statistics.updateGroup(1);
+	}
+	
 	//
 	// Track
 	//
