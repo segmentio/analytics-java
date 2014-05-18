@@ -34,7 +34,7 @@ import com.github.segmentio.stats.AnalyticsStatistics;
 public class AnalyticsClient {
 
 	private String writeKey;
-	private Options options;
+	private Config options;
 	
 	private Flusher flusher;
 	private IRequester requester;
@@ -59,7 +59,7 @@ public class AnalyticsClient {
 	 */
 	public AnalyticsClient(String writeKey) {
 
-		this(writeKey, new Options());
+		this(writeKey, new Config());
 	}
 
 	/**
@@ -83,7 +83,7 @@ public class AnalyticsClient {
 	 * 
 	 * 
 	 */
-	public AnalyticsClient(String writeKey, Options options) {
+	public AnalyticsClient(String writeKey, Config options) {
 
 		String errorPrefix = "analytics-java client must be initialized with a valid ";
 
@@ -550,7 +550,7 @@ public class AnalyticsClient {
 		this.writeKey = writeKey;
 	}
 
-	public Options getOptions() {
+	public Config getOptions() {
 		return options;
 	}
 

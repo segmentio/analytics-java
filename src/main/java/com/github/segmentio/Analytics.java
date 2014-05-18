@@ -35,7 +35,7 @@ public class Analytics {
 	public static synchronized void initialize(String writeKey) {
 
 		if (defaultClient == null)
-			defaultClient = new AnalyticsClient(writeKey, new Options());
+			defaultClient = new AnalyticsClient(writeKey, new Config());
 	}
 
 	/**
@@ -60,7 +60,7 @@ public class Analytics {
 	 * 
 	 * 
 	 */
-	public static synchronized void initialize(String writeKey, Options options) {
+	public static synchronized void initialize(String writeKey, Config options) {
 		
 		if (defaultClient == null)
 			defaultClient = new AnalyticsClient(writeKey, options);
