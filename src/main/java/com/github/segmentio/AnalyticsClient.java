@@ -12,6 +12,8 @@ import com.github.segmentio.models.Batch;
 import com.github.segmentio.models.EventProperties;
 import com.github.segmentio.models.Group;
 import com.github.segmentio.models.Identify;
+import com.github.segmentio.models.Page;
+import com.github.segmentio.models.Screen;
 import com.github.segmentio.models.Track;
 import com.github.segmentio.models.Traits;
 import com.github.segmentio.request.IRequester;
@@ -283,6 +285,196 @@ public class AnalyticsClient {
 	public void track(String userId, String event, EventProperties properties, Options options) {
 		flusher.enqueue(new Track(userId, event, properties, options));
 		statistics.updateTracks(1);
+	}
+	
+	//
+	// Page
+	//
+
+	/**
+	 * The `page` method let your record whenever a user sees a web page on 
+	 * your web site, and attach a `name`, `category` or `properties` to the web page load. 
+	 *
+	 * @param userId
+	 *            the user's id after they are logged in. It's the same id as
+	 *            which you would recognize a signed-in user in your system.
+	 * 
+	 * @param name
+	 *            The name of the web page, like "Signup", "Login"
+	 */
+	public void page(String userId, String name) {
+		page(userId, name, null, null, null);
+	}
+
+	/**
+	 * The `page` method let your record whenever a user sees a web page on 
+	 * your web site, and attach a `name`, `category` or `properties` to the web page load. 
+	 *
+	 * @param userId
+	 *            the user's id after they are logged in. It's the same id as
+	 *            which you would recognize a signed-in user in your system.
+	 * 
+	 * @param name
+	 *            The name of the web page, like "Signup", "Login"
+	 * 
+	 * @param properties
+	 *            a dictionary with items that describe the event in more
+	 *            detail. This argument is optional, but highly
+	 *            recommended—you’ll find these properties extremely useful
+	 *            later.
+	 */
+	public void page(String userId, String name, EventProperties properties) {
+		page(userId, name, null, properties, null);
+	}
+	
+	/**
+	 * The `page` method let your record whenever a user sees a web page on 
+	 * your web site, and attach a `name`, `category` or `properties` to the web page load. 
+	 *
+	 * @param userId
+	 *            the user's id after they are logged in. It's the same id as
+	 *            which you would recognize a signed-in user in your system.
+	 * 
+	 * @param name
+	 *            The name of the web page, like "Signup", "Login"
+	 * 
+	 * @param properties
+	 *            a dictionary with items that describe the event in more
+	 *            detail. This argument is optional, but highly
+	 *            recommended—you’ll find these properties extremely useful
+	 *            later.
+	 * 
+     * @param options
+	 *            an options object that allows you to set a timestamp, 
+     *            an anonymousId, a context, and target integrations.
+	 */
+	public void page(String userId, String name, EventProperties properties, Options options) {
+		page(userId, name, null, properties, options);
+	}
+	
+	/**
+	 * The `page` method let your record whenever a user sees a web page on 
+	 * your web site, and attach a `name`, `category` or `properties` to the web page load. 
+	 
+	 * @param userId
+	 *            the user's id after they are logged in. It's the same id as
+	 *            which you would recognize a signed-in user in your system.
+	 * 
+	 * @param name
+	 *            The name of the web page, like "Signup", "Login"
+	 * 
+	 * @param category
+	 *            The category of the web page, like "Sports" or "Authentication"
+	 * 
+	 * @param properties
+	 *            a dictionary with items that describe the event in more
+	 *            detail. This argument is optional, but highly
+	 *            recommended—you’ll find these properties extremely useful
+	 *            later.
+	 * 
+     * @param options
+	 *            an options object that allows you to set a timestamp, 
+     *            an anonymousId, a context, and target integrations.
+	 */
+	public void page(String userId, String name, String category, 
+			EventProperties properties, Options options) {
+		flusher.enqueue(new Page(userId, name, category, properties, options));
+		statistics.updatePage(1);
+	}
+	
+	//
+	// Screen
+	//
+
+	/**
+	 * The `screen` method let your record whenever a user sees a mobile screen, 
+	 * and attach a `name`, `category` or `properties` to the web page load. 
+	 *
+	 * @param userId
+	 *            the user's id after they are logged in. It's the same id as
+	 *            which you would recognize a signed-in user in your system.
+	 * 
+	 * @param name
+	 *            The name of the mobile screen, like "Signup", "Login"
+	 */
+	public void screen(String userId, String name) {
+		screen(userId, name, null, null, null);
+	}
+
+	/**
+	 * The `screen` method let your record whenever a user sees a mobile screen, 
+	 * and attach a `name`, `category` or `properties` to the web page load. 
+	 *
+	 * @param userId
+	 *            the user's id after they are logged in. It's the same id as
+	 *            which you would recognize a signed-in user in your system.
+	 * 
+	 * @param name
+	 *            The name of the mobile screen, like "Signup", "Login"
+	 * 
+	 * @param properties
+	 *            a dictionary with items that describe the event in more
+	 *            detail. This argument is optional, but highly
+	 *            recommended—you’ll find these properties extremely useful
+	 *            later.
+	 */
+	public void screen(String userId, String name, EventProperties properties) {
+		screen(userId, name, null, properties, null);
+	}
+	
+	/**
+	 * The `screen` method let your record whenever a user sees a mobile screen, 
+	 * and attach a `name`, `category` or `properties` to the web page load. 
+	 *
+	 * @param userId
+	 *            the user's id after they are logged in. It's the same id as
+	 *            which you would recognize a signed-in user in your system.
+	 * 
+	 * @param name
+	 *            The name of the mobile screen, like "Signup", "Login"
+	 * 
+	 * @param properties
+	 *            a dictionary with items that describe the event in more
+	 *            detail. This argument is optional, but highly
+	 *            recommended—you’ll find these properties extremely useful
+	 *            later.
+	 * 
+     * @param options
+	 *            an options object that allows you to set a timestamp, 
+     *            an anonymousId, a context, and target integrations.
+	 */
+	public void screen(String userId, String name, EventProperties properties, Options options) {
+		screen(userId, name, null, properties, options);
+	}
+	
+	/**
+	 * The `screen` method let your record whenever a user sees a mobile screen, 
+	 * and attach a `name`, `category` or `properties` to the web page load. 
+	 *
+	 * @param userId
+	 *            the user's id after they are logged in. It's the same id as
+	 *            which you would recognize a signed-in user in your system.
+	 * 
+	 * @param name
+	 *            The name of the mobile screen, like "Signup", "Login"
+	 * 
+	 * @param category
+	 *            The category of the web page, like "Sports" or "Authentication"
+	 * 
+	 * @param properties
+	 *            a dictionary with items that describe the event in more
+	 *            detail. This argument is optional, but highly
+	 *            recommended—you’ll find these properties extremely useful
+	 *            later.
+	 * 
+     * @param options
+	 *            an options object that allows you to set a timestamp, 
+     *            an anonymousId, a context, and target integrations.
+	 */
+	public void screen(String userId, String name, String category, 
+			EventProperties properties, Options options) {
+		flusher.enqueue(new Screen(userId, name, category, properties, options));
+		statistics.updateScreen(1);
 	}
 	
 	//
