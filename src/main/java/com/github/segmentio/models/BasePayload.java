@@ -4,70 +4,47 @@ import java.util.UUID;
 
 import org.joda.time.DateTime;
 
+import com.github.segmentio.Options;
+
 /**
- * The base model for for Track / Identify payload
- *
+ * The base model for a Segment.io API payload
  */
 public class BasePayload {
 
-	private String userId;
+	private String type;
 	private Context context;
+	private String anonymousId;
 	private DateTime timestamp;
-	private String requestId;
+	private String messageId;
 	
-	private transient Callback callback;
-	
-	public BasePayload(String userId, 
-					   DateTime timestamp, 
-					   Context context, 
-					   Callback callback) {
+	public BasePayload(String type, Options options) {
 		
-		this.userId = userId;
-		this.timestamp = timestamp;
-		this.context = context;
-		this.requestId = UUID.randomUUID().toString();
+		this.type = type;
+		if (options == null) options = new Options();
 		
-		this.callback = callback;
+		this.timestamp = options.getTimestamp();
+		this.context = options.getContext();
+		this.anonymousId = options.getAnonymousId();
+		this.messageId = UUID.randomUUID().toString();
 	}
 	
-	public String getUserId() {
-		return userId;
+	public String getType() {
+		return type;
 	}
-
-	public void setUserId(String userId) {
-		this.userId = userId;
+	
+	public String getAnonymousId() {
+		return anonymousId;
+	}
+	
+	public Context getContext() {
+		return context;
+	}
+	
+	public String getMessageId() {
+		return messageId;
 	}
 	
 	public DateTime getTimestamp() {
 		return timestamp;
 	}
-	
-	public void setTimestamp(DateTime timestamp) {
-		this.timestamp = timestamp;
-	}
-
-	public Context getContext() {
-		return context;
-	}
-
-	public void setContext(Context context) {
-		this.context = context;
-	}
-	
-	public Callback getCallback() {
-		return callback;
-	}
-	
-	public void setCallback(Callback callback) {
-		this.callback = callback;
-	}
-	
-	public String getRequestId() {
-		return requestId;
-	}
-	
-	public void setRequestId(String requestId) {
-		this.requestId = requestId;
-	}
-
 }

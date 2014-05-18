@@ -54,7 +54,8 @@ public class BlockingRequester implements IRequester {
 		try {
 			long start = System.currentTimeMillis();
 			
-			batch.setRequestTimestamp(DateTime.now());
+			// mark that the event is getting sent now
+			batch.setSentAt(DateTime.now());
 			
 			String json = gson.toJson(batch);
 			

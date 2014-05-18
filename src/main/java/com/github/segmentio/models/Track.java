@@ -1,28 +1,35 @@
 package com.github.segmentio.models;
 
-import org.joda.time.DateTime;
+import com.github.segmentio.Options;
 
 public class Track extends BasePayload {
 
-	@SuppressWarnings("unused")
-	private String action = "track";
-	
+	private String userId;
 	private String event;
 	private EventProperties properties;
 	
 	public Track(String userId, 
 				 String event, 
 				 EventProperties properties, 
-				 DateTime timestamp,
-				 Context context, 
-				 Callback callback) {
+				 Options options) {
 		
-		super(userId, timestamp, context, callback);
+		super("track", options);
 
+		if (properties == null) properties = new EventProperties();
+		
+		this.userId = userId;
 		this.event = event;
 		this.properties = properties;
 	}
 
+	public String getUserId() {
+		return userId;
+	}
+	
+	public void setUserId(String userId) {
+		this.userId = userId;
+	}
+	
 	public String getEvent() {
 		return event;
 	}

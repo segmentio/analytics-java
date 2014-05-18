@@ -1,20 +1,25 @@
 package com.github.segmentio.models;
 
-import org.joda.time.DateTime;
+import com.github.segmentio.Options;
 
 public class Identify extends BasePayload {
 
-	@SuppressWarnings("unused")
-	private String action = "identify";
-	
+	private String userId;
 	private Traits traits;
 	
-	public Identify(String userId, Traits traits, DateTime timestamp,
-			Context context, Callback callback) {
+	public Identify(String userId, Traits traits, Options options) {
+		super("identify", options);
 		
-		super(userId, timestamp, context, callback);
-		
+		this.userId = userId;
 		this.traits = traits;
+	}
+	
+	public String getUserId() {
+		return userId;
+	}
+	
+	public void setUserId(String userId) {
+		this.userId = userId;
 	}
 	
 	public Traits getTraits() {

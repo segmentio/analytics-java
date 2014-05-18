@@ -1,38 +1,25 @@
 package com.github.segmentio.models;
 
-import org.joda.time.DateTime;
+import com.github.segmentio.Options;
 
 public class Alias extends BasePayload {
 
-	@SuppressWarnings("unused")
-	private String action = "alias";
+	private String userId;
+	private String previousId;
 	
-	private String from;
-	private String to;
-	
-	public Alias(String from, String to, DateTime timestamp,
-			Context context, Callback callback) {
+	public Alias(String previousId, String userId, Options options) {
+		super("alias", options);
 		
-		super(null, timestamp, context, callback);
-		
-		this.from = from;
-		this.to = to;
+		this.previousId = previousId;
+		this.userId = userId;
 	}
 	
-	public String getFrom() {
-		return from;
+	public String getUserId() {
+		return userId;
 	}
 	
-	public void setFrom(String from) {
-		this.from = from;
-	}
-	
-	public String getTo() {
-		return to;
-	}
-	
-	public void setTo(String to) {
-		this.to = to;
+	public String getPreviousId() {
+		return previousId;
 	}
 
 }
