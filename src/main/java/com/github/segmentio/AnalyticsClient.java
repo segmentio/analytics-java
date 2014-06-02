@@ -2,7 +2,7 @@ package com.github.segmentio;
 
 import java.util.List;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.github.segmentio.flush.Flusher;
 import com.github.segmentio.flush.IBatchFactory;
