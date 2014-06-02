@@ -1,3 +1,12 @@
+1.0.0 / March 21, 2014
+=================
+* Updating to Segment Spec API v1
+* Fixing bugs in Config validation
+* Adding Options
+* Adding .group, .page, and .screen
+* Logging improvements
+* Bumping major version
+
 0.4.2 / March 21, 2014
 =================
 * Adding retries to flushing
@@ -5,7 +14,7 @@
 
 0.3.1 / 2013-10-02
 =================
-* Adding support for `Long`, and now generally any primitive or wrapper.
+* Adding support for `Long`, and now gen2erally any primitive or wrapper.
 
 0.3.0 / 2013-09-04
 =================
