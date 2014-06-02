@@ -1,4 +1,4 @@
-package com.github.segmentio.request;
+package com.github.segmentio.test.request;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -15,6 +15,7 @@ import com.github.segmentio.AnalyticsClient;
 import com.github.segmentio.Config;
 import com.github.segmentio.models.BasePayload;
 import com.github.segmentio.models.Batch;
+import com.github.segmentio.request.RetryingRequester;
 
 @RunWith(MockitoJUnitRunner.class)
 public class RetryingRequesterTest {

@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.lang3.ClassUtils;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,9 +40,7 @@ public class Props extends HashMap<String, Object> {
 		}
 	}
 	
-
 	public Props put(String key, Object value) {
-		
 		if (allowed(value)) {
 			super.put(key, value);
 		} else {
@@ -55,23 +54,20 @@ public class Props extends HashMap<String, Object> {
 	}
 	
 	private boolean isPrimitive (Object value) {
-		
 		boolean primitive = false;
-		
 		if (value != null) {
 			Class<?> clazz = value.getClass();
 			// http://stackoverflow.com/questions/709961/determining-if-an-object-is-of-primitive-type
 			primitive = clazz.isPrimitive() || ClassUtils.wrapperToPrimitive(clazz) != null;
 		}
-		
 		return primitive;
 	}
 	
 	public boolean allowed(Object value) {
-		
 		if (isPrimitive(value) || 
 			value instanceof String ||
 			value instanceof Date || 
+			value instanceof DateTime ||
 			value instanceof Props || 
 			value instanceof BigDecimal ||
 			// http://stackoverflow.com/questions/2651632/how-to-check-if-an-object-is-a-collection-type-in-java

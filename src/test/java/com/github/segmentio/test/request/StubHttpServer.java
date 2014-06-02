@@ -1,4 +1,4 @@
-package com.github.segmentio.request;
+package com.github.segmentio.test.request;
 
 import java.io.IOException;
 import java.io.PrintStream;

@@ -9,10 +9,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.segmentio.AnalyticsClient;
-import com.github.segmentio.Constants;
 import com.github.segmentio.models.BasePayload;
 import com.github.segmentio.models.Batch;
 import com.github.segmentio.request.IRequester;
+import com.github.segmentio.Constants;
 import com.github.segmentio.utils.ManualResetEvent;
 
 public class Flusher extends Thread {

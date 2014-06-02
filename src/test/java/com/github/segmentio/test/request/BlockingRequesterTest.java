@@ -1,4 +1,4 @@
-package com.github.segmentio.request;
+package com.github.segmentio.test.request;
 
 import java.io.IOException;
 import java.net.SocketTimeoutException;
@@ -13,6 +13,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import com.github.segmentio.AnalyticsClient;
 import com.github.segmentio.Config;
+import com.github.segmentio.request.BlockingRequester;
 
 @RunWith(MockitoJUnitRunner.class)
 public class BlockingRequesterTest {

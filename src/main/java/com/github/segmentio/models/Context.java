@@ -2,7 +2,6 @@ package com.github.segmentio.models;
 
 import com.github.segmentio.Analytics;
 
-
 public class Context extends Props {
 
 	private static final long serialVersionUID = 2042634726363431396L;

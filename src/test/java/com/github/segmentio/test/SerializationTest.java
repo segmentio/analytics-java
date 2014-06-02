@@ -1,4 +1,4 @@
-package com.github.segmentio;
+package com.github.segmentio.test;
 
 import java.math.BigDecimal;
 import java.util.LinkedList;
@@ -22,7 +22,6 @@ public class SerializationTest {
 		gson = GSONUtils.BUILDER.create();
 	}
 
-	
 	@Test
 	public void testArrays() {
 		

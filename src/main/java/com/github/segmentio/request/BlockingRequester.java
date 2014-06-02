@@ -85,22 +85,6 @@ public class BlockingRequester implements IRequester {
 		return false;
 	}
 
-    public String readResponseBody(HttpResponse response) throws IOException {
-        BufferedReader rd 
-            = new BufferedReader(
-                new InputStreamReader(
-                        response.getEntity().getContent()));
-        
-        StringBuilder responseBuilder = new StringBuilder();
-        String line;
-        while ((line = rd.readLine()) != null) {
-        	responseBuilder.append(line);
-        }
-        
-        String responseBody = responseBuilder.toString();
-        return responseBody;
-    }
-
     public HttpResponse executeRequest(String writeKey, String json) 
     		throws ClientProtocolException, IOException {  
     	
@@ -121,6 +105,22 @@ public class BlockingRequester implements IRequester {
         }
         
         return httpClient.execute(post);
+    }
+	
+    public String readResponseBody(HttpResponse response) throws IOException {
+        BufferedReader rd 
+            = new BufferedReader(
+                new InputStreamReader(
+                        response.getEntity().getContent()));
+        
+        StringBuilder responseBuilder = new StringBuilder();
+        String line;
+        while ((line = rd.readLine()) != null) {
+        	responseBuilder.append(line);
+        }
+        
+        String responseBody = responseBuilder.toString();
+        return responseBody;
     }
 	
 	private void succeed(Batch batch, AnalyticsStatistics statistics) {
