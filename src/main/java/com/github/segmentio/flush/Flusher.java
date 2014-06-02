@@ -46,13 +46,10 @@ public class Flusher extends Thread {
 	}
 	
 	public void run() {
-		
 		while (go) {
-			
 			List<BasePayload> current = new LinkedList<BasePayload>();
 			
 			do {
-				
 				if (queue.size() == 0) idle.set();
 				
 				BasePayload payload = null;
@@ -66,13 +63,10 @@ public class Flusher extends Thread {
 				
 				if (payload != null) {
 					//  we are no longer idle since there's messages to be processed
-					idle.reset();
-					
+					idle.reset();	
 					current.add(payload);
-					
 					client.getStatistics().updateQueued(this.queue.size());
 				}
-				
 			} 
 			// keep iterating and collecting the current batch
 			// while we're active, there's something in the queue, and we haven't already
@@ -81,20 +75,13 @@ public class Flusher extends Thread {
 			
 			if (current.size() > 0) {
 				// we have something to send in this batch
-				
 				logger.debug("Preparing to send batch.. [ " + current.size() +  " items]");
-				
 				Batch batch = factory.create(current);
-				
 				client.getStatistics().updateFlushAttempts(1);
-
 				requester.send(batch);
-				
-				logger.debug("Initiated batch request .. [ " + current.size() +  " items]");
-				
+				logger.debug("Initiated batch request .. [ " + current.size() +  " items]");	
 				current = new LinkedList<BasePayload>();
-			}
-			
+			}			
 			try {
 				// thread context switch to avoid resource contention
 				Thread.sleep(0);
