@@ -131,15 +131,10 @@ public class BlockingRequester implements IRequester {
 	
 	private void report(AnalyticsStatistics statistics, Batch batch, boolean success, String message) {
 		for (BasePayload payload : batch.getBatch()) {
-			Callback callback = payload.getCallback();
 			if (success) {
 				statistics.updateSuccessful(1);
 			} else {
 				statistics.updateFailed(1);
-			}
-			
-			if (callback != null) {
-				callback.onResponse(success, message);
 			}
 		}
 	}
