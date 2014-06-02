@@ -126,7 +126,7 @@ public class Config {
 	 * @param retries number of times to retry the request
 	 */
 	public Config setRetries(int retries) {
-		if (timeout < 0)
+		if (retries < 0)
 			throw new IllegalArgumentException("Analytics#option#retries must be greater or equal to 0.");
 		
 		this.retries = retries;
@@ -138,7 +138,7 @@ public class Config {
 	 * @param timeout backoff in milliseconds.
 	 */
 	public Config setBackoff(int backoff) {
-		if (timeout < 0)
+		if (backoff < 0)
 			throw new IllegalArgumentException("Analytics#option#timeout must be greater or equal to 0 milliseconds.");
 		
 		this.backoff = backoff;
