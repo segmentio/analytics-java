@@ -1,6 +1,8 @@
 package com.github.segmentio.request;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.http.HttpResponse;
@@ -17,7 +19,8 @@ import org.slf4j.LoggerFactory;
 
 import com.github.segmentio.AnalyticsClient;
 import com.github.segmentio.Constants;
-import com.github.segmentio.models.*;
+import com.github.segmentio.models.BasePayload;
+import com.github.segmentio.models.Batch;
 import com.github.segmentio.stats.AnalyticsStatistics;
 import com.github.segmentio.utils.GSONUtils;
 import com.google.gson.Gson;

@@ -18,7 +18,6 @@ public class BasePayload {
 	private String messageId;
 	
 	public BasePayload(String type, Options options) {
-		
 		this.type = type;
 		if (options == null) options = new Options();
 		

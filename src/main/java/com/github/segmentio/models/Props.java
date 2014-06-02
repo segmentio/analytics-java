@@ -22,13 +22,12 @@ public class Props extends HashMap<String, Object> {
 	}
 	
 	public Props(Object... kvs) {
-		
 		super(kvs == null ? 1 : kvs.length / 2);
 		
 		if (kvs != null) {
 			if (kvs.length % 2 != 0) {
 				
-				logger.warn("Segmentio properties must be initialized with an " + 
+				logger.warn("Segment properties must be initialized with an " + 
 						"even number of arguments, like so: [Key, Value, Key, Value]");	
 			} else {
 				if (kvs.length > 1) {
