@@ -5,7 +5,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.github.segmentio.Analytics;
-import com.github.segmentio.models.EventProperties;
+import com.github.segmentio.models.Props;
 import com.github.segmentio.models.Traits;
 
 public class AnalyticsTest {
@@ -50,7 +50,7 @@ public class AnalyticsTest {
 
 	@Test
 	public void track() {
-		Analytics.track("ilya@segment.io", "Ran a marathan", new EventProperties("time", 1000*60*60*3));
+		Analytics.track("ilya@segment.io", "Ran a marathan", new Props("time", 1000*60*60*3));
 		Analytics.flush();
 	}
 	
@@ -63,7 +63,7 @@ public class AnalyticsTest {
 	
 	@Test
 	public void track3() {
-		Analytics.track("ilya@segment.io", "Purchased an Item", new EventProperties("revenue", 10.12));
+		Analytics.track("ilya@segment.io", "Purchased an Item", new Props("revenue", 10.12));
 		Analytics.flush();
 	}
 	

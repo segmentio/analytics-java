@@ -9,7 +9,7 @@ import com.github.segmentio.flush.IBatchFactory;
 import com.github.segmentio.models.Alias;
 import com.github.segmentio.models.BasePayload;
 import com.github.segmentio.models.Batch;
-import com.github.segmentio.models.EventProperties;
+import com.github.segmentio.models.Props;
 import com.github.segmentio.models.Group;
 import com.github.segmentio.models.Identify;
 import com.github.segmentio.models.Page;
@@ -160,7 +160,7 @@ public class AnalyticsClient {
 	 *            need to record a trait once, no need to send it again.
 	 * 
 	 * @param options
-	 *            an options object that allows you to set a timestamp, 
+	 *            options allows you to set a timestamp, 
      *            an anonymousId, a context, and target integrations.
 	 */
 	public void identify(String userId, Traits traits, Options options) {
@@ -209,7 +209,7 @@ public class AnalyticsClient {
 	 *            need to record a trait once, no need to send it again.
 	 * 
 	 * @param options
-	 *            an options object that allows you to set a timestamp, 
+	 *            options allows you to set a timestamp, 
      *            an anonymousId, a context, and target integrations.
 	 */
 	public void group(String userId, String groupId, Traits traits, Options options) {
@@ -256,7 +256,7 @@ public class AnalyticsClient {
 	 *            recommended—you’ll find these properties extremely useful
 	 *            later.
 	 */
-	public void track(String userId, String event, EventProperties properties) {
+	public void track(String userId, String event, Props properties) {
 		track(userId, event, properties, null);
 	}
 
@@ -279,10 +279,10 @@ public class AnalyticsClient {
 	 *            later.
 	 * 
      * @param options
-	 *            an options object that allows you to set a timestamp, 
+	 *            options allows you to set a timestamp, 
      *            an anonymousId, a context, and target integrations.
 	 */
-	public void track(String userId, String event, EventProperties properties, Options options) {
+	public void track(String userId, String event, Props properties, Options options) {
 		flusher.enqueue(new Track(userId, event, properties, options));
 		statistics.updateTracks(1);
 	}
@@ -323,7 +323,7 @@ public class AnalyticsClient {
 	 *            recommended—you’ll find these properties extremely useful
 	 *            later.
 	 */
-	public void page(String userId, String name, EventProperties properties) {
+	public void page(String userId, String name, Props properties) {
 		page(userId, name, null, properties, null);
 	}
 	
@@ -345,10 +345,10 @@ public class AnalyticsClient {
 	 *            later.
 	 * 
      * @param options
-	 *            an options object that allows you to set a timestamp, 
+	 *            options allows you to set a timestamp, 
      *            an anonymousId, a context, and target integrations.
 	 */
-	public void page(String userId, String name, EventProperties properties, Options options) {
+	public void page(String userId, String name, Props properties, Options options) {
 		page(userId, name, null, properties, options);
 	}
 	
@@ -373,11 +373,11 @@ public class AnalyticsClient {
 	 *            later.
 	 * 
      * @param options
-	 *            an options object that allows you to set a timestamp, 
+	 *            options allows you to set a timestamp, 
      *            an anonymousId, a context, and target integrations.
 	 */
 	public void page(String userId, String name, String category, 
-			EventProperties properties, Options options) {
+			Props properties, Options options) {
 		flusher.enqueue(new Page(userId, name, category, properties, options));
 		statistics.updatePage(1);
 	}
@@ -418,7 +418,7 @@ public class AnalyticsClient {
 	 *            recommended—you’ll find these properties extremely useful
 	 *            later.
 	 */
-	public void screen(String userId, String name, EventProperties properties) {
+	public void screen(String userId, String name, Props properties) {
 		screen(userId, name, null, properties, null);
 	}
 	
@@ -440,10 +440,10 @@ public class AnalyticsClient {
 	 *            later.
 	 * 
      * @param options
-	 *            an options object that allows you to set a timestamp, 
+	 *            options allows you to set a timestamp, 
      *            an anonymousId, a context, and target integrations.
 	 */
-	public void screen(String userId, String name, EventProperties properties, Options options) {
+	public void screen(String userId, String name, Props properties, Options options) {
 		screen(userId, name, null, properties, options);
 	}
 	
@@ -468,11 +468,11 @@ public class AnalyticsClient {
 	 *            later.
 	 * 
      * @param options
-	 *            an options object that allows you to set a timestamp, 
+	 *            options allows you to set a timestamp, 
      *            an anonymousId, a context, and target integrations.
 	 */
 	public void screen(String userId, String name, String category, 
-			EventProperties properties, Options options) {
+			Props properties, Options options) {
 		flusher.enqueue(new Screen(userId, name, category, properties, options));
 		statistics.updateScreen(1);
 	}
@@ -505,7 +505,7 @@ public class AnalyticsClient {
 	 *            the identified user's id after they're logged in.
 	 *        
 	 * @param options
-	 *            an options object that allows you to set a timestamp, 
+	 *            options allows you to set a timestamp, 
      *            an anonymousId, a context, and target integrations.
 	 *             
 	 */

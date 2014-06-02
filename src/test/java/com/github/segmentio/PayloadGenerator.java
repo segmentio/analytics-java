@@ -7,7 +7,7 @@ import org.joda.time.DateTime;
 import com.github.segmentio.models.Alias;
 import com.github.segmentio.models.BasePayload;
 import com.github.segmentio.models.Context;
-import com.github.segmentio.models.EventProperties;
+import com.github.segmentio.models.Props;
 import com.github.segmentio.models.Identify;
 import com.github.segmentio.models.Props;
 import com.github.segmentio.models.Providers;
@@ -30,7 +30,7 @@ public class PayloadGenerator implements Iterable<BasePayload> {
 								.put("ip", "192.168.1.1"), null),
 							
 		new Track("ilya@segment.io", "Played a Song", 
-				new EventProperties().put("name", "Achilles")
+				new Props().put("name", "Achilles")
 							.put("revenue", 39.95)
 							.put("shippingMethod", "2-day"),
 							new DateTime(), 

@@ -6,16 +6,16 @@ public class Track extends BasePayload {
 
 	private String userId;
 	private String event;
-	private EventProperties properties;
+	private Props properties;
 	
 	public Track(String userId, 
 				 String event, 
-				 EventProperties properties, 
+				 Props properties, 
 				 Options options) {
 		
 		super("track", options);
 
-		if (properties == null) properties = new EventProperties();
+		if (properties == null) properties = new Props();
 		
 		this.userId = userId;
 		this.event = event;
@@ -38,11 +38,11 @@ public class Track extends BasePayload {
 		this.event = event;
 	}
 	
-	public EventProperties getProperties() {
+	public Props getProperties() {
 		return properties;
 	}
 	
-	public void setProperties(EventProperties properties) {
+	public void setProperties(Props properties) {
 		this.properties = properties;
 	}
 	

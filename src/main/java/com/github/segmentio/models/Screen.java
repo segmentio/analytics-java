@@ -7,17 +7,17 @@ public class Screen extends BasePayload {
 	private String userId;
 	private String name;
 	private String category;
-	private EventProperties properties;
+	private Props properties;
 	
 	public Screen(String userId, 
 				String name,
 				String category,
-				EventProperties properties, 
+				Props properties, 
 				Options options) {
 		
 		super("screen", options);
 
-		if (properties == null) properties = new EventProperties();
+		if (properties == null) properties = new Props();
 		
 		this.userId = userId;
 		this.name = name;
@@ -49,11 +49,11 @@ public class Screen extends BasePayload {
 		this.category = category;
 	}
 	
-	public EventProperties getProperties() {
+	public Props getProperties() {
 		return properties;
 	}
 	
-	public void setProperties(EventProperties properties) {
+	public void setProperties(Props properties) {
 		this.properties = properties;
 	}
 	
