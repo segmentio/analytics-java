@@ -67,25 +67,16 @@ public class BlockingRequester implements IRequester {
 			statistics.updateRequestTime(duration);
 			
 			if (statusCode == 200) {
-
-				String message = "Successful analytics request. [code = "
-						+ statusCode + "]. Response = " + responseBody;
-				
-				logger.info(message);
-				report(statistics, batch, true, message);
+				logger.debug("Successful analytics request. [code = {}]. Response = {}", statusCode, responseBody);
+				succeed(batch, statistics);
 				return true;
 			} else {
-
-				String message = "Failed analytics response [code = " + statusCode + 
-						"]. Response = " + responseBody;
-				
-				logger.error(message);
-				report(statistics, batch, false, message);
+				logger.error("Failed analytics response [code = {}]. Response = {}", statusCode, responseBody);
+				fail(batch, statistics);
 			}
 		} catch (IOException e) {
-			String message = "Failed analytics response." + e.getMessage();
-			logger.error(message, e);
-			report(statistics, batch, false, message);
+			logger.error("Failed analytics response. [error = {}]", e.getMessage());
+			fail(batch, statistics);
 		}
 		
 		return false;
@@ -129,13 +120,15 @@ public class BlockingRequester implements IRequester {
         return httpClient.execute(post);
     }
 	
-	private void report(AnalyticsStatistics statistics, Batch batch, boolean success, String message) {
+	private void succeed(Batch batch, AnalyticsStatistics statistics) {
 		for (BasePayload payload : batch.getBatch()) {
-			if (success) {
-				statistics.updateSuccessful(1);
-			} else {
-				statistics.updateFailed(1);
-			}
+			statistics.updateSuccessful(1);
+		}
+	}
+	
+	private void fail(Batch batch, AnalyticsStatistics statistics) {
+		for (BasePayload payload : batch.getBatch()) {
+			statistics.updateFailed(1);
 		}
 	}
 	
