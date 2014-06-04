@@ -1,4 +1,4 @@
-package com.github.segmentio.test;
+package com.github.segmentio;
 
 import java.math.BigDecimal;
 import java.util.LinkedList;

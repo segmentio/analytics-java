@@ -1,4 +1,4 @@
-package com.github.segmentio.test;
+package com.github.segmentio;
 
 import java.util.Random;
 

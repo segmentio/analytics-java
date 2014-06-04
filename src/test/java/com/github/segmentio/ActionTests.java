@@ -1,4 +1,4 @@
-package com.github.segmentio.test;
+package com.github.segmentio;
 
 import junit.framework.Assert;
 
@@ -14,7 +14,7 @@ public class ActionTests {
 	
 	@Before
 	public void setup() {
-		client = new AnalyticsClient(Constants.WRITE_KEY);
+		client = new AnalyticsClient(TestConstants.WRITE_KEY);
 	}
 
 	@Test
