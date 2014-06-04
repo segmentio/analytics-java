@@ -14,7 +14,7 @@
 
 0.3.1 / 2013-10-02
 =================
-* Adding support for `Long`, and now gen2erally any primitive or wrapper.
+* Adding support for `Long`, and now generally any primitive or wrapper.
 
 0.3.0 / 2013-09-04
 =================
