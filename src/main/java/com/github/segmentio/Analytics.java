@@ -1,5 +1,6 @@
 package com.github.segmentio;
 
+import com.github.segmentio.models.Options;
 import com.github.segmentio.models.Props;
 import com.github.segmentio.models.Traits;
 import com.github.segmentio.stats.AnalyticsStatistics;

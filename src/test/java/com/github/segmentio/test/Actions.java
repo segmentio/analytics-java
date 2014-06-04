@@ -5,8 +5,8 @@ import java.util.Random;
 import org.joda.time.DateTime;
 
 import com.github.segmentio.AnalyticsClient;
-import com.github.segmentio.Options;
 import com.github.segmentio.models.Context;
+import com.github.segmentio.models.Options;
 import com.github.segmentio.models.Props;
 import com.github.segmentio.models.Traits;
 

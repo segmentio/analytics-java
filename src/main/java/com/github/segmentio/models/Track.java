@@ -1,6 +1,5 @@
 package com.github.segmentio.models;
 
-import com.github.segmentio.Options;
 
 public class Track extends BasePayload {
 

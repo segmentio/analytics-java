@@ -4,7 +4,6 @@ import java.util.UUID;
 
 import org.joda.time.DateTime;
 
-import com.github.segmentio.Options;
 
 /**
  * The base model for a Segment.io API payload
@@ -16,6 +15,7 @@ public class BasePayload {
 	private String anonymousId;
 	private DateTime timestamp;
 	private String messageId;
+	private Props integrations;
 	
 	public BasePayload(String type, Options options) {
 		this.type = type;
@@ -25,6 +25,7 @@ public class BasePayload {
 		this.context = options.getContext();
 		this.anonymousId = options.getAnonymousId();
 		this.messageId = UUID.randomUUID().toString();
+		this.integrations = options.getIntegrations();
 	}
 	
 	public String getType() {
@@ -45,5 +46,9 @@ public class BasePayload {
 	
 	public DateTime getTimestamp() {
 		return timestamp;
+	}
+	
+	public Props getIntegrations () {
+		return integrations;
 	}
 }

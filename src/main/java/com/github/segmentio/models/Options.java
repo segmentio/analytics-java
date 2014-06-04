@@ -1,9 +1,7 @@
-package com.github.segmentio;
+package com.github.segmentio.models;
 
 import org.joda.time.DateTime;
 
-import com.github.segmentio.models.Context;
-import com.github.segmentio.models.Props;
 
 /**
  * Options object that allows the specification of a timestamp, 

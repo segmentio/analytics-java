@@ -9,6 +9,7 @@ import com.github.segmentio.flush.IBatchFactory;
 import com.github.segmentio.models.Alias;
 import com.github.segmentio.models.BasePayload;
 import com.github.segmentio.models.Batch;
+import com.github.segmentio.models.Options;
 import com.github.segmentio.models.Props;
 import com.github.segmentio.models.Group;
 import com.github.segmentio.models.Identify;
