@@ -49,8 +49,7 @@ public class Options {
 	 * Sets the context of this analytics call. Context contains information about the environment
 	 * such as the app name and version, the visitor's user agent, ip, etc ..
 	 * @param context The context object
-	 * @return This options object for chaining
-	 */
+	 * @return This options object for chaining */
 	public Options setContext(Context context) {
 		this.context = context;
 		return this;
