@@ -25,6 +25,4 @@ public class DateTimeTypeConverter implements JsonSerializer<DateTime> {
 		String formatted = formatter.print(src);
 		return new JsonPrimitive(formatted);
 	}
-	
-
 }

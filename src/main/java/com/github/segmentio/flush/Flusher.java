@@ -9,10 +9,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.segmentio.AnalyticsClient;
-import com.github.segmentio.Constants;
 import com.github.segmentio.models.BasePayload;
 import com.github.segmentio.models.Batch;
 import com.github.segmentio.request.IRequester;
+import com.github.segmentio.Constants;
 import com.github.segmentio.utils.ManualResetEvent;
 
 public class Flusher extends Thread {
@@ -46,13 +46,10 @@ public class Flusher extends Thread {
 	}
 	
 	public void run() {
-		
 		while (go) {
-			
 			List<BasePayload> current = new LinkedList<BasePayload>();
 			
 			do {
-				
 				if (queue.size() == 0) idle.set();
 				
 				BasePayload payload = null;
@@ -66,13 +63,10 @@ public class Flusher extends Thread {
 				
 				if (payload != null) {
 					//  we are no longer idle since there's messages to be processed
-					idle.reset();
-					
+					idle.reset();	
 					current.add(payload);
-					
 					client.getStatistics().updateQueued(this.queue.size());
 				}
-				
 			} 
 			// keep iterating and collecting the current batch
 			// while we're active, there's something in the queue, and we haven't already
@@ -81,20 +75,13 @@ public class Flusher extends Thread {
 			
 			if (current.size() > 0) {
 				// we have something to send in this batch
-				
-				logger.debug("Preparing to send batch.. [ " + current.size() +  " items]");
-				
+				logger.debug("Preparing to send batch.. [{} items]", current.size());
 				Batch batch = factory.create(current);
-				
 				client.getStatistics().updateFlushAttempts(1);
-
 				requester.send(batch);
-				
-				logger.debug("Initiated batch request .. [ " + current.size() +  " items]");
-				
+				logger.debug("Initiated batch request .. [{} items]", current.size());	
 				current = new LinkedList<BasePayload>();
-			}
-			
+			}			
 			try {
 				// thread context switch to avoid resource contention
 				Thread.sleep(0);
@@ -110,7 +97,6 @@ public class Flusher extends Thread {
 		
 		if (currentQueueSize <= maxQueueSize) {
 			this.queue.add(payload);
-			
 			this.client.getStatistics().updateInserted(1);
 			this.client.getStatistics().updateQueued(this.queue.size());
 		} else {
@@ -118,6 +104,7 @@ public class Flusher extends Thread {
 			// add dropped message to statistics, but don't log
 			// because the system is likely very resource strapped
 			this.client.getStatistics().updateDropped(1);
+			logger.error("Queue has reached maxSize, dropping payload.");
 		}
 	}
 	

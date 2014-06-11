@@ -12,7 +12,8 @@ import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.github.segmentio.AnalyticsClient;
-import com.github.segmentio.Options;
+import com.github.segmentio.Config;
+import com.github.segmentio.request.BlockingRequester;
 
 @RunWith(MockitoJUnitRunner.class)
 public class BlockingRequesterTest {
@@ -21,7 +22,7 @@ public class BlockingRequesterTest {
 
     @Mock
     private AnalyticsClient client;
-    private Options options = new Options();
+    private Config options = new Config();
     private BlockingRequester requester;
     private static final String RESPONSE = "Timeout Test!";
 
@@ -59,7 +60,7 @@ public class BlockingRequesterTest {
         server.setResponseDelay(serverTimeout);
         server.setResponseText(RESPONSE);
         
-        HttpResponse response = requester.executeRequest("{\"key\":\"value\"");
+        HttpResponse response = requester.executeRequest("write-key", "{\"key\":\"value\"");
         
         return requester.readResponseBody(response);
     }

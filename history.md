@@ -1,3 +1,12 @@
+1.0.0 / March 21, 2014
+=================
+* Updating to Segment Spec API v1
+* Fixing bugs in Config validation
+* Adding Options
+* Adding .group, .page, and .screen
+* Logging improvements
+* Bumping major version
+
 0.4.2 / March 21, 2014
 =================
 * Adding retries to flushing

@@ -2,18 +2,19 @@ package com.github.segmentio;
 
 import java.util.List;
 
-import org.apache.commons.lang.StringUtils;
-import org.joda.time.DateTime;
+import org.apache.commons.lang3.StringUtils;
 
 import com.github.segmentio.flush.Flusher;
 import com.github.segmentio.flush.IBatchFactory;
 import com.github.segmentio.models.Alias;
 import com.github.segmentio.models.BasePayload;
 import com.github.segmentio.models.Batch;
-import com.github.segmentio.models.Callback;
-import com.github.segmentio.models.Context;
-import com.github.segmentio.models.EventProperties;
+import com.github.segmentio.models.Options;
+import com.github.segmentio.models.Props;
+import com.github.segmentio.models.Group;
 import com.github.segmentio.models.Identify;
+import com.github.segmentio.models.Page;
+import com.github.segmentio.models.Screen;
 import com.github.segmentio.models.Track;
 import com.github.segmentio.models.Traits;
 import com.github.segmentio.request.IRequester;
@@ -34,7 +35,7 @@ import com.github.segmentio.stats.AnalyticsStatistics;
 public class AnalyticsClient {
 
 	private String writeKey;
-	private Options options;
+	private Config config;
 	
 	private Flusher flusher;
 	private IRequester requester;
@@ -59,7 +60,7 @@ public class AnalyticsClient {
 	 */
 	public AnalyticsClient(String writeKey) {
 
-		this(writeKey, new Options());
+		this(writeKey, new Config());
 	}
 
 	/**
@@ -78,23 +79,23 @@ public class AnalyticsClient {
 	 *            Your segment.io writeKey. You can get one of these by
 	 *            registering for a project at https://segment.io
 	 * 
-	 * @param options
-	 *            Options to configure the behavior of the Segment.io client
+	 * @param config
+	 *            Configure the behavior of this Segment.io client
 	 * 
 	 * 
 	 */
-	public AnalyticsClient(String writeKey, Options options) {
+	public AnalyticsClient(String writeKey, Config config) {
 
 		String errorPrefix = "analytics-java client must be initialized with a valid ";
 
 		if (StringUtils.isEmpty(writeKey))
 			throw new IllegalArgumentException(errorPrefix + "writeKey.");
 
-		if (options == null)
-			throw new IllegalArgumentException(errorPrefix + "options.");
+		if (config == null)
+			throw new IllegalArgumentException(errorPrefix + "config.");
 
 		this.writeKey = writeKey;
-		this.options = options;
+		this.config = config;
 		this.statistics = new AnalyticsStatistics();
 	    this.requester = new RetryingRequester(this);
 		
@@ -125,14 +126,26 @@ public class AnalyticsClient {
 	 *            the user's id after they are logged in. It's the same id as
 	 *            which you would recognize a signed-in user in your system.
 	 * 
+	 */
+	public void identify(String userId) {
+		identify(userId, null, null);
+	}
+
+	/**
+	 * Identifying a user ties all of their actions to an id, and associates
+	 * user traits to that id.
+	 * 
+	 * @param userId
+	 *            the user's id after they are logged in. It's the same id as
+	 *            which you would recognize a signed-in user in your system.
+	 * 
 	 * @param traits
-	 *            a dictionary with keys like email, name, subscriptionPlan or
-	 *            age. You only need to record a trait once, no need to send it
-	 *            again.
+	 *            a dictionary with keys like subscriptionPlan or age. You only
+	 *            need to record a trait once, no need to send it again.
+	 * 
 	 */
 	public void identify(String userId, Traits traits) {
-
-		identify(userId, traits, null, null, null);
+		identify(userId, traits, null);
 	}
 
 	/**
@@ -147,89 +160,64 @@ public class AnalyticsClient {
 	 *            a dictionary with keys like subscriptionPlan or age. You only
 	 *            need to record a trait once, no need to send it again.
 	 * 
-	 * @param context
-	 *            an object that describes anything that doesn't fit into this
-	 *            event's properties (such as the user's IP)
-	 * 
+	 * @param options
+	 *            options allows you to set a timestamp, 
+     *            an anonymousId, a context, and target integrations.
 	 */
-	public void identify(String userId, Traits traits, Context context) {
-
-		identify(userId, traits, null, context, null);
-	}
-
-	/**
-	 * Identifying a user ties all of their actions to an id, and associates
-	 * user traits to that id.
-	 * 
-	 * @param userId
-	 *            the user's id after they are logged in. It's the same id as
-	 *            which you would recognize a signed-in user in your system.
-	 * 
-	 * @param traits
-	 *            a dictionary with keys like subscriptionPlan or age. You only
-	 *            need to record a trait once, no need to send it again.
-	 * 
-	 * @param timestamp
-	 *            a {@link DateTime} representing when the identify took place.
-	 *            If the identify just happened, leave it blank and we'll use
-	 *            the server's time. If you are importing data from the past,
-	 *            make sure you provide this argument.
-	 * 
-	 * @param context
-	 *            an object that describes anything that doesn't fit into this
-	 *            event's properties (such as the user's IP)
-	 * 
-	 */
-	public void identify(String userId, Traits traits, DateTime timestamp,
-			Context context) {
-
-		identify(userId, traits, timestamp, context, null);
-	}
-
-	/**
-	 * Identifying a user ties all of their actions to an id, and associates
-	 * user traits to that id.
-	 * 
-	 * @param userId
-	 *            the user's id after they are logged in. It's the same id as
-	 *            which you would recognize a signed-in user in your system.
-	 * 
-	 * @param traits
-	 *            a dictionary with keys like subscriptionPlan or age. You only
-	 *            need to record a trait once, no need to send it again.
-	 * 
-	 * @param timestamp
-	 *            a {@link DateTime} representing when the identify took place.
-	 *            If the identify just happened, leave it blank and we'll use
-	 *            the server's time. If you are importing data from the past,
-	 *            make sure you provide this argument.
-	 * 
-	 * @param context
-	 *            an object that describes anything that doesn't fit into this
-	 *            event's properties (such as the user's IP)
-	 * 
-	 * @param callback
-	 *            a callback that is fired when this track's batch is flushed to
-	 *            the server. Note: this callback is fired on the same thread as
-	 *            the async event loop that made the request. You should not
-	 *            perform any kind of long running operation on it.
-	 */
-	public void identify(String userId, Traits traits, DateTime timestamp,
-			Context context, Callback callback) {
-
-		if (context == null)
-			context = new Context();
-		if (traits == null)
-			traits = new Traits();
-
-		Identify identify = new Identify(userId, traits, timestamp, context,
-				callback);
-
-		flusher.enqueue(identify);
-		
+	public void identify(String userId, Traits traits, Options options) {
+		flusher.enqueue(new Identify(userId, traits, options));
 		statistics.updateIdentifies(1);
 	}
 
+	//
+	// Group
+	//
+
+	/**
+	 * The `group` method lets you associate a user with a group. Be it a company, 
+	 * organization, account, project or team! It also lets you record custom traits about the 
+     * group, like industry or number of employees.
+	 * 
+	 * @param userId
+	 *            the user's id after they are logged in. It's the same id as
+	 *            which you would recognize a signed-in user in your system.
+	 * 
+	 * @param groupId
+	 *            the group's id as it would appear in your database.
+	 * 
+	 * @param traits
+	 *            a dictionary with keys like subscriptionPlan or age. You only
+	 *            need to record a trait once, no need to send it again.
+	 */
+	public void group(String userId, String groupId, Traits traits) {
+		group(userId, groupId, traits, null);
+	}
+	
+	/**
+	 * The `group` method lets you associate a user with a group. Be it a company, 
+	 * organization, account, project or team! It also lets you record custom traits about the 
+     * group, like industry or number of employees.
+	 * 
+	 * @param userId
+	 *            the user's id after they are logged in. It's the same id as
+	 *            which you would recognize a signed-in user in your system.
+	 * 
+	 * @param groupId
+	 *            the group's id as it would appear in your database.
+	 * 
+	 * @param traits
+	 *            a dictionary with keys like subscriptionPlan or age. You only
+	 *            need to record a trait once, no need to send it again.
+	 * 
+	 * @param options
+	 *            options allows you to set a timestamp, 
+     *            an anonymousId, a context, and target integrations.
+	 */
+	public void group(String userId, String groupId, Traits traits, Options options) {
+		flusher.enqueue(new Group(userId, groupId, traits, options));
+		statistics.updateGroup(1);
+	}
+	
 	//
 	// Track
 	//
@@ -248,8 +236,7 @@ public class AnalyticsClient {
 	 * 
 	 */
 	public void track(String userId, String event) {
-
-		track(userId, event, null, null, null, null);
+		track(userId, event, null, null);
 	}
 
 	/**
@@ -270,9 +257,8 @@ public class AnalyticsClient {
 	 *            recommended—you’ll find these properties extremely useful
 	 *            later.
 	 */
-	public void track(String userId, String event, EventProperties properties) {
-
-		track(userId, event, properties, null, null, null);
+	public void track(String userId, String event, Props properties) {
+		track(userId, event, properties, null);
 	}
 
 	/**
@@ -293,104 +279,204 @@ public class AnalyticsClient {
 	 *            recommended—you’ll find these properties extremely useful
 	 *            later.
 	 * 
-	 * @param timestamp
-	 *            a {@link DateTime} object representing when the track took
-	 *            place. If the event just happened, leave it blank and we'll
-	 *            use the server's time. If you are importing data from the
-	 *            past, make sure you provide this argument.
-	 * 
+     * @param options
+	 *            options allows you to set a timestamp, 
+     *            an anonymousId, a context, and target integrations.
 	 */
-	public void track(String userId, String event, EventProperties properties,
-			DateTime timestamp) {
-
-		track(userId, event, properties, timestamp, null, null);
-	}
-
-	/**
-	 * Whenever a user triggers an event, you’ll want to track it.
-	 * 
-	 * @param userId
-	 *            the user's id after they are logged in. It's the same id as
-	 *            which you would recognize a signed-in user in your system.
-	 * 
-	 * @param event
-	 *            describes what this user just did. It's a human readable
-	 *            description like "Played a Song", "Printed a Report" or
-	 *            "Updated Status".
-	 * 
-	 * @param properties
-	 *            a dictionary with items that describe the event in more
-	 *            detail. This argument is optional, but highly
-	 *            recommended—you’ll find these properties extremely useful
-	 *            later.
-	 * 
-	 * @param timestamp
-	 *            a {@link DateTime} object representing when the track took
-	 *            place. If the event just happened, leave it blank and we'll
-	 *            use the server's time. If you are importing data from the
-	 *            past, make sure you provide this argument.
-	 * 
-	 * @param context
-	 *            an object that describes anything that doesn't fit into this
-	 *            event's properties (such as the user's IP)
-	 * 
-	 */
-	public void track(String userId, String event, EventProperties properties,
-			DateTime timestamp, Context context) {
-
-		track(userId, event, properties, timestamp, context, null);
-	}
-
-	/**
-	 * Whenever a user triggers an event, you’ll want to track it.
-	 * 
-	 * @param userId
-	 *            the user's id after they are logged in. It's the same id as
-	 *            which you would recognize a signed-in user in your system.
-	 * 
-	 * @param event
-	 *            describes what this user just did. It's a human readable
-	 *            description like "Played a Song", "Printed a Report" or
-	 *            "Updated Status".
-	 * 
-	 * @param properties
-	 *            a dictionary with items that describe the event in more
-	 *            detail. This argument is optional, but highly
-	 *            recommended—you’ll find these properties extremely useful
-	 *            later.
-	 * 
-	 * @param timestamp
-	 *            a {@link DateTime} object representing when the track took
-	 *            place. If the event just happened, leave it blank and we'll
-	 *            use the server's time. If you are importing data from the
-	 *            past, make sure you provide this argument.
-	 * 
-	 * @param context
-	 *            an object that describes anything that doesn't fit into this
-	 *            event's properties (such as the user's IP)
-	 * 
-	 * @param callback
-	 *            a callback that is fired when this track's batch is flushed to
-	 *            the server. Note: this callback is fired on the same thread as
-	 *            the async event loop that made the request. You should not
-	 *            perform any kind of long running operation on it.
-	 */
-	public void track(String userId, String event, EventProperties properties,
-			DateTime timestamp, Context context, Callback callback) {
-
-		if (context == null)
-			context = new Context();
-		if (properties == null)
-			properties = new EventProperties();
-
-		Track track = new Track(userId, event, properties, timestamp, context,
-				callback);
-
-		flusher.enqueue(track);
-		
+	public void track(String userId, String event, Props properties, Options options) {
+		flusher.enqueue(new Track(userId, event, properties, options));
 		statistics.updateTracks(1);
 	}
+	
+	//
+	// Page
+	//
 
+	/**
+	 * The `page` method let your record whenever a user sees a web page on 
+	 * your web site, and attach a `name`, `category` or `properties` to the web page load. 
+	 *
+	 * @param userId
+	 *            the user's id after they are logged in. It's the same id as
+	 *            which you would recognize a signed-in user in your system.
+	 * 
+	 * @param name
+	 *            The name of the web page, like "Signup", "Login"
+	 */
+	public void page(String userId, String name) {
+		page(userId, name, null, null, null);
+	}
+
+	/**
+	 * The `page` method let your record whenever a user sees a web page on 
+	 * your web site, and attach a `name`, `category` or `properties` to the web page load. 
+	 *
+	 * @param userId
+	 *            the user's id after they are logged in. It's the same id as
+	 *            which you would recognize a signed-in user in your system.
+	 * 
+	 * @param name
+	 *            The name of the web page, like "Signup", "Login"
+	 * 
+	 * @param properties
+	 *            a dictionary with items that describe the event in more
+	 *            detail. This argument is optional, but highly
+	 *            recommended—you’ll find these properties extremely useful
+	 *            later.
+	 */
+	public void page(String userId, String name, Props properties) {
+		page(userId, name, null, properties, null);
+	}
+	
+	/**
+	 * The `page` method let your record whenever a user sees a web page on 
+	 * your web site, and attach a `name`, `category` or `properties` to the web page load. 
+	 *
+	 * @param userId
+	 *            the user's id after they are logged in. It's the same id as
+	 *            which you would recognize a signed-in user in your system.
+	 * 
+	 * @param name
+	 *            The name of the web page, like "Signup", "Login"
+	 * 
+	 * @param properties
+	 *            a dictionary with items that describe the event in more
+	 *            detail. This argument is optional, but highly
+	 *            recommended—you’ll find these properties extremely useful
+	 *            later.
+	 * 
+     * @param options
+	 *            options allows you to set a timestamp, 
+     *            an anonymousId, a context, and target integrations.
+	 */
+	public void page(String userId, String name, Props properties, Options options) {
+		page(userId, name, null, properties, options);
+	}
+	
+	/**
+	 * The `page` method let your record whenever a user sees a web page on 
+	 * your web site, and attach a `name`, `category` or `properties` to the web page load. 
+	 
+	 * @param userId
+	 *            the user's id after they are logged in. It's the same id as
+	 *            which you would recognize a signed-in user in your system.
+	 * 
+	 * @param name
+	 *            The name of the web page, like "Signup", "Login"
+	 * 
+	 * @param category
+	 *            The category of the web page, like "Sports" or "Authentication"
+	 * 
+	 * @param properties
+	 *            a dictionary with items that describe the event in more
+	 *            detail. This argument is optional, but highly
+	 *            recommended—you’ll find these properties extremely useful
+	 *            later.
+	 * 
+     * @param options
+	 *            options allows you to set a timestamp, 
+     *            an anonymousId, a context, and target integrations.
+	 */
+	public void page(String userId, String name, String category, 
+			Props properties, Options options) {
+		flusher.enqueue(new Page(userId, name, category, properties, options));
+		statistics.updatePage(1);
+	}
+	
+	//
+	// Screen
+	//
+
+	/**
+	 * The `screen` method let your record whenever a user sees a mobile screen, 
+	 * and attach a `name`, `category` or `properties` to the web page load. 
+	 *
+	 * @param userId
+	 *            the user's id after they are logged in. It's the same id as
+	 *            which you would recognize a signed-in user in your system.
+	 * 
+	 * @param name
+	 *            The name of the mobile screen, like "Signup", "Login"
+	 */
+	public void screen(String userId, String name) {
+		screen(userId, name, null, null, null);
+	}
+
+	/**
+	 * The `screen` method let your record whenever a user sees a mobile screen, 
+	 * and attach a `name`, `category` or `properties` to the web page load. 
+	 *
+	 * @param userId
+	 *            the user's id after they are logged in. It's the same id as
+	 *            which you would recognize a signed-in user in your system.
+	 * 
+	 * @param name
+	 *            The name of the mobile screen, like "Signup", "Login"
+	 * 
+	 * @param properties
+	 *            a dictionary with items that describe the event in more
+	 *            detail. This argument is optional, but highly
+	 *            recommended—you’ll find these properties extremely useful
+	 *            later.
+	 */
+	public void screen(String userId, String name, Props properties) {
+		screen(userId, name, null, properties, null);
+	}
+	
+	/**
+	 * The `screen` method let your record whenever a user sees a mobile screen, 
+	 * and attach a `name`, `category` or `properties` to the web page load. 
+	 *
+	 * @param userId
+	 *            the user's id after they are logged in. It's the same id as
+	 *            which you would recognize a signed-in user in your system.
+	 * 
+	 * @param name
+	 *            The name of the mobile screen, like "Signup", "Login"
+	 * 
+	 * @param properties
+	 *            a dictionary with items that describe the event in more
+	 *            detail. This argument is optional, but highly
+	 *            recommended—you’ll find these properties extremely useful
+	 *            later.
+	 * 
+     * @param options
+	 *            options allows you to set a timestamp, 
+     *            an anonymousId, a context, and target integrations.
+	 */
+	public void screen(String userId, String name, Props properties, Options options) {
+		screen(userId, name, null, properties, options);
+	}
+	
+	/**
+	 * The `screen` method let your record whenever a user sees a mobile screen, 
+	 * and attach a `name`, `category` or `properties` to the web page load. 
+	 *
+	 * @param userId
+	 *            the user's id after they are logged in. It's the same id as
+	 *            which you would recognize a signed-in user in your system.
+	 * 
+	 * @param name
+	 *            The name of the mobile screen, like "Signup", "Login"
+	 * 
+	 * @param category
+	 *            The category of the web page, like "Sports" or "Authentication"
+	 * 
+	 * @param properties
+	 *            a dictionary with items that describe the event in more
+	 *            detail. This argument is optional, but highly
+	 *            recommended—you’ll find these properties extremely useful
+	 *            later.
+	 * 
+     * @param options
+	 *            options allows you to set a timestamp, 
+     *            an anonymousId, a context, and target integrations.
+	 */
+	public void screen(String userId, String name, String category, 
+			Props properties, Options options) {
+		flusher.enqueue(new Screen(userId, name, category, properties, options));
+		statistics.updateScreen(1);
+	}
 	
 	//
 	// Alias
@@ -399,124 +485,35 @@ public class AnalyticsClient {
 	/**
 	 * Aliases an anonymous user into an identified user.
 	 * 
-	 * @param from
+	 * @param previousId
 	 *            the anonymous user's id before they are logged in.
 	 * 
-	 * @param to
+	 * @param userId
 	 *            the identified user's id after they're logged in.
 	 *           
 	 */
-	public void alias(String from, String to) {
-		alias(from, to, null, null, null);
+	public void alias(String previousId, String userId) {
+		alias(previousId, userId, null);
 	}
 
 	/**
 	 * Aliases an anonymous user into an identified user.
 	 * 
-	 * @param from
+	 * @param previousId
 	 *            the anonymous user's id before they are logged in.
 	 * 
-	 * @param to
+	 * @param userId
 	 *            the identified user's id after they're logged in.
-	 * 
-	 * 
-	 * @param timestamp
-	 *            a {@link DateTime} object representing when the track took
-	 *            place. If the event just happened, leave it blank and we'll
-	 *            use the server's time. If you are importing data from the
-	 *            past, make sure you provide this argument.
-	 * 
-	 *           
-	 */
-	public void alias(String from, String to, DateTime timestamp) {
-		alias(from, to, timestamp, null, null);
-	}
-
-	/**
-	 * Aliases an anonymous user into an identified user.
-	 * 
-	 * @param from
-	 *            the anonymous user's id before they are logged in.
-	 * 
-	 * @param to
-	 *            the identified user's id after they're logged in.
-	 * 
-	 * 
-	 * @param context
-	 *            an object that describes anything that doesn't fit into this
-	 *            event's properties (such as the user's IP)
-	 *           
-	 */
-	public void alias(String from, String to, Context context) {
-		alias(from, to, null, context, null);
-	}
-
-	/**
-	 * Aliases an anonymous user into an identified user.
-	 * 
-	 * @param from
-	 *            the anonymous user's id before they are logged in.
-	 * 
-	 * @param to
-	 *            the identified user's id after they're logged in.
-	 * 
-	 * 
-	 * @param timestamp
-	 *            a {@link DateTime} object representing when the track took
-	 *            place. If the event just happened, leave it blank and we'll
-	 *            use the server's time. If you are importing data from the
-	 *            past, make sure you provide this argument.
-	 * 
-	 * @param context
-	 *            an object that describes anything that doesn't fit into this
-	 *            event's properties (such as the user's IP)
-	 *           
-	 */
-	public void alias(String from, String to, DateTime timestamp, Context context) {
-		alias(from, to, timestamp, context, null);
-	}
-	
-
-	/**
-	 * Aliases an anonymous user into an identified user.
-	 * 
-	 * @param from
-	 *            the anonymous user's id before they are logged in.
-	 * 
-	 * @param to
-	 *            the identified user's id after they're logged in.
-	 * 
-	 * 
-	 * @param timestamp
-	 *            a {@link DateTime} object representing when the track took
-	 *            place. If the event just happened, leave it blank and we'll
-	 *            use the server's time. If you are importing data from the
-	 *            past, make sure you provide this argument.
-	 * 
-	 * @param context
-	 *            an object that describes anything that doesn't fit into this
-	 *            event's properties (such as the user's IP)
-	 *
-	 * @param callback
-	 *            a callback that is fired when this track's batch is flushed to
-	 *            the server. Note: this callback is fired on the same thread as
-	 *            the async event loop that made the request. You should not
-	 *            perform any kind of long running operation on it.
+	 *        
+	 * @param options
+	 *            options allows you to set a timestamp, 
+     *            an anonymousId, a context, and target integrations.
 	 *             
 	 */
-	public void alias(String from, String to, DateTime timestamp, Context context, Callback callback) {
-		
-		if (context == null)
-			context = new Context();
-
-		Alias alias = new Alias(from, to, timestamp, context, callback);
-
-		flusher.enqueue(alias);
-		
+	public void alias(String previousId, String userId, Options options) {
+		flusher.enqueue(new Alias(previousId, userId, options));
 		statistics.updateAlias(1);
 	}
-
-	
 	
 	//
 	// Actions
@@ -550,8 +547,8 @@ public class AnalyticsClient {
 		this.writeKey = writeKey;
 	}
 
-	public Options getOptions() {
-		return options;
+	public Config getOptions() {
+		return config;
 	}
 
 	public AnalyticsStatistics getStatistics() {

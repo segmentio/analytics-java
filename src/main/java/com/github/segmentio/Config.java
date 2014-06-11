@@ -1,13 +1,13 @@
 package com.github.segmentio;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 
 /**
  * Segment.io client options
  * 
  */
-public class Options {
+public class Config {
 
 	/**
 	 * The REST API endpoint (with scheme)
@@ -39,7 +39,7 @@ public class Options {
 	/**
 	 * Creates a default options
 	 */
-	public Options() {
+	public Config() {
 		this(Defaults.HOST, Defaults.MAX_QUEUE_SIZE, Defaults.TIMEOUT, Defaults.RETRIES, Defaults.BACKOFF);
 	}
 
@@ -52,7 +52,7 @@ public class Options {
 	 * @param retries
 	 * @param backoff
 	 */
-	Options(String host, int maxQueueSize, int timeout, int retries, int backoff) {
+	Config(String host, int maxQueueSize, int timeout, int retries, int backoff) {
 		setHost(host);
 		setMaxQueueSize(maxQueueSize);
 		setTimeout(timeout);
@@ -87,7 +87,7 @@ public class Options {
 	 * 
 	 * @param maxQueueSize
 	 */
-	public Options setMaxQueueSize(int maxQueueSize) {
+	public Config setMaxQueueSize(int maxQueueSize) {
 		if (maxQueueSize < 1)
 			throw new IllegalArgumentException("Analytics#option#maxQueueSize must be greater than 0.");
 		
@@ -100,7 +100,7 @@ public class Options {
 	 * 
 	 * @param host
 	 */
-	public Options setHost(String host) {
+	public Config setHost(String host) {
 		if (StringUtils.isEmpty(host))
 			throw new IllegalArgumentException("Analytics#option#host must be a valid host, like 'https://api.segment.io'.");
 		
@@ -113,7 +113,7 @@ public class Options {
 	 * Sets the milliseconds to wait before a flush is marked as timed out.
 	 * @param timeout timeout in milliseconds.
 	 */
-	public Options setTimeout(int timeout) {
+	public Config setTimeout(int timeout) {
 		if (timeout < 1000)
 			throw new IllegalArgumentException("Analytics#option#timeout must be at least 1000 milliseconds.");
 		
@@ -125,8 +125,8 @@ public class Options {
 	 * Sets the amount of request retries.
 	 * @param retries number of times to retry the request
 	 */
-	public Options setRetries(int retries) {
-		if (timeout < 0)
+	public Config setRetries(int retries) {
+		if (retries < 0)
 			throw new IllegalArgumentException("Analytics#option#retries must be greater or equal to 0.");
 		
 		this.retries = retries;
@@ -137,8 +137,8 @@ public class Options {
 	 * Sets the milliseconds to wait between request retries
 	 * @param timeout backoff in milliseconds.
 	 */
-	public Options setBackoff(int backoff) {
-		if (timeout < 0)
+	public Config setBackoff(int backoff) {
+		if (backoff < 0)
 			throw new IllegalArgumentException("Analytics#option#timeout must be greater or equal to 0 milliseconds.");
 		
 		this.backoff = backoff;

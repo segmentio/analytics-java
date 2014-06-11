@@ -22,7 +22,6 @@ public class SerializationTest {
 		gson = GSONUtils.BUILDER.create();
 	}
 
-	
 	@Test
 	public void testArrays() {
 		
