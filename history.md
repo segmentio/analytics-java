@@ -1,4 +1,4 @@
-1.0.0 / March 21, 2014
+1.0.0 / June 3, 2014
 =================
 * Updating to Segment Spec API v1
 * Fixing bugs in Config validation
