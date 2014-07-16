@@ -1,6 +1,5 @@
 package com.github.segmentio.models;
 
-import com.github.segmentio.Analytics;
 
 public class Context extends Props {
 
@@ -19,7 +18,7 @@ public class Context extends Props {
 	private void addDefaults() {
 		this.put("library", new Props()
 			.put("name", "analytics-java")
-			.put("version", Analytics.VERSION));
+			.put("version", "1.0.0"));
 	}
 	
 	@Override
