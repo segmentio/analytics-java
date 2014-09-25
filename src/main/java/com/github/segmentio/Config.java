@@ -1,5 +1,7 @@
 package com.github.segmentio;
 
+import org.apache.http.HttpHost;
+
 import org.apache.commons.lang3.StringUtils;
 
 
@@ -37,6 +39,11 @@ public class Config {
 	private int backoff;
 	
 	/**
+	 * An optional proxy host connection.
+	 */
+	private HttpHost proxy;
+	
+	/**
 	 * Creates a default options
 	 */
 	public Config() {
@@ -68,6 +75,10 @@ public class Config {
 		return maxQueueSize;
 	}
 
+	public HttpHost getProxy() {
+	    return proxy;
+	}
+	
 	public int getTimeout() {
 		return timeout;
 	}
@@ -95,6 +106,16 @@ public class Config {
 		return this;
 	}
 
+	/**
+	 * Sets a proxy to route all requests to the host through.
+	 * 
+	 * @param proxy Valid http proxy.
+	 */
+	public Config setProxy(HttpHost proxy) {
+	  this.proxy = proxy;
+	  return this;
+	}
+	
 	/**
 	 * Sets the REST API endpoint
 	 * 

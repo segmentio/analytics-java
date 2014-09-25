@@ -3,6 +3,9 @@ package com.github.segmentio.request;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 
+import org.apache.http.conn.HttpHostConnectException;
+
+import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.junit.*;
@@ -10,7 +13,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
-
 import com.github.segmentio.AnalyticsClient;
 import com.github.segmentio.Config;
 import com.github.segmentio.request.BlockingRequester;
@@ -63,5 +65,19 @@ public class BlockingRequesterTest {
         HttpResponse response = requester.executeRequest("write-key", "{\"key\":\"value\"");
         
         return requester.readResponseBody(response);
+    }
+    
+    @Test
+    public void testProxyHttpRequest() throws IOException {
+        options.setProxy(new HttpHost("localhost", 33721));
+        requester = new BlockingRequester(client);
+        try {
+          executeHttpRequest(0);
+        }
+        catch (HttpHostConnectException e) {
+          // We aren't running a proxy server so the connection should be refused.
+          Assert.assertTrue(e.getMessage().contains("Connection refused"));
+          Assert.assertTrue(e.getMessage().contains("localhost:33721"));
+        }
     }
 }

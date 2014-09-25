@@ -47,7 +47,8 @@ public class BlockingRequester implements IRequester {
 		        .setStaleConnectionCheckEnabled(true)
                 .setSocketTimeout(requestTimeout)
                 .setConnectTimeout(requestTimeout)
-                .setConnectionRequestTimeout(requestTimeout).build();
+                .setConnectionRequestTimeout(requestTimeout)
+                .setProxy(client.getOptions().getProxy()).build();
 		
 		this.gson = GSONUtils.BUILDER.create();
 	}
