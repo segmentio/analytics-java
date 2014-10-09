@@ -1,5 +1,6 @@
 package com.github.segmentio.stats;
 
+import com.github.segmentio.Analytics;
 
 public class AnalyticsStatistics extends Statistics {
 
@@ -19,13 +20,16 @@ public class AnalyticsStatistics extends Statistics {
 	private static String QUEUED_KEY = "Queued";
 	private static String INSERTED_KEY = "Inserted";
 	private static String DROPPED_KEY = "Dropped";
-
+	
 	private static String SUCCESSFUL_KEY = "Successful";
 	private static String FAILED_KEY = "Failed";
 
 
 	/**
-	 * Returns the statistic representing how many identify calls happened
+	 * Returns the statistic representing how many 
+	 * {@link Analytics#identify(String, com.github.segmentio.models.Traits)} 
+	 * calls happened
+	 * @return
 	 */
 	public Statistic getIdentifies() {
 		return ensure(IDENTIFY_KEY);
@@ -83,7 +87,7 @@ public class AnalyticsStatistics extends Statistics {
 	public void updateInserted(double val) {
 		update(INSERTED_KEY, val);
 	}
-
+	
 	public Statistic getQueued() {
 		return ensure(QUEUED_KEY);
 	}
@@ -91,7 +95,7 @@ public class AnalyticsStatistics extends Statistics {
 	public void updateQueued(double val) {
 		update(QUEUED_KEY, val);
 	}
-
+	
 	/**
 	 * Get the amount of messages that were dropped because
 	 * the queue was too high
