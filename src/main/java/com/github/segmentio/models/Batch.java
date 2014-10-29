@@ -1,6 +1,7 @@
 package com.github.segmentio.models;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.joda.time.DateTime;
 
@@ -8,11 +9,13 @@ public class Batch {
 
 	private String writeKey;
 	private List<BasePayload> batch;
-	private DateTime requestTimestamp;
+	private String messageId;
+	private DateTime sentAt;
 	
 	public Batch(String writeKey, List<BasePayload> batch) {
 		this.writeKey = writeKey;
 		this.batch = batch;
+		this.messageId = UUID.randomUUID().toString();
 	}
 	
 	public String getWriteKey() {
@@ -31,12 +34,20 @@ public class Batch {
 		this.batch = batch;
 	}
 	
-	public DateTime getRequestTimestamp() {
-		return requestTimestamp;
+	public String getMessageId() {
+		return messageId;
 	}
 	
-	public void setRequestTimestamp(DateTime requestTimestamp) {
-		this.requestTimestamp = requestTimestamp;
+	public void setMessageId(String messageId) {
+		this.messageId = messageId;
+	}
+	
+	public DateTime getSentAt() {
+		return sentAt;
+	}
+	
+	public void setSentAt(DateTime sentAt) {
+		this.sentAt = sentAt;
 	}
 	
 }

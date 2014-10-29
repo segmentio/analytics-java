@@ -12,16 +12,17 @@ import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import com.github.segmentio.AnalyticsClient;
-import com.github.segmentio.Options;
+import com.github.segmentio.Config;
 import com.github.segmentio.models.BasePayload;
 import com.github.segmentio.models.Batch;
+import com.github.segmentio.request.RetryingRequester;
 
 @RunWith(MockitoJUnitRunner.class)
 public class RetryingRequesterTest {
 
     private static final int HTTP_TIMEOUT = 1000;
 
-    private Options options;
+    private Config options;
     private AnalyticsClient client;
     private RetryingRequester requester;
 
@@ -29,7 +30,7 @@ public class RetryingRequesterTest {
     
     @Before
     public void setup() throws IOException {
-        options = new Options();
+        options = new Config();
         server = new RetryingHttpServer();
         options.setTimeout(HTTP_TIMEOUT);
         options.setHost("http://localhost:" + server.getServerPort());

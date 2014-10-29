@@ -1,7 +1,10 @@
 package com.github.segmentio.request;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.config.CookieSpecs;
@@ -16,7 +19,8 @@ import org.slf4j.LoggerFactory;
 
 import com.github.segmentio.AnalyticsClient;
 import com.github.segmentio.Constants;
-import com.github.segmentio.models.*;
+import com.github.segmentio.models.BasePayload;
+import com.github.segmentio.models.Batch;
 import com.github.segmentio.stats.AnalyticsStatistics;
 import com.github.segmentio.utils.GSONUtils;
 import com.google.gson.Gson;
@@ -43,7 +47,8 @@ public class BlockingRequester implements IRequester {
 		        .setStaleConnectionCheckEnabled(true)
                 .setSocketTimeout(requestTimeout)
                 .setConnectTimeout(requestTimeout)
-                .setConnectionRequestTimeout(requestTimeout).build();
+                .setConnectionRequestTimeout(requestTimeout)
+                .setProxy(client.getOptions().getProxy()).build();
 		
 		this.gson = GSONUtils.BUILDER.create();
 	}
@@ -53,11 +58,12 @@ public class BlockingRequester implements IRequester {
 		try {
 			long start = System.currentTimeMillis();
 			
-			batch.setRequestTimestamp(DateTime.now());
+			// mark that the event is getting sent now
+			batch.setSentAt(DateTime.now());
 			
 			String json = gson.toJson(batch);
 			
-			HttpResponse response = executeRequest(json);
+			HttpResponse response = executeRequest(batch.getWriteKey(), json);
 			String responseBody = readResponseBody(response);
 			int statusCode = response.getStatusLine().getStatusCode();
 			
@@ -65,30 +71,43 @@ public class BlockingRequester implements IRequester {
 			statistics.updateRequestTime(duration);
 			
 			if (statusCode == 200) {
-
-				String message = "Successful analytics request. [code = "
-						+ statusCode + "]. Response = " + responseBody;
-				
-				logger.info(message);
-				report(statistics, batch, true, message);
+				logger.debug("Successful analytics request. [code = {}]. Response = {}", statusCode, responseBody);
+				succeed(batch, statistics);
 				return true;
 			} else {
-
-				String message = "Failed analytics response [code = " + statusCode + 
-						"]. Response = " + responseBody;
-				
-				logger.error(message);
-				report(statistics, batch, false, message);
+				logger.error("Failed analytics response [code = {}]. Response = {}", statusCode, responseBody);
+				fail(batch, statistics);
 			}
 		} catch (IOException e) {
-			String message = "Failed analytics response." + e.getMessage();
-			logger.error(message, e);
-			report(statistics, batch, false, message);
+			logger.error("Failed analytics response. [error = {}]", e.getMessage());
+			fail(batch, statistics);
 		}
 		
 		return false;
 	}
 
+    public HttpResponse executeRequest(String writeKey, String json) 
+    		throws ClientProtocolException, IOException {  
+    	
+        HttpPost post =
+                new HttpPost(client.getOptions().getHost() + "/v1/import");
+        post.setConfig(defaultRequestConfig);
+        post.addHeader("Content-Type", "application/json; charset=utf-8");
+       
+		// Basic Authentication
+		// https://segment.io/docs/tracking-api/reference/#authentication
+		post.addHeader("Authorization", 
+				"Basic " + Base64.encodeBase64((writeKey+":").getBytes()));
+        
+        post.setEntity(new ByteArrayEntity(json.getBytes("UTF-8")));
+        
+        if (logger.isTraceEnabled()) {
+            logger.trace("Posting analytics data");
+        }
+        
+        return httpClient.execute(post);
+    }
+	
     public String readResponseBody(HttpResponse response) throws IOException {
         BufferedReader rd 
             = new BufferedReader(
@@ -104,38 +123,19 @@ public class BlockingRequester implements IRequester {
         String responseBody = responseBuilder.toString();
         return responseBody;
     }
-
-    public HttpResponse executeRequest(String json) throws ClientProtocolException, IOException {
-        
-        HttpPost post =
-                new HttpPost(client.getOptions().getHost() + "/v1/import");
-        post.setConfig(defaultRequestConfig);
-        post.addHeader("Content-Type", "application/json; charset=utf-8");
-        
-        post.setEntity(new ByteArrayEntity(json.getBytes("UTF-8")));
-        
-        if (logger.isTraceEnabled()) {
-            logger.trace("Posting analytics data");
-        }
-        
-        return httpClient.execute(post);
-    }
 	
-	private void report(AnalyticsStatistics statistics, Batch batch, boolean success, String message) {
+	private void succeed(Batch batch, AnalyticsStatistics statistics) {
 		for (BasePayload payload : batch.getBatch()) {
-			Callback callback = payload.getCallback();
-			if (success) {
-				statistics.updateSuccessful(1);
-			} else {
-				statistics.updateFailed(1);
-			}
-			
-			if (callback != null) {
-				callback.onResponse(success, message);
-			}
+			statistics.updateSuccessful(1);
 		}
 	}
-
+	
+	private void fail(Batch batch, AnalyticsStatistics statistics) {
+		for (BasePayload payload : batch.getBatch()) {
+			statistics.updateFailed(1);
+		}
+	}
+	
 	public void close() {
 		try {
             httpClient.close();
@@ -143,5 +143,6 @@ public class BlockingRequester implements IRequester {
             logger.error("Error while closing", e);
         }
 	}
+
 
 }
