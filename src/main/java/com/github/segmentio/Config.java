@@ -156,7 +156,7 @@ public class Config {
 
 	/**
 	 * Sets the milliseconds to wait between request retries
-	 * @param timeout backoff in milliseconds.
+	 * @param backoff in milliseconds.
 	 */
 	public Config setBackoff(int backoff) {
 		if (backoff < 0)
