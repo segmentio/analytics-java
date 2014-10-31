@@ -32,8 +32,11 @@ public class RetryingRequester extends BlockingRequester {
 			} catch (InterruptedException e) {
 				logger.warn("Interrupted during backoff", e);
 			}
-			logger.info("Retrying request [attempt " + attempts + "] ..");
+			logger.info("Retrying request [attempt {}] ..", attempts);
 			success = super.send(batch);
+		}
+		if (!success) {
+			logger.error("Unable to complete request after {} attempts", attempts);
 		}
 		return success;
 	}
