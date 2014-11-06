@@ -554,5 +554,9 @@ public class AnalyticsClient {
 	public AnalyticsStatistics getStatistics() {
 		return statistics;
 	}
+	
+	public int getQueueDepth() {
+		return flusher.getQueueDepth();
+	}
 
 }
