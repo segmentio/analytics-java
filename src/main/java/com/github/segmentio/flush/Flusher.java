@@ -74,15 +74,8 @@ public class Flusher extends Thread {
 			// over-filled this batch
 			while (go && queue.size() > 0 && current.size() < Constants.BATCH_INCREMENT);
 			
-			if (current.size() > 0) {
-				// we have something to send in this batch
-				logger.debug("Preparing to send batch.. [{} items]", current.size());
-				Batch batch = factory.create(current);
-				client.getStatistics().updateFlushAttempts(1);
-				requester.send(batch);
-				logger.debug("Initiated batch request .. [{} items]", current.size());	
-				current = new LinkedList<BasePayload>();
-			}			
+			sendBatch(current);
+			
 			try {
 				// thread context switch to avoid resource contention
 				Thread.sleep(0);
@@ -90,6 +83,37 @@ public class Flusher extends Thread {
 				logger.error("Interrupted while sleeping flushing thread.", e);
 			}
 		}
+	}
+
+	private void sendBatch(List<BasePayload> current) {
+		boolean success = true;
+		int retryCount = 0;
+		
+		do {
+			try {
+				if (current.size() > 0) {
+					// we have something to send in this batch
+					logger.debug("Preparing to send batch.. [{} items]", current.size());
+					Batch batch = factory.create(current);
+					client.getStatistics().updateFlushAttempts(1);
+					requester.send(batch);
+					logger.debug("Initiated batch request .. [{} items]", current.size());	
+					current = new LinkedList<BasePayload>();
+				}
+				success=true;
+			} catch (RuntimeException e) {
+				// We will log and loop back around, so we 
+				logger.error("Unexpected error while sending batch, catching so we don't lose records", e);
+				retryCount++;
+				success=false;
+			}
+		}
+		while (!success && retryCount < 3);
+		
+		if (!success) {
+			logger.error("Unable to send batch after {} retries. Giving up on this batch.", retryCount);
+		}
+		
 	}
 	
 	final static int QUEUE_WARNING_PCT_THRESHHOLD = 80;
