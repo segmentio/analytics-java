@@ -1,12 +1,11 @@
 package com.github.segmentio.models;
 
 
-public class Page extends BasePayload {
+public class Page extends PropertyPayload {
 
 	private String userId;
 	private String name;
 	private String category;
-	private Props properties;
 	
 	public Page(String userId, 
 				String name,
@@ -14,14 +13,11 @@ public class Page extends BasePayload {
 				Props properties, 
 				Options options) {
 		
-		super("page", options);
+		super("page", properties, options);
 
-		if (properties == null) properties = new Props();
-		
 		this.userId = userId;
 		this.name = name;
 		this.category = category;
-		this.properties = properties;
 	}
 
 	public String getUserId() {
@@ -46,14 +42,6 @@ public class Page extends BasePayload {
 	
 	public void setCategory(String category) {
 		this.category = category;
-	}
-	
-	public Props getProperties() {
-		return properties;
-	}
-	
-	public void setProperties(Props properties) {
-		this.properties = properties;
 	}
 	
 }
