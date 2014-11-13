@@ -44,10 +44,9 @@ public class Props extends HashMap<String, Object> {
 		if (allowed(value)) {
 			super.put(key, value);
 		} else {
-			logger.warn(
-					String.format("Key %s value %s not allowed because it is " + 
+			logger.warn("Key {} value {} not allowed because it is " + 
 						"not of type String, Integer, Double, Boolean, or Date.",
-						key, value));
+						key, value);
 		}
 		
 		return this;

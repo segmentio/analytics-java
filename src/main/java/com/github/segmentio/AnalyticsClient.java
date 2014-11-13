@@ -3,6 +3,8 @@ package com.github.segmentio;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.github.segmentio.flush.Flusher;
 import com.github.segmentio.flush.IBatchFactory;
@@ -33,6 +35,8 @@ import com.github.segmentio.stats.AnalyticsStatistics;
  * 
  */
 public class AnalyticsClient {
+	
+	private static final Logger logger = LoggerFactory.getLogger(Constants.LOGGER); 
 
 	private String writeKey;
 	private Config config;
@@ -100,8 +104,16 @@ public class AnalyticsClient {
 	    this.requester = new RetryingRequester(this);
 		
 		this.flusher = new Flusher(this, factory, requester);
+		this.flusher.setUncaughtExceptionHandler(flusherExceptionHandler);
 		this.flusher.start();
 	}
+	
+	Thread.UncaughtExceptionHandler flusherExceptionHandler = new Thread.UncaughtExceptionHandler() {
+		
+		public void uncaughtException(Thread t, Throwable e) {
+			logger.error("Fatal exception in Flusher thread {}, events are no longer being sent to Segment", e);
+		}
+	};
 	
 	private IBatchFactory factory = new IBatchFactory() {
 		
@@ -553,6 +565,10 @@ public class AnalyticsClient {
 
 	public AnalyticsStatistics getStatistics() {
 		return statistics;
+	}
+	
+	public int getQueueDepth() {
+		return flusher.getQueueDepth();
 	}
 
 }

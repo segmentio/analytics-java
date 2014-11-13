@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import com.github.segmentio.AnalyticsClient;
 import com.github.segmentio.models.BasePayload;
 import com.github.segmentio.models.Batch;
+import com.github.segmentio.models.Track;
 import com.github.segmentio.request.IRequester;
 import com.github.segmentio.Constants;
 import com.github.segmentio.utils.ManualResetEvent;
@@ -73,15 +74,8 @@ public class Flusher extends Thread {
 			// over-filled this batch
 			while (go && queue.size() > 0 && current.size() < Constants.BATCH_INCREMENT);
 			
-			if (current.size() > 0) {
-				// we have something to send in this batch
-				logger.debug("Preparing to send batch.. [{} items]", current.size());
-				Batch batch = factory.create(current);
-				client.getStatistics().updateFlushAttempts(1);
-				requester.send(batch);
-				logger.debug("Initiated batch request .. [{} items]", current.size());	
-				current = new LinkedList<BasePayload>();
-			}			
+			sendBatch(current);
+			
 			try {
 				// thread context switch to avoid resource contention
 				Thread.sleep(0);
@@ -90,7 +84,39 @@ public class Flusher extends Thread {
 			}
 		}
 	}
+
+	private void sendBatch(List<BasePayload> current) {
+		boolean success = true;
+		int retryCount = 0;
+		
+		do {
+			try {
+				if (current.size() > 0) {
+					// we have something to send in this batch
+					logger.debug("Preparing to send batch.. [{} items]", current.size());
+					Batch batch = factory.create(current);
+					client.getStatistics().updateFlushAttempts(1);
+					requester.send(batch);
+					logger.debug("Initiated batch request .. [{} items]", current.size());	
+					current = new LinkedList<BasePayload>();
+				}
+				success=true;
+			} catch (RuntimeException e) {
+				// We will log and loop back around, so we 
+				logger.error("Unexpected error while sending batch, catching so we don't lose records", e);
+				retryCount++;
+				success=false;
+			}
+		}
+		while (!success && retryCount < 3);
+		
+		if (!success) {
+			logger.error("Unable to send batch after {} retries. Giving up on this batch.", retryCount);
+		}
+		
+	}
 	
+	final static int QUEUE_WARNING_PCT_THRESHHOLD = 80;
 	public void enqueue(BasePayload payload) {
 		int maxQueueSize = client.getOptions().getMaxQueueSize();
 		int currentQueueSize = queue.size();
@@ -99,12 +125,30 @@ public class Flusher extends Thread {
 			this.queue.add(payload);
 			this.client.getStatistics().updateInserted(1);
 			this.client.getStatistics().updateQueued(this.queue.size());
+			
+			logQueueDepth(payload, currentQueueSize, maxQueueSize);
 		} else {
 			// the queue is too high, we can't risk memory overflow
 			// add dropped message to statistics, but don't log
 			// because the system is likely very resource strapped
 			this.client.getStatistics().updateDropped(1);
 			logger.error("Queue has reached maxSize, dropping payload.");
+		}
+	}
+	
+	private void logQueueDepth(BasePayload payload, int currentQueueSize, int maxQueueSize) {
+		float queueSizePct = (float) currentQueueSize / maxQueueSize;
+		if (queueSizePct > QUEUE_WARNING_PCT_THRESHHOLD) {
+			
+			String details = "";
+			
+			if (payload instanceof Track) {
+				details = "Track Event: " + ((Track) payload).getEvent();
+			}
+			// Seems like Track events are probably the biggest culprit here
+			
+			logger.warn("Queue is approaching maxSize: {}% full ({}/{}) {}", 
+					String.format("%f", queueSizePct), currentQueueSize, maxQueueSize, details);
 		}
 	}
 	
@@ -120,5 +164,9 @@ public class Flusher extends Thread {
 		go = false;
 		
 		queue.clear();
+	}
+	
+	public int getQueueDepth() {
+		return queue.size();
 	}
 }
