@@ -34,7 +34,7 @@ public class SerializationTest {
 		
 		String json = gson.toJson(props);
 		
-		Assert.assertEquals("{\"stringArray\":[\"One\",\"Two\"],\"string\":\"Some string\"}", json);
+		Assert.assertEquals("{\"string\":\"Some string\",\"stringArray\":[\"One\",\"Two\"]}", json);
 	}
 
 	@Test
@@ -51,7 +51,7 @@ public class SerializationTest {
 		
 		String json = gson.toJson(props);
 		
-		Assert.assertEquals("{\"stringList\":[\"One\",\"Two\"],\"string\":\"Some string\"}", json);
+		Assert.assertEquals("{\"string\":\"Some string\",\"stringList\":[\"One\",\"Two\"]}", json);
 	}
 	
 
@@ -67,7 +67,7 @@ public class SerializationTest {
 		
 		String json = gson.toJson(props);
 		
-		Assert.assertEquals("{\"decimal\":1.202,\"string\":\"Some string\"}", json);
+		Assert.assertEquals("{\"string\":\"Some string\",\"decimal\":1.202}", json);
 	}
 
 }
