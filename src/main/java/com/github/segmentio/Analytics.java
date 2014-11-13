@@ -6,7 +6,7 @@ import com.github.segmentio.models.Traits;
 import com.github.segmentio.stats.AnalyticsStatistics;
 
 public class Analytics {
-  public final static String VERSION = "1.0.4";
+  public final static String VERSION = "1.0.5";
 
   private static AnalyticsClient defaultClient;
 
