@@ -22,6 +22,7 @@ import com.github.segmentio.models.Traits;
 import com.github.segmentio.request.IRequester;
 import com.github.segmentio.request.RetryingRequester;
 import com.github.segmentio.stats.AnalyticsStatistics;
+import com.google.common.collect.ImmutableMap;
 
 /**
  * The Segment.io Client - Instantiate this to use the Segment.io API.
