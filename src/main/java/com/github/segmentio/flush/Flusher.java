@@ -96,11 +96,10 @@ public class Flusher extends Thread {
 					logger.debug("Preparing to send batch.. [{} items]", current.size());
 					Batch batch = factory.create(current);
 					client.getStatistics().updateFlushAttempts(1);
-					requester.send(batch);
+					success=requester.send(batch);
 					logger.debug("Initiated batch request .. [{} items]", current.size());	
 					current = new LinkedList<BasePayload>();
 				}
-				success=true;
 			} catch (RuntimeException e) {
 				// We will log and loop back around, so we 
 				logger.error("Unexpected error while sending batch, catching so we don't lose records", e);
