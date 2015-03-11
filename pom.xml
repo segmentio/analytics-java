@@ -11,7 +11,7 @@
   <artifactId>analytics</artifactId>
   <description>The analytics API you've always wanted.</description>
   <!--  IMPORTANT: DON'T FORGET TO UPDATE Analytics.VERSION EVERYTIME !!! -->
-  <version>1.0.7</version>
+  <version>1.0.8-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>analytics</name>
