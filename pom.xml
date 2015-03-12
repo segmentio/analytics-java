@@ -33,6 +33,7 @@
     <findbugs.version>2.0.1</findbugs.version>
     <gson.version>2.3.1</gson.version>
     <okhttp.version>2.2.0</okhttp.version>
+    <guava.version>18.0</guava.version>
 
     <!-- Test Dependencies -->
     <junit.version>4.11</junit.version>
@@ -86,6 +87,11 @@
         <groupId>com.squareup.okhttp</groupId>
         <artifactId>okhttp</artifactId>
         <version>${okhttp.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+        <version>${guava.version}</version>
       </dependency>
       <dependency>
         <groupId>junit</groupId>

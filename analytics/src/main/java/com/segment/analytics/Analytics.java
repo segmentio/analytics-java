@@ -1,5 +1,6 @@
 package com.segment.analytics;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.segment.analytics.internal.AnalyticsVersion;
@@ -11,12 +12,13 @@ import com.segment.analytics.internal.http.UploadResponse;
 import com.squareup.okhttp.Credentials;
 import com.squareup.okhttp.OkHttpClient;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import retrofit.RequestInterceptor;
 import retrofit.RestAdapter;
 import retrofit.RetrofitError;
@@ -24,22 +26,24 @@ import retrofit.client.OkClient;
 import retrofit.converter.GsonConverter;
 
 public class Analytics {
-  private final SegmentService service;
+  private static final Logger LOGGER = Logger.getLogger(Analytics.class.getName());
   private static final Map<String, Object> CONTEXT;
-  private final BlockingQueue<Payload> payloadQueue;
 
   static {
-    Map<String, Object> context = new ConcurrentHashMap<>();
-    Map<String, Object> library = new ConcurrentHashMap<>();
-    library.put("name", "analytics-java");
-    library.put("version", AnalyticsVersion.get());
-    context.put("library", library);
-    CONTEXT = Collections.unmodifiableMap(context);
+    ImmutableMap<String, String> library =
+        ImmutableMap.of("name", "analytics-java", "version", AnalyticsVersion.get());
+    CONTEXT = ImmutableMap.<String, Object>of("library", library);
   }
 
-  public Analytics(SegmentService service) {
+  private final BlockingQueue<Payload> payloadQueue;
+  private final SegmentService service;
+  private final int size;
+
+  Analytics(BlockingQueue<Payload> payloadQueue, SegmentService service, int size) {
+    this.payloadQueue = payloadQueue;
     this.service = service;
-    payloadQueue = new LinkedBlockingDeque<>();
+    this.size = size;
+
     new Worker().start();
   }
 
@@ -47,7 +51,6 @@ public class Analytics {
     try {
       payloadQueue.put(payload);
     } catch (InterruptedException e) {
-      // todo: handle
     }
   }
 
@@ -57,29 +60,49 @@ public class Analytics {
       super.run();
 
       List<Payload> payloadList = new ArrayList<>();
+      List<Batch> failedBatches = new ArrayList<>();
+
       try {
         while (true) {
           Payload payload = payloadQueue.take();
           payloadList.add(payload);
 
-          if (payloadList.size() >= 20) {
-
-            System.out.println("Uploading 5 payloads:" + payloadList);
-
-            Batch batch = Batch.create(payloadList, CONTEXT);
-
-            try {
-              UploadResponse response = service.upload(batch);
-              System.out.println(response);
-            } catch (RetrofitError error) {
-              error.getKind();
+          if (payloadList.size() >= size) {
+            Batch batch = Batch.create(payloadList, CONTEXT, 0);
+            if (!upload(batch)) {
+              failedBatches.add(batch);
+            } else {
+              Iterator<Batch> failedBatchesIterator = failedBatches.iterator();
+              while (failedBatchesIterator.hasNext()) {
+                Batch failed = failedBatchesIterator.next();
+                Batch retry =
+                    Batch.create(failed.batch(), failed.context(), failed.retryCount() + 1);
+                if (upload(retry)) {
+                  failedBatchesIterator.remove();
+                }
+              }
             }
 
-            payloadList.clear();
+            payloadList = new ArrayList<>();
           }
         }
       } catch (InterruptedException e) {
-        // todo: handle
+        Thread.currentThread().interrupt();
+      }
+    }
+
+    boolean upload(Batch batch) {
+      try {
+        UploadResponse response = service.upload(batch);
+        if (response.success()) {
+          LOGGER.log(Level.FINEST, "Uploaded batch.");
+        } else {
+          LOGGER.log(Level.FINEST, "Could not upload batch.");
+        }
+        return response.success();
+      } catch (RetrofitError error) {
+        LOGGER.log(Level.FINEST, "Could not upload batch.", error);
+        return false;
       }
     }
   }
@@ -108,11 +131,16 @@ public class Analytics {
             }
           })
           .setLogLevel(RestAdapter.LogLevel.FULL)
+          .setLog(new RestAdapter.Log() {
+            @Override public void log(String message) {
+              LOGGER.log(Level.FINEST, message);
+            }
+          })
           .build();
 
       SegmentService segmentService = restAdapter.create(SegmentService.class);
 
-      return new Analytics(segmentService);
+      return new Analytics(new LinkedBlockingDeque<Payload>(), segmentService, 200);
     }
   }
 }

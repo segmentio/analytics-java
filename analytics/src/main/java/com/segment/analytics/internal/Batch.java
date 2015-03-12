@@ -14,7 +14,9 @@ import java.util.Map;
 
   public abstract Map<String, Object> context();
 
-  public static Batch create(List<Payload> batch, Map<String, Object> context) {
-    return new AutoValue_Batch(batch, new Date(), context);
+  public abstract int retryCount();
+
+  public static Batch create(List<Payload> batch, Map<String, Object> context, int retryCount) {
+    return new AutoValue_Batch(batch, new Date(), context, retryCount);
   }
 }
