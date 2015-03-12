@@ -40,7 +40,7 @@ public abstract class GroupPayload implements Payload {
     }
 
     @Override GroupPayload realBuild() {
-      return new AutoValue_GroupPayload(Type.ALIAS, UUID.randomUUID(), new Date(), context,
+      return new AutoValue_GroupPayload(Type.GROUP, UUID.randomUUID(), new Date(), context,
           anonymousId, userId, groupId, traits);
     }
 

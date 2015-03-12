@@ -22,6 +22,7 @@ import java.util.logging.Logger;
 import retrofit.RequestInterceptor;
 import retrofit.RestAdapter;
 import retrofit.RetrofitError;
+import retrofit.client.Client;
 import retrofit.client.OkClient;
 import retrofit.converter.GsonConverter;
 
@@ -56,9 +57,18 @@ public class Analytics {
 
   public static class Builder {
     private final String writeKey;
+    private Client client;
 
     public Builder(String writeKey) {
       this.writeKey = writeKey;
+    }
+
+    public Builder client(Client client) {
+      if (client == null) {
+        throw new NullPointerException("Null client");
+      }
+      this.client = client;
+      return this;
     }
 
     public Analytics build() {
@@ -67,11 +77,14 @@ public class Analytics {
           .registerTypeAdapter(Payload.Type.class, new PayloadTypeTypeAdapter())
           .create();
 
-      OkHttpClient okHttpClient = new OkHttpClient();
+      if (client == null) {
+        OkHttpClient okHttpClient = new OkHttpClient();
+        client = new OkClient(okHttpClient);
+      }
 
       RestAdapter restAdapter = new RestAdapter.Builder().setConverter(new GsonConverter(gson))
           .setEndpoint("https://api.segment.io")
-          .setClient(new OkClient(okHttpClient))
+          .setClient(client)
           .setRequestInterceptor(new RequestInterceptor() {
             @Override public void intercept(RequestFacade request) {
               request.addHeader("Authorization", Credentials.basic(writeKey, ""));

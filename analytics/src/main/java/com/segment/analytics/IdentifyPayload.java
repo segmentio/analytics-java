@@ -37,7 +37,7 @@ public abstract class IdentifyPayload implements Payload {
         throw new IllegalStateException("Either userId or traits must be provided.");
       }
 
-      return new AutoValue_IdentifyPayload(Type.ALIAS, UUID.randomUUID(), new Date(), context,
+      return new AutoValue_IdentifyPayload(Type.IDENTIFY, UUID.randomUUID(), new Date(), context,
           anonymousId, userId, traits);
     }
 
