@@ -1,11 +1,9 @@
 package com.segment.analytics;
 
 import com.google.auto.value.AutoValue;
-import com.segment.analytics.internal.Utils;
+import com.google.common.collect.ImmutableMap;
 import com.segment.analytics.internal.gson.AutoGson;
-import java.util.Date;
 import java.util.Map;
-import java.util.UUID;
 import javax.annotation.Nullable;
 
 @AutoValue @AutoGson //
@@ -16,36 +14,34 @@ public abstract class GroupPayload implements Payload {
   @Nullable public abstract Map<String, Object> traits();
 
   public static Builder builder(String groupId) {
-    return new AutoValue_GroupPayload.Builder() //
-        .type(Type.GROUP) //
-        .timestamp(new Date()) //
-        .messageId(UUID.randomUUID()).groupId(groupId);
+    return new Builder(groupId);
   }
 
-  @AutoValue.Validate void validate() {
-    Utils.validate(this);
-  }
+  public static class Builder extends PayloadBuilder<GroupPayload> {
+    String groupId;
+    Map<String, Object> traits;
 
-  @AutoValue.Builder //
-  public abstract static class Builder {
-    // Common
-    abstract Builder type(Type type); // Required
+    Builder(String groupId) {
+      super(Type.GROUP);
 
-    abstract Builder messageId(UUID messageId); // Required
+      if (groupId == null) {
+        // todo validate length?
+        throw new NullPointerException("Null groupId");
+      }
+      this.groupId = groupId;
+    }
 
-    abstract Builder timestamp(Date timestamp); // Required
+    public Builder traits(Map<String, Object> traits) {
+      if (traits == null) {
+        throw new NullPointerException("Null traits");
+      }
+      this.traits = ImmutableMap.copyOf(traits);
+      return this;
+    }
 
-    public abstract Builder context(Map<String, Object> context);
-
-    public abstract Builder anonymousId(UUID anonymousId);
-
-    public abstract Builder userId(String userId);
-
-    // Group Payload
-    public abstract Builder groupId(String groupId);
-
-    public abstract Builder traits(Map<String, Object> traits);
-
-    public abstract GroupPayload build();
+    @Override GroupPayload realBuild() {
+      return new AutoValue_GroupPayload(type, messageId, timestamp, context, anonymousId, userId,
+          groupId, traits);
+    }
   }
 }

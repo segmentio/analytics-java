@@ -1,11 +1,9 @@
 package com.segment.analytics;
 
 import com.google.auto.value.AutoValue;
-import com.segment.analytics.internal.Utils;
+import com.google.common.collect.ImmutableMap;
 import com.segment.analytics.internal.gson.AutoGson;
-import java.util.Date;
 import java.util.Map;
-import java.util.UUID;
 import javax.annotation.Nullable;
 
 @AutoValue @AutoGson //
@@ -15,38 +13,33 @@ public abstract class TrackPayload implements Payload {
   @Nullable public abstract Map<String, Object> properties();
 
   public static Builder builder(String event) {
-    return new AutoValue_TrackPayload.Builder() //
-        .type(Type.TRACK) //
-        .timestamp(new Date()) //
-        .messageId(UUID.randomUUID()) //
-        .event(event);
+    return new Builder(event);
   }
 
-  @AutoValue.Validate void validate() {
-    Utils.validate(this);
-  }
+  public static class Builder extends PayloadBuilder<TrackPayload> {
+    String event;
+    Map<String, Object> properties;
 
-  @AutoValue.Builder //
-  public abstract static class Builder {
-    // Common
-    abstract Builder type(Type type); // Required
+    Builder(String event) {
+      super(Type.SCREEN);
 
-    abstract Builder messageId(UUID messageId); // Required
+      if (event == null) {
+        throw new NullPointerException("Null event");
+      }
+      this.event = event;
+    }
 
-    abstract Builder timestamp(Date timestamp); // Required
+    public Builder properties(Map<String, Object> properties) {
+      if (properties == null) {
+        throw new NullPointerException("Null properties");
+      }
+      this.properties = ImmutableMap.copyOf(properties);
+      return this;
+    }
 
-    public abstract Builder context(Map<String, Object> context);
-
-    public abstract Builder anonymousId(UUID anonymousId);
-
-    public abstract Builder userId(String userId);
-
-    // Track Payload
-
-    abstract Builder event(String event); // Required
-
-    public abstract Builder properties(Map<String, Object> properties);
-
-    public abstract TrackPayload build();
+    @Override TrackPayload realBuild() {
+      return new AutoValue_TrackPayload(type, messageId, timestamp, context, anonymousId, userId,
+          event, properties);
+    }
   }
 }

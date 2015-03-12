@@ -21,15 +21,15 @@ import static org.junit.Assert.fail;
       }
     }, SCREEN {
       @Override public Payload create() {
-        return ScreenPayload.builder().build();
+        return ScreenPayload.builderForNamedPages("bar").build();
       }
     }, GROUP {
       @Override public Payload create() {
-        return GroupPayload.builder("bar").build();
+        return GroupPayload.builder("qaz").build();
       }
     }, ALIAS {
       @Override public Payload create() {
-        return AliasPayload.builder("qaz").build();
+        return AliasPayload.builder("qux").build();
       }
     };
 
@@ -41,7 +41,7 @@ import static org.junit.Assert.fail;
     try {
       factories.create();
       fail();
-    } catch (IllegalArgumentException e) {
+    } catch (IllegalStateException e) {
       assertThat(e).hasMessage("Either anonymousId or userId must be provided.");
     }
   }

@@ -1,11 +1,9 @@
 package com.segment.analytics;
 
 import com.google.auto.value.AutoValue;
-import com.segment.analytics.internal.Utils;
+import com.google.common.collect.ImmutableMap;
 import com.segment.analytics.internal.gson.AutoGson;
-import java.util.Date;
 import java.util.Map;
-import java.util.UUID;
 import javax.annotation.Nullable;
 
 @AutoValue @AutoGson //
@@ -16,43 +14,50 @@ public abstract class ScreenPayload implements Payload {
 
   @Nullable public abstract Map<String, Object> properties();
 
-  public static Builder builder() {
-    return new AutoValue_ScreenPayload.Builder() //
-        .type(Type.SCREEN) //
-        .timestamp(new Date()) //
-        .messageId(UUID.randomUUID());
+  public static Builder builderForNamedPages(String name) {
+    return new Builder().name(name);
   }
 
-  @AutoValue.Validate void validate() {
-    Utils.validate(this);
+  public static Builder builderForCategorizedPages(String category) {
+    return new Builder().category(category);
+  }
 
-    if (name() == null && category() == null) {
-      throw new IllegalArgumentException("either name or category must be provided");
+  public static class Builder extends PayloadBuilder<ScreenPayload> {
+    String name;
+    String category;
+    Map<String, Object> properties;
+
+    Builder() {
+      super(Type.SCREEN);
     }
-  }
 
-  @AutoValue.Builder //
-  public abstract static class Builder {
-    // Common
-    abstract Builder type(Type type); // Required
+    public Builder name(String name) {
+      if (name == null) {
+        throw new NullPointerException("Null name");
+      }
+      this.name = name;
+      return this;
+    }
 
-    abstract Builder messageId(UUID messageId); // Required
+    public Builder category(String category) {
+      if (category == null) {
+        throw new NullPointerException("Null category");
+      }
+      this.category = category;
+      return this;
+    }
 
-    abstract Builder timestamp(Date timestamp); // Required
+    public Builder properties(Map<String, Object> properties) {
+      if (properties == null) {
+        throw new NullPointerException("Null properties");
+      }
+      this.properties = ImmutableMap.copyOf(properties);
+      return this;
+    }
 
-    public abstract Builder context(Map<String, Object> context);
-
-    public abstract Builder anonymousId(UUID anonymousId);
-
-    public abstract Builder userId(String userId);
-
-    // Screen Payload
-    public abstract Builder name(String name);
-
-    public abstract Builder category(String category);
-
-    public abstract Builder properties(Map<String, Object> properties);
-
-    public abstract ScreenPayload build();
+    @Override ScreenPayload realBuild() {
+      return new AutoValue_ScreenPayload(type, messageId, timestamp, context, anonymousId, userId,
+          name, category, properties);
+    }
   }
 }

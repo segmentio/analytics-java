@@ -1,11 +1,7 @@
 package com.segment.analytics;
 
 import com.google.auto.value.AutoValue;
-import com.segment.analytics.internal.Utils;
 import com.segment.analytics.internal.gson.AutoGson;
-import java.util.Date;
-import java.util.Map;
-import java.util.UUID;
 
 @AutoValue @AutoGson //
 public abstract class AliasPayload implements Payload {
@@ -13,35 +9,25 @@ public abstract class AliasPayload implements Payload {
   public abstract String previousId();
 
   public static Builder builder(String previousId) {
-    return new AutoValue_AliasPayload.Builder() //
-        .type(Type.ALIAS) //
-        .timestamp(new Date()) //
-        .messageId(UUID.randomUUID()) //
-        .previousId(previousId);
+    return new Builder(previousId);
   }
 
-  @AutoValue.Validate void validate() {
-    Utils.validate(this);
-  }
+  public static class Builder extends PayloadBuilder<AliasPayload> {
+    String previousId;
 
-  @AutoValue.Builder //
-  public abstract static class Builder {
-    // Common
-    abstract Builder type(Type type); // Required
+    Builder(String previousId) {
+      super(Type.ALIAS);
 
-    abstract Builder messageId(UUID messageId); // Required
+      if (previousId == null) {
+        // todo validate length?
+        throw new NullPointerException("Null previousId");
+      }
+      this.previousId = previousId;
+    }
 
-    abstract Builder timestamp(Date timestamp); // Required
-
-    public abstract Builder context(Map<String, Object> context);
-
-    public abstract Builder anonymousId(UUID anonymousId);
-
-    public abstract Builder userId(String userId);
-
-    // Alias Payload
-    public abstract Builder previousId(String previousId);
-
-    public abstract AliasPayload build();
+    @Override AliasPayload realBuild() {
+      return new AutoValue_AliasPayload(type, messageId, timestamp, context, anonymousId, userId,
+          previousId);
+    }
   }
 }
