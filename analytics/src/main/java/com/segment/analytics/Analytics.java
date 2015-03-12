@@ -54,6 +54,43 @@ public class Analytics {
     }
   }
 
+  public static class Builder {
+    private final String writeKey;
+
+    public Builder(String writeKey) {
+      this.writeKey = writeKey;
+    }
+
+    public Analytics build() {
+      Gson gson = new GsonBuilder() //
+          .registerTypeAdapterFactory(new AutoValueAdapterFactory())
+          .registerTypeAdapter(Payload.Type.class, new PayloadTypeTypeAdapter())
+          .create();
+
+      OkHttpClient okHttpClient = new OkHttpClient();
+
+      RestAdapter restAdapter = new RestAdapter.Builder().setConverter(new GsonConverter(gson))
+          .setEndpoint("https://api.segment.io")
+          .setClient(new OkClient(okHttpClient))
+          .setRequestInterceptor(new RequestInterceptor() {
+            @Override public void intercept(RequestFacade request) {
+              request.addHeader("Authorization", Credentials.basic(writeKey, ""));
+            }
+          })
+          .setLogLevel(RestAdapter.LogLevel.FULL)
+          .setLog(new RestAdapter.Log() {
+            @Override public void log(String message) {
+              LOGGER.log(Level.FINEST, message);
+            }
+          })
+          .build();
+
+      SegmentService segmentService = restAdapter.create(SegmentService.class);
+
+      return new Analytics(new LinkedBlockingDeque<Payload>(), segmentService, 200);
+    }
+  }
+
   class Worker extends Thread {
 
     @Override public void run() {
@@ -104,43 +141,6 @@ public class Analytics {
         LOGGER.log(Level.FINEST, "Could not upload batch.", error);
         return false;
       }
-    }
-  }
-
-  public static class Builder {
-    private final String writeKey;
-
-    public Builder(String writeKey) {
-      this.writeKey = writeKey;
-    }
-
-    public Analytics build() {
-      Gson gson = new GsonBuilder() //
-          .registerTypeAdapterFactory(new AutoValueAdapterFactory())
-          .registerTypeAdapter(Payload.Type.class, new PayloadTypeTypeAdapter())
-          .create();
-
-      OkHttpClient okHttpClient = new OkHttpClient();
-
-      RestAdapter restAdapter = new RestAdapter.Builder().setConverter(new GsonConverter(gson))
-          .setEndpoint("https://api.segment.io")
-          .setClient(new OkClient(okHttpClient))
-          .setRequestInterceptor(new RequestInterceptor() {
-            @Override public void intercept(RequestFacade request) {
-              request.addHeader("Authorization", Credentials.basic(writeKey, ""));
-            }
-          })
-          .setLogLevel(RestAdapter.LogLevel.FULL)
-          .setLog(new RestAdapter.Log() {
-            @Override public void log(String message) {
-              LOGGER.log(Level.FINEST, message);
-            }
-          })
-          .build();
-
-      SegmentService segmentService = restAdapter.create(SegmentService.class);
-
-      return new Analytics(new LinkedBlockingDeque<Payload>(), segmentService, 200);
     }
   }
 }

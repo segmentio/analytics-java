@@ -6,10 +6,6 @@ import java.util.UUID;
 import javax.annotation.Nullable;
 
 public interface Payload {
-  public enum Type {
-    IDENTIFY, GROUP, TRACK, SCREEN, ALIAS
-  }
-
   public Type type();
 
   public UUID messageId();
@@ -21,4 +17,8 @@ public interface Payload {
   @Nullable public UUID anonymousId();
 
   @Nullable public String userId();
+
+  public enum Type {
+    IDENTIFY, GROUP, TRACK, SCREEN, ALIAS
+  }
 }

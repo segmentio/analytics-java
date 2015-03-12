@@ -8,6 +8,10 @@ import java.util.List;
 import java.util.Map;
 
 @AutoValue @AutoGson public abstract class Batch {
+  public static Batch create(List<Payload> batch, Map<String, Object> context, int retryCount) {
+    return new AutoValue_Batch(batch, new Date(), context, retryCount);
+  }
+
   public abstract List<Payload> batch();
 
   public abstract Date sentAt();
@@ -15,8 +19,4 @@ import java.util.Map;
   public abstract Map<String, Object> context();
 
   public abstract int retryCount();
-
-  public static Batch create(List<Payload> batch, Map<String, Object> context, int retryCount) {
-    return new AutoValue_Batch(batch, new Date(), context, retryCount);
-  }
 }

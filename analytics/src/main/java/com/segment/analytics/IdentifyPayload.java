@@ -9,13 +9,13 @@ import javax.annotation.Nullable;
 @AutoValue @AutoGson //
 public abstract class IdentifyPayload implements Payload {
 
-  @Nullable public abstract Map<String, Object> traits();
-
   public static Builder builder() {
     return new Builder();
   }
 
-  public static class Builder extends PayloadBuilder<IdentifyPayload> {
+  @Nullable public abstract Map<String, Object> traits();
+
+  public static class Builder extends PayloadBuilder<IdentifyPayload, Builder> {
     Map<String, Object> traits;
 
     protected Builder() {
@@ -37,6 +37,10 @@ public abstract class IdentifyPayload implements Payload {
 
       return new AutoValue_IdentifyPayload(type, messageId, timestamp, context, anonymousId, userId,
           traits);
+    }
+
+    @Override Builder self() {
+      return this;
     }
   }
 }

@@ -4,7 +4,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 
-public abstract class PayloadBuilder<T extends Payload> {
+public abstract class PayloadBuilder<T extends Payload, V extends PayloadBuilder> {
   final Payload.Type type;
   final UUID messageId;
   final Date timestamp;
@@ -18,32 +18,34 @@ public abstract class PayloadBuilder<T extends Payload> {
     this.timestamp = new Date();
   }
 
-  public PayloadBuilder<T> context(Map<String, Object> context) {
+  public V context(Map<String, Object> context) {
     if (context == null) {
       throw new NullPointerException("Null context");
     }
     this.context = context;
-    return this;
+    return self();
   }
 
-  public PayloadBuilder<T> anonymousId(UUID anonymousId) {
+  public V anonymousId(UUID anonymousId) {
     if (anonymousId == null) {
       throw new NullPointerException("Null anonymousId");
     }
     this.anonymousId = anonymousId;
-    return this;
+    return self();
   }
 
-  public PayloadBuilder<T> userId(String userId) {
+  public V userId(String userId) {
     if (userId == null) {
       // todo validate length?
       throw new NullPointerException("Null userId");
     }
     this.userId = userId;
-    return this;
+    return self();
   }
 
   abstract T realBuild();
+
+  abstract V self();
 
   public T build() {
     if (anonymousId == null && userId == null) {

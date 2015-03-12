@@ -8,12 +8,6 @@ import javax.annotation.Nullable;
 
 @AutoValue @AutoGson //
 public abstract class ScreenPayload implements Payload {
-  @Nullable public abstract String name();
-
-  @Nullable public abstract String category();
-
-  @Nullable public abstract Map<String, Object> properties();
-
   public static Builder builderForNamedPages(String name) {
     return new Builder().name(name);
   }
@@ -22,7 +16,13 @@ public abstract class ScreenPayload implements Payload {
     return new Builder().category(category);
   }
 
-  public static class Builder extends PayloadBuilder<ScreenPayload> {
+  @Nullable public abstract String name();
+
+  @Nullable public abstract String category();
+
+  @Nullable public abstract Map<String, Object> properties();
+
+  public static class Builder extends PayloadBuilder<ScreenPayload, Builder> {
     String name;
     String category;
     Map<String, Object> properties;
@@ -52,6 +52,10 @@ public abstract class ScreenPayload implements Payload {
         throw new NullPointerException("Null properties");
       }
       this.properties = ImmutableMap.copyOf(properties);
+      return this;
+    }
+
+    @Override Builder self() {
       return this;
     }
 

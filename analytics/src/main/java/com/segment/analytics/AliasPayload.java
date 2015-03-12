@@ -6,13 +6,13 @@ import com.segment.analytics.internal.gson.AutoGson;
 @AutoValue @AutoGson //
 public abstract class AliasPayload implements Payload {
 
-  public abstract String previousId();
-
   public static Builder builder(String previousId) {
     return new Builder(previousId);
   }
 
-  public static class Builder extends PayloadBuilder<AliasPayload> {
+  public abstract String previousId();
+
+  public static class Builder extends PayloadBuilder<AliasPayload, Builder> {
     String previousId;
 
     Builder(String previousId) {
@@ -28,6 +28,10 @@ public abstract class AliasPayload implements Payload {
     @Override AliasPayload realBuild() {
       return new AutoValue_AliasPayload(type, messageId, timestamp, context, anonymousId, userId,
           previousId);
+    }
+
+    @Override Builder self() {
+      return this;
     }
   }
 }

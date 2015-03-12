@@ -8,15 +8,15 @@ import javax.annotation.Nullable;
 
 @AutoValue @AutoGson //
 public abstract class TrackPayload implements Payload {
-  public abstract String event();
-
-  @Nullable public abstract Map<String, Object> properties();
-
   public static Builder builder(String event) {
     return new Builder(event);
   }
 
-  public static class Builder extends PayloadBuilder<TrackPayload> {
+  public abstract String event();
+
+  @Nullable public abstract Map<String, Object> properties();
+
+  public static class Builder extends PayloadBuilder<TrackPayload, Builder> {
     String event;
     Map<String, Object> properties;
 
@@ -34,6 +34,10 @@ public abstract class TrackPayload implements Payload {
         throw new NullPointerException("Null properties");
       }
       this.properties = ImmutableMap.copyOf(properties);
+      return this;
+    }
+
+    @Override Builder self() {
       return this;
     }
 

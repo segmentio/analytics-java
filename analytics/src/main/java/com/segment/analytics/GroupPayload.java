@@ -9,15 +9,15 @@ import javax.annotation.Nullable;
 @AutoValue @AutoGson //
 public abstract class GroupPayload implements Payload {
 
-  public abstract String groupId();
-
-  @Nullable public abstract Map<String, Object> traits();
-
   public static Builder builder(String groupId) {
     return new Builder(groupId);
   }
 
-  public static class Builder extends PayloadBuilder<GroupPayload> {
+  public abstract String groupId();
+
+  @Nullable public abstract Map<String, Object> traits();
+
+  public static class Builder extends PayloadBuilder<GroupPayload, Builder> {
     String groupId;
     Map<String, Object> traits;
 
@@ -42,6 +42,10 @@ public abstract class GroupPayload implements Payload {
     @Override GroupPayload realBuild() {
       return new AutoValue_GroupPayload(type, messageId, timestamp, context, anonymousId, userId,
           groupId, traits);
+    }
+
+    @Override Builder self() {
+      return this;
     }
   }
 }
