@@ -1,5 +1,6 @@
 package com.segment.analytics;
 
+import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -16,7 +17,7 @@ public abstract class PayloadBuilder<T extends Payload, V extends PayloadBuilder
     if (context == null) {
       throw new NullPointerException("Null context");
     }
-    this.context = context;
+    this.context = ImmutableMap.copyOf(context);
     return self();
   }
 
