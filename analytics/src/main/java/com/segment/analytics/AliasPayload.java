@@ -1,6 +1,7 @@
 package com.segment.analytics;
 
 import com.google.auto.value.AutoValue;
+import com.segment.analytics.internal.Utils;
 import com.segment.analytics.internal.gson.AutoGson;
 import java.util.Date;
 import java.util.Map;
@@ -20,9 +21,7 @@ public abstract class AliasPayload implements Payload {
   }
 
   @AutoValue.Validate void validate() {
-    if (anonymousId() == null && userId() == null) {
-      throw new IllegalArgumentException("Either anonymousId or userId must be provided.");
-    }
+    Utils.validate(this);
   }
 
   @AutoValue.Builder //
