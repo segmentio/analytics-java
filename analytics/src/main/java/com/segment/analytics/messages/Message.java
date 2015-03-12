@@ -1,11 +1,11 @@
-package com.segment.analytics;
+package com.segment.analytics.messages;
 
 import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 import javax.annotation.Nullable;
 
-public interface Payload {
+public interface Message {
   public Type type();
 
   public UUID messageId();

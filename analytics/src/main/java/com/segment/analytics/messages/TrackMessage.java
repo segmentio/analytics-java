@@ -1,4 +1,4 @@
-package com.segment.analytics;
+package com.segment.analytics.messages;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableMap;
@@ -8,8 +8,7 @@ import java.util.Map;
 import java.util.UUID;
 import javax.annotation.Nullable;
 
-@AutoValue @AutoGson //
-public abstract class TrackPayload implements Payload {
+@AutoValue @AutoGson public abstract class TrackMessage implements Message {
   public static Builder builder(String event) {
     return new Builder(event);
   }
@@ -18,9 +17,9 @@ public abstract class TrackPayload implements Payload {
 
   @Nullable public abstract Map<String, Object> properties();
 
-  public static class Builder extends PayloadBuilder<TrackPayload, Builder> {
-    String event;
-    Map<String, Object> properties;
+  public static class Builder extends PayloadBuilder<TrackMessage, Builder> {
+    private String event;
+    private Map<String, Object> properties;
 
     private Builder(String event) {
       if (event == null) {
@@ -41,8 +40,8 @@ public abstract class TrackPayload implements Payload {
       return this;
     }
 
-    @Override TrackPayload realBuild() {
-      return new AutoValue_TrackPayload(Type.TRACK, UUID.randomUUID(), new Date(), context,
+    @Override protected TrackMessage realBuild() {
+      return new AutoValue_TrackMessage(Type.TRACK, UUID.randomUUID(), new Date(), context,
           anonymousId, userId, event, properties);
     }
   }

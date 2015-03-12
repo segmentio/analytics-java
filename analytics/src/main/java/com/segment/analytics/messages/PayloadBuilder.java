@@ -1,10 +1,10 @@
-package com.segment.analytics;
+package com.segment.analytics.messages;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import java.util.UUID;
 
-public abstract class PayloadBuilder<T extends Payload, V extends PayloadBuilder> {
+public abstract class PayloadBuilder<T extends Message, V extends PayloadBuilder> {
   Map<String, Object> context;
   UUID anonymousId;
   String userId;
@@ -38,7 +38,7 @@ public abstract class PayloadBuilder<T extends Payload, V extends PayloadBuilder
     return self();
   }
 
-  abstract T realBuild();
+  protected abstract T realBuild();
 
   abstract V self();
 

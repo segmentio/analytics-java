@@ -1,4 +1,4 @@
-package com.segment.analytics;
+package com.segment.analytics.messages;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableMap;
@@ -8,8 +8,7 @@ import java.util.Map;
 import java.util.UUID;
 import javax.annotation.Nullable;
 
-@AutoValue @AutoGson //
-public abstract class IdentifyPayload implements Payload {
+@AutoValue @AutoGson public abstract class IdentifyMessage implements Message {
 
   public static Builder builder() {
     return new Builder();
@@ -17,8 +16,8 @@ public abstract class IdentifyPayload implements Payload {
 
   @Nullable public abstract Map<String, Object> traits();
 
-  public static class Builder extends PayloadBuilder<IdentifyPayload, Builder> {
-    Map<String, Object> traits;
+  public static class Builder extends PayloadBuilder<IdentifyMessage, Builder> {
+    private Map<String, Object> traits;
 
     private Builder() {
       // Hidden from Public API
@@ -32,12 +31,12 @@ public abstract class IdentifyPayload implements Payload {
       return this;
     }
 
-    @Override IdentifyPayload realBuild() {
+    @Override protected IdentifyMessage realBuild() {
       if (userId == null && traits == null) {
         throw new IllegalStateException("Either userId or traits must be provided.");
       }
 
-      return new AutoValue_IdentifyPayload(Type.IDENTIFY, UUID.randomUUID(), new Date(), context,
+      return new AutoValue_IdentifyMessage(Type.IDENTIFY, UUID.randomUUID(), new Date(), context,
           anonymousId, userId, traits);
     }
 

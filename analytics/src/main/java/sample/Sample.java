@@ -1,7 +1,7 @@
 package sample;
 
 import com.segment.analytics.Analytics;
-import com.segment.analytics.TrackPayload;
+import com.segment.analytics.messages.TrackMessage;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Sample {
@@ -16,7 +16,7 @@ public class Sample {
         @Override public void run() {
           super.run();
           for (int i = 0; i < 10; i++) {
-            analytics.enqueue(TrackPayload.builder("Java Test #" + count.getAndIncrement())
+            analytics.enqueue(TrackMessage.builder("Java Test #" + count.getAndIncrement())
                 .userId("prateek")
                 .build());
           }

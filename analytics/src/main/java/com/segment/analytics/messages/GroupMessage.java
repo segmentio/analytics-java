@@ -1,4 +1,4 @@
-package com.segment.analytics;
+package com.segment.analytics.messages;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableMap;
@@ -8,8 +8,7 @@ import java.util.Map;
 import java.util.UUID;
 import javax.annotation.Nullable;
 
-@AutoValue @AutoGson //
-public abstract class GroupPayload implements Payload {
+@AutoValue @AutoGson public abstract class GroupMessage implements Message {
 
   public static Builder builder(String groupId) {
     return new Builder(groupId);
@@ -19,9 +18,9 @@ public abstract class GroupPayload implements Payload {
 
   @Nullable public abstract Map<String, Object> traits();
 
-  public static class Builder extends PayloadBuilder<GroupPayload, Builder> {
-    String groupId;
-    Map<String, Object> traits;
+  public static class Builder extends PayloadBuilder<GroupMessage, Builder> {
+    private String groupId;
+    private Map<String, Object> traits;
 
     private Builder(String groupId) {
       if (groupId == null) {
@@ -39,8 +38,8 @@ public abstract class GroupPayload implements Payload {
       return this;
     }
 
-    @Override GroupPayload realBuild() {
-      return new AutoValue_GroupPayload(Type.GROUP, UUID.randomUUID(), new Date(), context,
+    @Override protected GroupMessage realBuild() {
+      return new AutoValue_GroupMessage(Type.GROUP, UUID.randomUUID(), new Date(), context,
           anonymousId, userId, groupId, traits);
     }
 

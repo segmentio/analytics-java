@@ -1,4 +1,4 @@
-package com.segment.analytics;
+package com.segment.analytics.messages;
 
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableMap;
@@ -8,14 +8,9 @@ import java.util.Map;
 import java.util.UUID;
 import javax.annotation.Nullable;
 
-@AutoValue @AutoGson //
-public abstract class ScreenPayload implements Payload {
-  public static Builder builderForNamedPages(String name) {
-    return new Builder().name(name);
-  }
-
-  public static Builder builderForCategorizedPages(String category) {
-    return new Builder().category(category);
+@AutoValue @AutoGson public abstract class ScreenMessage implements Message {
+  public static Builder builder() {
+    return new Builder();
   }
 
   @Nullable public abstract String name();
@@ -24,10 +19,10 @@ public abstract class ScreenPayload implements Payload {
 
   @Nullable public abstract Map<String, Object> properties();
 
-  public static class Builder extends PayloadBuilder<ScreenPayload, Builder> {
-    String name;
-    String category;
-    Map<String, Object> properties;
+  public static class Builder extends PayloadBuilder<ScreenMessage, Builder> {
+    private String name;
+    private String category;
+    private Map<String, Object> properties;
 
     private Builder() {
       // Hidden from Public API
@@ -61,8 +56,12 @@ public abstract class ScreenPayload implements Payload {
       return this;
     }
 
-    @Override ScreenPayload realBuild() {
-      return new AutoValue_ScreenPayload(Type.SCREEN, UUID.randomUUID(), new Date(), context,
+    @Override protected ScreenMessage realBuild() {
+      if (name == null && category == null) {
+        throw new IllegalStateException("Either name or category must be provided.");
+      }
+
+      return new AutoValue_ScreenMessage(Type.SCREEN, UUID.randomUUID(), new Date(), context,
           anonymousId, userId, name, category, properties);
     }
   }

@@ -9,6 +9,7 @@ import com.segment.analytics.internal.gson.AutoValueAdapterFactory;
 import com.segment.analytics.internal.gson.PayloadTypeTypeAdapter;
 import com.segment.analytics.internal.http.SegmentService;
 import com.segment.analytics.internal.http.UploadResponse;
+import com.segment.analytics.messages.Message;
 import com.squareup.okhttp.Credentials;
 import com.squareup.okhttp.OkHttpClient;
 import java.util.ArrayList;
@@ -36,21 +37,21 @@ public class Analytics {
     CONTEXT = ImmutableMap.<String, Object>of("library", library);
   }
 
-  private final BlockingQueue<Payload> payloadQueue;
+  private final BlockingQueue<Message> messageQueue;
   private final SegmentService service;
   private final int size;
 
-  Analytics(BlockingQueue<Payload> payloadQueue, SegmentService service, int size) {
-    this.payloadQueue = payloadQueue;
+  Analytics(BlockingQueue<Message> messageQueue, SegmentService service, int size) {
+    this.messageQueue = messageQueue;
     this.service = service;
     this.size = size;
 
     new Worker().start();
   }
 
-  public void enqueue(Payload payload) {
+  public void enqueue(Message message) {
     try {
-      payloadQueue.put(payload);
+      messageQueue.put(message);
     } catch (InterruptedException e) {
     }
   }
@@ -74,7 +75,7 @@ public class Analytics {
     public Analytics build() {
       Gson gson = new GsonBuilder() //
           .registerTypeAdapterFactory(new AutoValueAdapterFactory())
-          .registerTypeAdapter(Payload.Type.class, new PayloadTypeTypeAdapter())
+          .registerTypeAdapter(Message.Type.class, new PayloadTypeTypeAdapter())
           .create();
 
       if (client == null) {
@@ -100,7 +101,7 @@ public class Analytics {
 
       SegmentService segmentService = restAdapter.create(SegmentService.class);
 
-      return new Analytics(new LinkedBlockingDeque<Payload>(), segmentService, 200);
+      return new Analytics(new LinkedBlockingDeque<Message>(), segmentService, 200);
     }
   }
 
@@ -109,16 +110,16 @@ public class Analytics {
     @Override public void run() {
       super.run();
 
-      List<Payload> payloadList = new ArrayList<>();
+      List<Message> messageList = new ArrayList<>();
       List<Batch> failedBatches = new ArrayList<>();
 
       try {
         while (true) {
-          Payload payload = payloadQueue.take();
-          payloadList.add(payload);
+          Message message = messageQueue.take();
+          messageList.add(message);
 
-          if (payloadList.size() >= size) {
-            Batch batch = Batch.create(payloadList, CONTEXT, 0);
+          if (messageList.size() >= size) {
+            Batch batch = Batch.create(messageList, CONTEXT, 0);
             if (!upload(batch)) {
               failedBatches.add(batch);
             } else {
@@ -133,7 +134,7 @@ public class Analytics {
               }
             }
 
-            payloadList = new ArrayList<>();
+            messageList = new ArrayList<>();
           }
         }
       } catch (InterruptedException e) {

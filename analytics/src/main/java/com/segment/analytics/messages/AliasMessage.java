@@ -1,12 +1,11 @@
-package com.segment.analytics;
+package com.segment.analytics.messages;
 
 import com.google.auto.value.AutoValue;
 import com.segment.analytics.internal.gson.AutoGson;
 import java.util.Date;
 import java.util.UUID;
 
-@AutoValue @AutoGson //
-public abstract class AliasPayload implements Payload {
+@AutoValue @AutoGson public abstract class AliasMessage implements Message {
 
   public static Builder builder(String previousId) {
     return new Builder(previousId);
@@ -14,8 +13,8 @@ public abstract class AliasPayload implements Payload {
 
   public abstract String previousId();
 
-  public static class Builder extends PayloadBuilder<AliasPayload, Builder> {
-    String previousId;
+  public static class Builder extends PayloadBuilder<AliasMessage, Builder> {
+    private String previousId;
 
     private Builder(String previousId) {
       if (previousId == null) {
@@ -25,8 +24,8 @@ public abstract class AliasPayload implements Payload {
       this.previousId = previousId;
     }
 
-    @Override AliasPayload realBuild() {
-      return new AutoValue_AliasPayload(Type.ALIAS, UUID.randomUUID(), new Date(), context,
+    @Override protected AliasMessage realBuild() {
+      return new AutoValue_AliasMessage(Type.ALIAS, UUID.randomUUID(), new Date(), context,
           anonymousId, userId, previousId);
     }
 
