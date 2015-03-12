@@ -1,11 +1,11 @@
 package com.segment.analytics.internal;
 
-final class Version {
-  static String version() {
+public final class AnalyticsVersion {
+  public static String get() {
     return "analytics/${project.version}";
   }
 
-  private Version() {
+  private AnalyticsVersion() {
     throw new AssertionError("No instances allowed.");
   }
 }

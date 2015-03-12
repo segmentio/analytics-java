@@ -13,7 +13,7 @@ public class Sample {
         @Override public void run() {
           super.run();
           for (int i = 0; i < 10; i++) {
-            analytics.track(
+            analytics.enqueue(
                 TrackPayload.builder("Trying out the Java Lib").userId("prateek").build());
           }
         }
