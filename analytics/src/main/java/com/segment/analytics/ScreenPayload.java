@@ -3,7 +3,9 @@ package com.segment.analytics;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableMap;
 import com.segment.analytics.internal.gson.AutoGson;
+import java.util.Date;
 import java.util.Map;
+import java.util.UUID;
 import javax.annotation.Nullable;
 
 @AutoValue @AutoGson //
@@ -27,8 +29,8 @@ public abstract class ScreenPayload implements Payload {
     String category;
     Map<String, Object> properties;
 
-    Builder() {
-      super(Type.SCREEN);
+    private Builder() {
+      // Hidden from Public API
     }
 
     public Builder name(String name) {
@@ -60,8 +62,8 @@ public abstract class ScreenPayload implements Payload {
     }
 
     @Override ScreenPayload realBuild() {
-      return new AutoValue_ScreenPayload(type, messageId, timestamp, context, anonymousId, userId,
-          name, category, properties);
+      return new AutoValue_ScreenPayload(Type.SCREEN, UUID.randomUUID(), new Date(), context,
+          anonymousId, userId, name, category, properties);
     }
   }
 }

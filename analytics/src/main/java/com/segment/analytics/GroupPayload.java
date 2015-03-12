@@ -3,7 +3,9 @@ package com.segment.analytics;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableMap;
 import com.segment.analytics.internal.gson.AutoGson;
+import java.util.Date;
 import java.util.Map;
+import java.util.UUID;
 import javax.annotation.Nullable;
 
 @AutoValue @AutoGson //
@@ -21,9 +23,7 @@ public abstract class GroupPayload implements Payload {
     String groupId;
     Map<String, Object> traits;
 
-    Builder(String groupId) {
-      super(Type.GROUP);
-
+    private Builder(String groupId) {
       if (groupId == null) {
         // todo validate length?
         throw new NullPointerException("Null groupId");
@@ -40,8 +40,8 @@ public abstract class GroupPayload implements Payload {
     }
 
     @Override GroupPayload realBuild() {
-      return new AutoValue_GroupPayload(type, messageId, timestamp, context, anonymousId, userId,
-          groupId, traits);
+      return new AutoValue_GroupPayload(Type.ALIAS, UUID.randomUUID(), new Date(), context,
+          anonymousId, userId, groupId, traits);
     }
 
     @Override Builder self() {

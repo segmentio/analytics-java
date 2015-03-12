@@ -3,7 +3,9 @@ package com.segment.analytics;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableMap;
 import com.segment.analytics.internal.gson.AutoGson;
+import java.util.Date;
 import java.util.Map;
+import java.util.UUID;
 import javax.annotation.Nullable;
 
 @AutoValue @AutoGson //
@@ -18,8 +20,8 @@ public abstract class IdentifyPayload implements Payload {
   public static class Builder extends PayloadBuilder<IdentifyPayload, Builder> {
     Map<String, Object> traits;
 
-    protected Builder() {
-      super(Type.IDENTIFY);
+    private Builder() {
+      // Hidden from Public API
     }
 
     public Builder traits(Map<String, Object> traits) {
@@ -35,8 +37,8 @@ public abstract class IdentifyPayload implements Payload {
         throw new IllegalStateException("Either userId or traits must be provided.");
       }
 
-      return new AutoValue_IdentifyPayload(type, messageId, timestamp, context, anonymousId, userId,
-          traits);
+      return new AutoValue_IdentifyPayload(Type.ALIAS, UUID.randomUUID(), new Date(), context,
+          anonymousId, userId, traits);
     }
 
     @Override Builder self() {

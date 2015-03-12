@@ -1,21 +1,15 @@
 package com.segment.analytics;
 
-import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 
 public abstract class PayloadBuilder<T extends Payload, V extends PayloadBuilder> {
-  final Payload.Type type;
-  final UUID messageId;
-  final Date timestamp;
   Map<String, Object> context;
   UUID anonymousId;
   String userId;
 
-  protected PayloadBuilder(Payload.Type type) {
-    this.type = type;
-    this.messageId = UUID.randomUUID();
-    this.timestamp = new Date();
+  PayloadBuilder() {
+    // Hidden from Public API
   }
 
   public V context(Map<String, Object> context) {

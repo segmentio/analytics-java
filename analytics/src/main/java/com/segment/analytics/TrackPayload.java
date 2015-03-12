@@ -3,7 +3,9 @@ package com.segment.analytics;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableMap;
 import com.segment.analytics.internal.gson.AutoGson;
+import java.util.Date;
 import java.util.Map;
+import java.util.UUID;
 import javax.annotation.Nullable;
 
 @AutoValue @AutoGson //
@@ -20,9 +22,7 @@ public abstract class TrackPayload implements Payload {
     String event;
     Map<String, Object> properties;
 
-    Builder(String event) {
-      super(Type.SCREEN);
-
+    private Builder(String event) {
       if (event == null) {
         throw new NullPointerException("Null event");
       }
@@ -42,8 +42,8 @@ public abstract class TrackPayload implements Payload {
     }
 
     @Override TrackPayload realBuild() {
-      return new AutoValue_TrackPayload(type, messageId, timestamp, context, anonymousId, userId,
-          event, properties);
+      return new AutoValue_TrackPayload(Type.TRACK, UUID.randomUUID(), new Date(), context,
+          anonymousId, userId, event, properties);
     }
   }
 }

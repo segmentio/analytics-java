@@ -2,6 +2,8 @@ package com.segment.analytics;
 
 import com.google.auto.value.AutoValue;
 import com.segment.analytics.internal.gson.AutoGson;
+import java.util.Date;
+import java.util.UUID;
 
 @AutoValue @AutoGson //
 public abstract class AliasPayload implements Payload {
@@ -15,9 +17,7 @@ public abstract class AliasPayload implements Payload {
   public static class Builder extends PayloadBuilder<AliasPayload, Builder> {
     String previousId;
 
-    Builder(String previousId) {
-      super(Type.ALIAS);
-
+    private Builder(String previousId) {
       if (previousId == null) {
         // todo validate length?
         throw new NullPointerException("Null previousId");
@@ -26,8 +26,8 @@ public abstract class AliasPayload implements Payload {
     }
 
     @Override AliasPayload realBuild() {
-      return new AutoValue_AliasPayload(type, messageId, timestamp, context, anonymousId, userId,
-          previousId);
+      return new AutoValue_AliasPayload(Type.ALIAS, UUID.randomUUID(), new Date(), context,
+          anonymousId, userId, previousId);
     }
 
     @Override Builder self() {
