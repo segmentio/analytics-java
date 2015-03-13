@@ -11,11 +11,17 @@ public class Sample {
 
     final AtomicInteger count = new AtomicInteger();
 
-    for (int i = 0; i < 50; i++) {
+    for (int i = 0; i < 100; i++) {
+      try {
+        Thread.sleep(1000);
+      } catch (InterruptedException e) {
+        e.printStackTrace();
+      }
       new Thread() {
         @Override public void run() {
           super.run();
           for (int i = 0; i < 10; i++) {
+
             analytics.enqueue(TrackMessage.builder("Java Test #" + count.getAndIncrement())
                 .userId("prateek")
                 .build());
