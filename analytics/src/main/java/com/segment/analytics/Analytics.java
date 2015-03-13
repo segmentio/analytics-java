@@ -29,19 +29,11 @@ public class Analytics {
 
   public static class Builder {
     private final String writeKey;
-    private Client client;
     private Log log;
+    private Client client;
 
     public Builder(String writeKey) {
       this.writeKey = writeKey;
-    }
-
-    public Builder client(Client client) {
-      if (client == null) {
-        throw new NullPointerException("Null client");
-      }
-      this.client = client;
-      return this;
     }
 
     public Builder log(Log log) {
