@@ -27,6 +27,10 @@ public class Analytics {
     client.enqueue(message);
   }
 
+  public void shutdown() {
+    client.shutdown();
+  }
+
   public static class Builder {
     private final String writeKey;
     private Log log;
@@ -78,7 +82,7 @@ public class Analytics {
       SegmentService segmentService = restAdapter.create(SegmentService.class);
 
       AnalyticsClient analyticsClient =
-          new AnalyticsClient(new LinkedBlockingDeque<Message>(), segmentService, 200, log);
+          new AnalyticsClient(new LinkedBlockingDeque<Message>(), segmentService, 25, log);
 
       return new Analytics(analyticsClient);
     }

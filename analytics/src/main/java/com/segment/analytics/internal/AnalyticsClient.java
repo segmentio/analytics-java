@@ -25,6 +25,7 @@ public class AnalyticsClient {
   private final SegmentService service;
   private final int size;
   private final Log log;
+  private final Worker worker;
 
   public AnalyticsClient(BlockingQueue<Message> messageQueue, SegmentService service, int size,
       Log log) {
@@ -33,11 +34,17 @@ public class AnalyticsClient {
     this.size = size;
     this.log = log;
 
-    new Worker().start();
+    worker = new Worker();
+    worker.start();
   }
 
   public void enqueue(Message message) {
     messageQueue.add(message);
+  }
+
+  public void shutdown() {
+    worker.interrupt();
+    messageQueue.clear();
   }
 
   class Worker extends Thread {
@@ -76,7 +83,10 @@ public class AnalyticsClient {
       }
     }
 
-    boolean upload(Batch batch) {
+    boolean upload(Batch batch) throws InterruptedException {
+      if (Thread.currentThread().isInterrupted()) {
+        throw new InterruptedException("Thread Interrupted.");
+      }
       try {
         UploadResponse response = service.upload(batch);
         if (response.success()) {
