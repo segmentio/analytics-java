@@ -9,6 +9,7 @@ import com.segment.analytics.internal.http.SegmentService;
 import com.segment.analytics.messages.Message;
 import com.squareup.okhttp.Credentials;
 import com.squareup.okhttp.OkHttpClient;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 import retrofit.RequestInterceptor;
 import retrofit.RestAdapter;
@@ -112,7 +113,8 @@ public class Analytics {
       SegmentService segmentService = restAdapter.create(SegmentService.class);
 
       AnalyticsClient analyticsClient =
-          new AnalyticsClient(new LinkedBlockingDeque<Message>(), segmentService, 25, log);
+          new AnalyticsClient(new LinkedBlockingDeque<Message>(), segmentService, 25, log,
+              Executors.defaultThreadFactory());
 
       return new Analytics(analyticsClient);
     }

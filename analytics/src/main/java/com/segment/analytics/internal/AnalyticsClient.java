@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ThreadFactory;
 import retrofit.RetrofitError;
 
 public class AnalyticsClient {
@@ -25,17 +26,17 @@ public class AnalyticsClient {
   private final SegmentService service;
   private final int size;
   private final Log log;
-  private final Worker worker;
+  private final Thread looperThread;
 
   public AnalyticsClient(BlockingQueue<Message> messageQueue, SegmentService service, int size,
-      Log log) {
+      Log log, ThreadFactory threadFactory) {
     this.messageQueue = messageQueue;
     this.service = service;
     this.size = size;
     this.log = log;
 
-    worker = new Worker();
-    worker.start();
+    looperThread = threadFactory.newThread(new Looper());
+    looperThread.start();
   }
 
   public void enqueue(Message message) {
@@ -43,14 +44,12 @@ public class AnalyticsClient {
   }
 
   public void shutdown() {
-    worker.interrupt();
+    looperThread.interrupt();
     messageQueue.clear();
   }
 
-  class Worker extends Thread {
+  class Looper implements Runnable {
     @Override public void run() {
-      super.run();
-
       List<Message> messageList = new ArrayList<>();
       List<Batch> failedBatches = new ArrayList<>();
 
@@ -61,17 +60,22 @@ public class AnalyticsClient {
 
           if (messageList.size() >= size) {
             Batch batch = Batch.create(messageList, CONTEXT, 0);
-            if (!upload(batch)) {
+            boolean shouldRetry = uploadedSuccessfully(batch);
+            if (shouldRetry) {
               failedBatches.add(batch);
-            } else {
-              Iterator<Batch> failedBatchesIterator = failedBatches.iterator();
-              while (failedBatchesIterator.hasNext()) {
-                Batch failed = failedBatchesIterator.next();
-                Batch retry =
-                    Batch.create(failed.batch(), failed.context(), failed.retryCount() + 1);
-                if (upload(retry)) {
-                  failedBatchesIterator.remove();
-                }
+              return;
+            }
+
+            Iterator<Batch> failedBatchesIterator = failedBatches.iterator();
+            while (failedBatchesIterator.hasNext()) {
+              Batch failedBatch = failedBatchesIterator.next();
+              Batch retryBatch = Batch.create(failedBatch.batch(), failedBatch.context(),
+                  failedBatch.retryCount() + 1);
+              if (uploadedSuccessfully(retryBatch)) {
+                failedBatchesIterator.remove();
+              } else if (retryBatch.retryCount() > 5) {
+                // Give up after 5 retries
+                failedBatchesIterator.remove();
               }
             }
 
@@ -83,25 +87,21 @@ public class AnalyticsClient {
       }
     }
 
-    boolean upload(Batch batch) throws InterruptedException {
+    /** Returns {@code true} to indicate the batch was successfully uploaded. */
+    boolean uploadedSuccessfully(Batch batch) throws InterruptedException {
       if (Thread.currentThread().isInterrupted()) {
         throw new InterruptedException("Thread Interrupted.");
       }
       try {
         UploadResponse response = service.upload(batch);
-        if (response.success()) {
-          log.d("Uploaded batch.");
-        } else {
-          log.e(null, String.format("Server rejected batch: %s.", batch));
-        }
-        // We connected to the server but it rejected our message. Don't retry
-        return true;
+        return response.success(); // should never return false
       } catch (RetrofitError error) {
         switch (error.getKind()) {
+          // todo: kill the thread for unexpected error
+          // todo: we should never run into conversion errors, safe to ignore them?
           case HTTP:
             log.e(error, String.format("Server rejected batch: %s.", batch));
-            // We connected to the server but it rejected our message. Don't retry
-            return true;
+            return true; // We connected to the server but it rejected our message. Don't retry
           default:
             log.e(error, String.format("Could not upload batch: %s.", batch));
             return false;
