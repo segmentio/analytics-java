@@ -41,7 +41,6 @@ public class AnalyticsClient {
   }
 
   class Worker extends Thread {
-
     @Override public void run() {
       super.run();
 
@@ -81,14 +80,22 @@ public class AnalyticsClient {
       try {
         UploadResponse response = service.upload(batch);
         if (response.success()) {
-          log.v("Uploaded batch.");
+          log.d("Uploaded batch.");
         } else {
-          log.v("Could not upload batch.");
+          log.e(null, String.format("Server rejected batch: %s.", batch));
         }
-        return response.success();
+        // We connected to the server but it rejected our message. Don't retry
+        return true;
       } catch (RetrofitError error) {
-        log.e(error, "Could not upload batch.");
-        return false;
+        switch (error.getKind()) {
+          case HTTP:
+            log.e(error, String.format("Server rejected batch: %s.", batch));
+            // We connected to the server but it rejected our message. Don't retry
+            return true;
+          default:
+            log.e(error, String.format("Could not upload batch: %s.", batch));
+            return false;
+        }
       }
     }
   }
