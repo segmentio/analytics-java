@@ -16,6 +16,23 @@ import retrofit.client.Client;
 import retrofit.client.OkClient;
 import retrofit.converter.GsonConverter;
 
+import static com.segment.analytics.internal.Utils.isNullOrEmpty;
+
+/**
+ * The entry point into the Segment for Java library.
+ * <p/>
+ * The idea is simple: one pipeline for all your data. Segment is the single hub to collect,
+ * translate and route your data with the flip of a switch.
+ * <p/>
+ * Analytics for Java will automatically batch events and upload it periodically to Segment's
+ * servers for you. You only need to instrument Segment once, then flip a switch to install
+ * new tools.
+ * <p/>
+ * This class is the main entry point into the client API. Use {@link Builder} to construct your
+ * own instances.
+ *
+ * @see <a href="https://Segment/">Segment</a>
+ */
 public class Analytics {
   final AnalyticsClient client;
 
@@ -23,23 +40,35 @@ public class Analytics {
     this.client = client;
   }
 
+  /** Enqueue the given message to be uploaded to Segment's servers. */
   public void enqueue(Message message) {
     client.enqueue(message);
   }
 
+  /** Stops this instance from processing further requests. */
   public void shutdown() {
     client.shutdown();
   }
 
+  /** Fluent API for creating {@link Analytics} instances. */
   public static class Builder {
     private final String writeKey;
     private Log log;
     private Client client;
 
+    /**
+     * Start building a new {@link Analytics} instance.
+     *
+     * @param writeKey Your project write key available on the Segment dashboard.
+     */
     public Builder(String writeKey) {
+      if (isNullOrEmpty(writeKey)) {
+        throw new NullPointerException("Empty writeKey");
+      }
       this.writeKey = writeKey;
     }
 
+    /** Configure debug logging mechanism. By default, nothing is logged. */
     public Builder log(Log log) {
       if (log == null) {
         throw new NullPointerException("Null log");
@@ -48,6 +77,7 @@ public class Analytics {
       return this;
     }
 
+    /** Create a {@link Analytics} client. */
     public Analytics build() {
       Gson gson = new GsonBuilder() //
           .registerTypeAdapterFactory(new AutoValueAdapterFactory())
