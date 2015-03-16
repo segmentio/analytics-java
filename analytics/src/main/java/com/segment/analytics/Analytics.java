@@ -63,7 +63,7 @@ public class Analytics {
      */
     public Builder(String writeKey) {
       if (isNullOrEmpty(writeKey)) {
-        throw new NullPointerException("Empty writeKey");
+        throw new NullPointerException("category cannot be null or empty.");
       }
       this.writeKey = writeKey;
     }

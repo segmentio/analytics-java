@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.UUID;
 import javax.annotation.Nullable;
 
+import static com.segment.analytics.internal.Utils.isNullOrEmpty;
+
 @AutoValue @AutoGson public abstract class ScreenMessage implements Message {
   public static Builder builder() {
     return new Builder();
@@ -37,8 +39,8 @@ import javax.annotation.Nullable;
     }
 
     public Builder category(String category) {
-      if (category == null) {
-        throw new NullPointerException("Null category");
+      if (isNullOrEmpty(category)) {
+        throw new NullPointerException("category cannot be null or empty.");
       }
       this.category = category;
       return this;

@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.UUID;
 import javax.annotation.Nullable;
 
+import static com.segment.analytics.internal.Utils.isNullOrEmpty;
+
 @AutoValue @AutoGson public abstract class GroupMessage implements Message {
 
   public static Builder builder(String groupId) {
@@ -23,9 +25,8 @@ import javax.annotation.Nullable;
     private Map<String, Object> traits;
 
     private Builder(String groupId) {
-      if (groupId == null) {
-        // todo validate length?
-        throw new NullPointerException("Null groupId");
+      if (isNullOrEmpty(groupId)) {
+        throw new NullPointerException("groupId cannot be null or empty.");
       }
       this.groupId = groupId;
     }

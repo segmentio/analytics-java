@@ -4,6 +4,8 @@ import com.google.common.collect.ImmutableMap;
 import java.util.Map;
 import java.util.UUID;
 
+import static com.segment.analytics.internal.Utils.isNullOrEmpty;
+
 public abstract class PayloadBuilder<T extends Message, V extends PayloadBuilder> {
   Map<String, Object> context;
   UUID anonymousId;
@@ -30,9 +32,8 @@ public abstract class PayloadBuilder<T extends Message, V extends PayloadBuilder
   }
 
   public V userId(String userId) {
-    if (userId == null) {
-      // todo validate length?
-      throw new NullPointerException("Null userId");
+    if (isNullOrEmpty(userId)) {
+      throw new NullPointerException("userId cannot be null or empty.");
     }
     this.userId = userId;
     return self();

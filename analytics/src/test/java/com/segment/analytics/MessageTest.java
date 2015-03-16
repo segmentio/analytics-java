@@ -29,7 +29,7 @@ import static org.junit.Assert.fail;
       AliasMessage.builder(null);
       fail();
     } catch (NullPointerException e) {
-      assertThat(e).hasMessage("Null previousId");
+      assertThat(e).hasMessage("previousId cannot be null or empty.");
     }
   }
 
@@ -38,7 +38,7 @@ import static org.junit.Assert.fail;
       GroupMessage.builder(null);
       fail();
     } catch (NullPointerException e) {
-      assertThat(e).hasMessage("Null groupId");
+      assertThat(e).hasMessage("groupId cannot be null or empty.");
     }
 
     try {
@@ -82,7 +82,7 @@ import static org.junit.Assert.fail;
       TrackMessage.builder(null);
       fail();
     } catch (NullPointerException e) {
-      assertThat(e).hasMessage("Null event");
+      assertThat(e).hasMessage("event cannot be null or empty.");
     }
 
     try {

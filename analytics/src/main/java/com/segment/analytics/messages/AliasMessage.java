@@ -5,6 +5,8 @@ import com.segment.analytics.internal.gson.AutoGson;
 import java.util.Date;
 import java.util.UUID;
 
+import static com.segment.analytics.internal.Utils.isNullOrEmpty;
+
 @AutoValue @AutoGson public abstract class AliasMessage implements Message {
 
   public static Builder builder(String previousId) {
@@ -17,9 +19,8 @@ import java.util.UUID;
     private String previousId;
 
     private Builder(String previousId) {
-      if (previousId == null) {
-        // todo validate length?
-        throw new NullPointerException("Null previousId");
+      if (isNullOrEmpty(previousId)) {
+        throw new NullPointerException("previousId cannot be null or empty.");
       }
       this.previousId = previousId;
     }

@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.UUID;
 import javax.annotation.Nullable;
 
+import static com.segment.analytics.internal.Utils.isNullOrEmpty;
+
 @AutoValue @AutoGson public abstract class TrackMessage implements Message {
   public static Builder builder(String event) {
     return new Builder(event);
@@ -22,8 +24,8 @@ import javax.annotation.Nullable;
     private Map<String, Object> properties;
 
     private Builder(String event) {
-      if (event == null) {
-        throw new NullPointerException("Null event");
+      if (isNullOrEmpty(event)) {
+        throw new NullPointerException("event cannot be null or empty.");
       }
       this.event = event;
     }
