@@ -1,8 +1,8 @@
 package com.segment.analytics.internal;
 
 import com.google.auto.value.AutoValue;
-import com.segment.analytics.messages.Message;
 import com.segment.analytics.internal.gson.AutoGson;
+import com.segment.analytics.messages.Message;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;

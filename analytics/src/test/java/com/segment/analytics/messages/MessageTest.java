@@ -1,11 +1,5 @@
-package com.segment.analytics;
+package com.segment.analytics.messages;
 
-import com.segment.analytics.messages.AliasMessage;
-import com.segment.analytics.messages.GroupMessage;
-import com.segment.analytics.messages.IdentifyMessage;
-import com.segment.analytics.messages.Message;
-import com.segment.analytics.messages.ScreenMessage;
-import com.segment.analytics.messages.TrackMessage;
 import com.squareup.burst.BurstJUnit4;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -15,9 +9,9 @@ import static org.junit.Assert.fail;
 
 @RunWith(BurstJUnit4.class) public class MessageTest {
 
-  @Test public void missingUserIdAndAnonymousIdThrowsException(Factories factories) {
+  @Test public void missingUserIdAndAnonymousIdThrowsException(MessageBuilder builder) {
     try {
-      factories.create();
+      builder.get().build();
       fail();
     } catch (IllegalStateException e) {
       assertThat(e).hasMessage("Either anonymousId or userId must be provided.");
@@ -93,30 +87,30 @@ import static org.junit.Assert.fail;
     }
   }
 
-  @SuppressWarnings("UnusedDeclaration") public enum Factories {
+  @SuppressWarnings("UnusedDeclaration") public enum MessageBuilder {
     ALIAS {
-      @Override public Message create() {
-        return AliasMessage.builder("foo").build();
+      @Override public AliasMessage.Builder get() {
+        return AliasMessage.builder("foo");
       }
     }, GROUP {
-      @Override public Message create() {
-        return GroupMessage.builder("bar").build();
+      @Override public GroupMessage.Builder get() {
+        return GroupMessage.builder("foo");
       }
     },
     IDENTIFY {
-      @Override public Message create() {
-        return IdentifyMessage.builder().build();
+      @Override public IdentifyMessage.Builder get() {
+        return IdentifyMessage.builder();
       }
     }, SCREEN {
-      @Override public Message create() {
-        return ScreenMessage.builder().name("baz").build();
+      @Override public ScreenMessage.Builder get() {
+        return ScreenMessage.builder().name("foo");
       }
     }, TRACK {
-      @Override public Message create() {
-        return TrackMessage.builder("qux").build();
+      @Override public TrackMessage.Builder get() {
+        return TrackMessage.builder("foo");
       }
     };
 
-    public abstract Message create();
+    public abstract <T extends Message, V extends PayloadBuilder> PayloadBuilder<T, V> get();
   }
 }
