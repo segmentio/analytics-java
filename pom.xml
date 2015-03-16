@@ -21,6 +21,7 @@
 
   <modules>
     <module>analytics</module>
+    <module>analytics-sample</module>
   </modules>
 
   <properties>
@@ -136,7 +137,6 @@
         </plugin>
       </plugins>
     </pluginManagement>
-
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
