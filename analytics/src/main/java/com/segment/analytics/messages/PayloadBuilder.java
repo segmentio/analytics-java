@@ -12,7 +12,9 @@ public abstract class PayloadBuilder<T extends Message, V extends PayloadBuilder
   String userId;
 
   PayloadBuilder() {
-    // Hidden from Public API
+    // Hidden from Public API.
+    // We would use Auto's Builders, but they don't provide a nice way of hiding internal details,
+    // like mapping Maps to ImmutableMaps
   }
 
   public V context(Map<String, Object> context) {
