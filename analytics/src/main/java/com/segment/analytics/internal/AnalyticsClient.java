@@ -45,7 +45,7 @@ public class AnalyticsClient {
     private final SegmentService service;
     private final Batch batch;
     private final Log log;
-    private final Backo backo = new Backo.Builder().build(); // TODO: pool
+    private final Backo backo = new Backo.Builder().build();
 
     public UploadBatchTask(SegmentService service, Batch batch, Log log) {
       this.service = service;
@@ -54,16 +54,9 @@ public class AnalyticsClient {
     }
 
     @Override public void run() {
-      int attempts = 0; // TODO: reuse backoff's attempts?
+      int attempts = 0;
 
       while (true) {
-        try {
-          backo.backOff();
-        } catch (InterruptedException e) {
-          log.e(e, String.format("Thread interrupted while backing off for batch: %s.", batch));
-          break;
-        }
-
         if (upload(batch)) {
           break;
         }
@@ -71,6 +64,13 @@ public class AnalyticsClient {
         attempts++;
         if (attempts > 5) {
           log.e(null, String.format("Giving up on batch: %s.", batch));
+          break;
+        }
+
+        try {
+          backo.backOff();
+        } catch (InterruptedException e) {
+          log.e(e, String.format("Thread interrupted while backing off for batch: %s.", batch));
           break;
         }
       }
