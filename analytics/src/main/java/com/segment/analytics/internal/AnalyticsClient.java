@@ -45,7 +45,7 @@ public class AnalyticsClient {
     private final SegmentService service;
     private final Batch batch;
     private final Log log;
-    private final BackOff backOff = BackOff.create();
+    private final Backo backo = new Backo.Builder().build(); // TODO: pool
 
     public UploadBatchTask(SegmentService service, Batch batch, Log log) {
       this.service = service;
@@ -58,7 +58,7 @@ public class AnalyticsClient {
 
       while (true) {
         try {
-          backOff.backOff();
+          backo.backOff();
         } catch (InterruptedException e) {
           log.e(e, String.format("Thread interrupted while backing off for batch: %s.", batch));
           break;
