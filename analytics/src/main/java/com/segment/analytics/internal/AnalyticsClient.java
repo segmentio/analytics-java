@@ -19,10 +19,6 @@ public class AnalyticsClient {
   private final Thread looperThread;
   private final ExecutorService flushExecutor;
 
-  /**
-   * The AnalyticsClient polls the message queue. Once it polls enough times, it offloads the
-   * messages into a batch on a different thread, which uploads it.
-   */
   public AnalyticsClient(BlockingQueue<Message> messageQueue, SegmentService service, int size,
       Log log, ThreadFactory looperThreadFactory, ExecutorService flushExecutor) {
     this.messageQueue = messageQueue;
@@ -45,18 +41,11 @@ public class AnalyticsClient {
     flushExecutor.shutdown();
   }
 
-  static class BackOff {
-    void backOff() throws InterruptedException {
-      // todo: a real strategy
-      Thread.sleep(1000);
-    }
-  }
-
   static class UploadBatchTask implements Runnable {
     private final SegmentService service;
     private final Batch batch;
     private final Log log;
-    private final BackOff backOff = new BackOff();
+    private final BackOff backOff = BackOff.create();
 
     public UploadBatchTask(SegmentService service, Batch batch, Log log) {
       this.service = service;
@@ -65,18 +54,29 @@ public class AnalyticsClient {
     }
 
     @Override public void run() {
+      int attempts = 0; // TODO: reuse backoff's attempts?
+
       while (true) {
         try {
           backOff.backOff();
-          if (upload(batch)) {
-            return;
-          }
-        } catch (InterruptedException ignored) {
+        } catch (InterruptedException e) {
+          log.e(e, String.format("Thread interrupted while backing off for batch: %s.", batch));
+          break;
+        }
+
+        if (upload(batch)) {
+          break;
+        }
+
+        attempts++;
+        if (attempts > 5) {
+          log.e(null, String.format("Giving up on batch: %s.", batch));
+          break;
         }
       }
     }
 
-    /** Returns {@code true} to indicate the batch was successfully uploaded. */
+    /** Returns {@code false} to indicate the batch should be retried. */
     boolean upload(Batch batch) {
       try {
         UploadResponse response = service.upload(batch);
