@@ -114,7 +114,7 @@ public class Analytics {
 
       AnalyticsClient analyticsClient =
           new AnalyticsClient(new LinkedBlockingDeque<Message>(), segmentService, 25, log,
-              Executors.defaultThreadFactory());
+              Executors.defaultThreadFactory(), Executors.newSingleThreadExecutor());
 
       return new Analytics(analyticsClient);
     }

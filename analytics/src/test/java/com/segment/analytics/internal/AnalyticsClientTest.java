@@ -6,6 +6,7 @@ import com.segment.analytics.internal.http.SegmentService;
 import com.segment.analytics.messages.Message;
 import com.squareup.burst.BurstJUnit4;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,13 +25,15 @@ import static org.mockito.MockitoAnnotations.initMocks;
   @Mock SegmentService segmentService;
   @Mock Log log;
   @Mock ThreadFactory threadFactory;
+  @Mock ExecutorService executorService;
   @Mock Thread thread;
 
   @Before public void setUp() {
     initMocks(this);
 
     when(threadFactory.newThread(any(Runnable.class))).thenReturn(thread);
-    client = new AnalyticsClient(blockingQueue, segmentService, 25, log, threadFactory);
+    client =
+        new AnalyticsClient(blockingQueue, segmentService, 25, log, threadFactory, executorService);
   }
 
   @Test public void enqueueAddsToQueue(MessageBuilder builder) {
