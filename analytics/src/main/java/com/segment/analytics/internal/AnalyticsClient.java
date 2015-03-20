@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import retrofit.RetrofitError;
 
 public class AnalyticsClient {
@@ -44,7 +45,8 @@ public class AnalyticsClient {
     private final SegmentService service;
     private final Batch batch;
     private final Log log;
-    private final Backo backo = new Backo.Builder().build();
+    // todo: pool backo instances
+    private final Backo backo = new Backo.Builder().base(TimeUnit.SECONDS, 30).jitter(1).build();
 
     public UploadBatchTask(SegmentService service, Batch batch, Log log) {
       this.service = service;
@@ -99,7 +101,8 @@ public class AnalyticsClient {
           }
         }
       } catch (InterruptedException e) {
-        Thread.currentThread().interrupt();
+        log.e(e, "Thread interrupted while polling for messages.");
+        return; // Stop processing messages
       }
     }
   }
