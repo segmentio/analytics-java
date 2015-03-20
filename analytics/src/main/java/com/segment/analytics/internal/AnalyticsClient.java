@@ -2,7 +2,6 @@ package com.segment.analytics.internal;
 
 import com.segment.analytics.Log;
 import com.segment.analytics.internal.http.SegmentService;
-import com.segment.analytics.internal.http.UploadResponse;
 import com.segment.analytics.messages.Message;
 import java.util.ArrayList;
 import java.util.List;
@@ -57,38 +56,30 @@ public class AnalyticsClient {
       int attempts = 0;
 
       while (true) {
-        if (upload(batch)) {
-          break;
+        try {
+          // Ignore return value, UploadResponse#success will never return false for 200 OK
+          service.upload(batch);
+        } catch (RetrofitError error) {
+          switch (error.getKind()) {
+            case HTTP:
+              log.e(error, String.format("Server rejected batch: %s.", batch));
+              return; // Don't retry
+            default:
+              log.e(error, String.format("Could not upload batch: %s.", batch));
+          }
         }
 
         attempts++;
         if (attempts > 5) {
           log.e(null, String.format("Giving up on batch: %s.", batch));
-          break;
+          return;
         }
 
         try {
           backo.backOff();
         } catch (InterruptedException e) {
           log.e(e, String.format("Thread interrupted while backing off for batch: %s.", batch));
-          break;
-        }
-      }
-    }
-
-    /** Returns {@code false} to indicate the batch should be retried. */
-    boolean upload(Batch batch) {
-      try {
-        UploadResponse response = service.upload(batch);
-        return response.success(); // should never return false
-      } catch (RetrofitError error) {
-        switch (error.getKind()) {
-          case HTTP:
-            log.e(error, String.format("Server rejected batch: %s.", batch));
-            return true; // We connected to the server but it rejected our message. Don't retry
-          default:
-            log.e(error, String.format("Could not upload batch: %s.", batch));
-            return false;
+          return;
         }
       }
     }
