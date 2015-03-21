@@ -45,8 +45,7 @@ public class AnalyticsClient {
     private final SegmentService service;
     private final Batch batch;
     private final Log log;
-    // todo: pool backo instances
-    private final Backo backo = new Backo.Builder().base(TimeUnit.SECONDS, 30).jitter(1).build();
+    private Backo backo;
 
     public UploadBatchTask(SegmentService service, Batch batch, Log log) {
       this.service = service;
@@ -75,6 +74,11 @@ public class AnalyticsClient {
         if (attempts > 5) {
           log.e(null, String.format("Giving up on batch: %s.", batch));
           return;
+        }
+
+        if (backo == null) {
+          // todo: pool backo instances
+          backo = new Backo.Builder().base(TimeUnit.SECONDS, 30).jitter(1).build();
         }
 
         try {
