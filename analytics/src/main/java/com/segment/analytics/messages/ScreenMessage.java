@@ -21,13 +21,23 @@ import static com.segment.analytics.internal.Utils.isNullOrEmpty;
 
   @Nullable public abstract Map<String, Object> properties();
 
-  public static class Builder extends PayloadBuilder<ScreenMessage, Builder> {
+  public Builder toBuilder() {
+    return new Builder(this);
+  }
+
+  public static class Builder extends MessageBuilder<ScreenMessage, Builder> {
     private String name;
     private String category;
     private Map<String, Object> properties;
 
+    private Builder(ScreenMessage screen) {
+      super(screen);
+      name = screen.name();
+      category = screen.category();
+      properties = screen.properties();
+    }
+
     private Builder() {
-      // Hidden from Public API
     }
 
     public Builder name(String name) {

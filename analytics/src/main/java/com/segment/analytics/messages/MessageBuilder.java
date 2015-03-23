@@ -6,15 +6,21 @@ import java.util.UUID;
 
 import static com.segment.analytics.internal.Utils.isNullOrEmpty;
 
-public abstract class PayloadBuilder<T extends Message, V extends PayloadBuilder> {
+public abstract class MessageBuilder<T extends Message, V extends MessageBuilder> {
   Map<String, Object> context;
   UUID anonymousId;
   String userId;
 
-  PayloadBuilder() {
+  MessageBuilder() {
     // Hidden from Public API.
     // We would use Auto's Builders, but they don't provide a nice way of hiding internal details,
     // like mapping Maps to ImmutableMaps
+  }
+
+  MessageBuilder(Message message) {
+    context = message.context();
+    anonymousId = message.anonymousId();
+    userId = message.userId();
   }
 
   public V context(Map<String, Object> context) {

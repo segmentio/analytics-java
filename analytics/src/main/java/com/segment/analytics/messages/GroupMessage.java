@@ -20,9 +20,19 @@ import static com.segment.analytics.internal.Utils.isNullOrEmpty;
 
   @Nullable public abstract Map<String, Object> traits();
 
-  public static class Builder extends PayloadBuilder<GroupMessage, Builder> {
+  public Builder toBuilder() {
+    return new Builder(this);
+  }
+
+  public static class Builder extends MessageBuilder<GroupMessage, Builder> {
     private String groupId;
     private Map<String, Object> traits;
+
+    private Builder(GroupMessage group) {
+      super(group);
+      groupId = group.groupId();
+      traits = group.traits();
+    }
 
     private Builder(String groupId) {
       if (isNullOrEmpty(groupId)) {

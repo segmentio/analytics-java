@@ -16,11 +16,19 @@ import javax.annotation.Nullable;
 
   @Nullable public abstract Map<String, Object> traits();
 
-  public static class Builder extends PayloadBuilder<IdentifyMessage, Builder> {
+  public Builder toBuilder() {
+    return new Builder(this);
+  }
+
+  public static class Builder extends MessageBuilder<IdentifyMessage, Builder> {
     private Map<String, Object> traits;
 
+    private Builder(IdentifyMessage identify) {
+      super(identify);
+      traits = identify.traits();
+    }
+
     private Builder() {
-      // Hidden from Public API
     }
 
     public Builder traits(Map<String, Object> traits) {

@@ -4,7 +4,6 @@ import com.segment.analytics.messages.AliasMessage;
 import com.segment.analytics.messages.GroupMessage;
 import com.segment.analytics.messages.IdentifyMessage;
 import com.segment.analytics.messages.Message;
-import com.segment.analytics.messages.PayloadBuilder;
 import com.segment.analytics.messages.ScreenMessage;
 import com.segment.analytics.messages.TrackMessage;
 
@@ -37,6 +36,6 @@ public final class TestUtils {
       }
     };
 
-    public abstract <T extends Message, V extends PayloadBuilder> PayloadBuilder<T, V> get();
+    public abstract <T extends Message, V extends com.segment.analytics.messages.MessageBuilder> com.segment.analytics.messages.MessageBuilder<T, V> get();
   }
 }

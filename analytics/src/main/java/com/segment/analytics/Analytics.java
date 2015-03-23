@@ -9,6 +9,9 @@ import com.segment.analytics.internal.http.SegmentService;
 import com.segment.analytics.messages.Message;
 import com.squareup.okhttp.Credentials;
 import com.squareup.okhttp.OkHttpClient;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 import retrofit.RequestInterceptor;
@@ -35,14 +38,27 @@ import static com.segment.analytics.internal.Utils.isNullOrEmpty;
  * @see <a href="https://Segment/">Segment</a>
  */
 public class Analytics {
-  final AnalyticsClient client;
+  private final AnalyticsClient client;
+  private final List<MessageInterceptor> messageInterceptors;
 
-  Analytics(AnalyticsClient client) {
+  Analytics(AnalyticsClient client, List<MessageInterceptor> interceptors) {
     this.client = client;
+    if (interceptors == null) {
+      messageInterceptors = Collections.emptyList();
+    } else {
+      messageInterceptors = Collections.unmodifiableList(interceptors);
+    }
   }
 
   /** Enqueue the given message to be uploaded to Segment's servers. */
   public void enqueue(Message message) {
+    for (int i = 0, size = messageInterceptors.size(); i < size; i++) {
+      message = messageInterceptors.get(i).intercept(message);
+      if (message == null) {
+        // todo: log
+        return;
+      }
+    }
     client.enqueue(message);
   }
 
@@ -56,6 +72,7 @@ public class Analytics {
     private final String writeKey;
     private Log log;
     private Client client;
+    private List<MessageInterceptor> messageInterceptors;
 
     /**
      * Start building a new {@link Analytics} instance.
@@ -75,6 +92,20 @@ public class Analytics {
         throw new NullPointerException("Null log");
       }
       this.log = log;
+      return this;
+    }
+
+    public Builder addMessageInterceptor(MessageInterceptor interceptor) {
+      if (interceptor == null) {
+        throw new IllegalArgumentException("Null interceptor");
+      }
+      if (messageInterceptors == null) {
+        messageInterceptors = new ArrayList<>();
+      }
+      if (messageInterceptors.contains(interceptor)) {
+        throw new IllegalStateException("MessageInterceptor is already registered.");
+      }
+      messageInterceptors.add(interceptor);
       return this;
     }
 
@@ -116,7 +147,7 @@ public class Analytics {
           new AnalyticsClient(new LinkedBlockingDeque<Message>(), segmentService, 25, log,
               Executors.defaultThreadFactory(), Executors.newSingleThreadExecutor());
 
-      return new Analytics(analyticsClient);
+      return new Analytics(analyticsClient, messageInterceptors);
     }
   }
 }
