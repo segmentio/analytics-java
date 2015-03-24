@@ -1,7 +1,30 @@
 package com.segment.analytics.internal;
 
+/*
+ * The MIT License (MIT)
+ *
+ * Copyright (c) 2014 Segment.io, Inc.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Backo implements the "full jitter" backoff policy as described in this article <a
@@ -12,21 +35,18 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Jitter
  * </a>
  */
-// TODO: Use our published library
 public class Backo {
   private static final long DEFAULT_BASE = 100; // 100ms
   private static final int DEFAULT_FACTOR = 2;
   private static final double DEFAULT_JITTER = 0;
   private static final long DEFAULT_CAP = Long.MAX_VALUE;
 
-  private final AtomicInteger attempts;
   private final long base;
   private final int factor;
   private final double jitter;
   private final long cap;
 
-  Backo(long base, int factor, double jitter, long cap) {
-    attempts = new AtomicInteger();
+  private Backo(long base, int factor, double jitter, long cap) {
     this.base = base;
     this.factor = factor;
     this.jitter = jitter;
@@ -39,16 +59,19 @@ public class Backo {
   }
 
   /**
-   * Sleeps for the duration returned by {@link #duration}.
+   * Sleeps for the duration returned by {@link #backOff}.
    *
    * @throws InterruptedException
    */
-  public void backOff() throws InterruptedException {
-    Thread.sleep(duration());
+  public void sleep(int attempt) throws InterruptedException {
+    Thread.sleep(backOff(attempt));
   }
 
-  long duration() {
-    long duration = base * (long) Math.pow(factor, attempts.getAndIncrement());
+  /**
+   * todo: docs
+   */
+  public long backOff(int attempt) {
+    long duration = base * (long) Math.pow(factor, attempt);
     if (jitter != 0) {
       double random = Math.random();
       int deviation = (int) Math.floor(random * jitter * duration);
@@ -58,14 +81,10 @@ public class Backo {
         duration = duration + deviation;
       }
     }
-    if (duration < base) {
+    if (duration < 0) {
       duration = Long.MAX_VALUE;
     }
-    return Math.min(duration, cap);
-  }
-
-  void reset() {
-    attempts.set(0);
+    return Math.min(Math.max(duration, base), cap);
   }
 
   public static class Builder {
@@ -83,7 +102,10 @@ public class Backo {
       return this;
     }
 
-    /** Set the backoff factor. Defaults to {@code 2}. */
+    /**
+     * Set the backoff factor. Defaults to {@code 2}. Using a factor of {@code 2} will back off
+     * linearly.
+     */
     public Builder factor(int factor) {
       // Disallow factor of 1?
       this.factor = factor;

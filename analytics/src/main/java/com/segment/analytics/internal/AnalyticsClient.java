@@ -18,6 +18,7 @@ public class AnalyticsClient {
   private final Log log;
   private final Thread looperThread;
   private final ExecutorService flushExecutor;
+  private final Backo backo;
 
   public AnalyticsClient(BlockingQueue<Message> messageQueue, SegmentService service, int size,
       Log log, ThreadFactory looperThreadFactory, ExecutorService flushExecutor) {
@@ -26,6 +27,7 @@ public class AnalyticsClient {
     this.size = size;
     this.log = log;
     this.flushExecutor = flushExecutor;
+    this.backo = new Backo.Builder().base(TimeUnit.SECONDS, 30).jitter(1).build();
 
     looperThread = looperThreadFactory.newThread(new Looper());
     looperThread.start();
@@ -45,12 +47,13 @@ public class AnalyticsClient {
     private final SegmentService service;
     private final Batch batch;
     private final Log log;
-    private Backo backo;
+    private final Backo backo;
 
-    public UploadBatchTask(SegmentService service, Batch batch, Log log) {
+    public UploadBatchTask(SegmentService service, Batch batch, Log log, Backo backo) {
       this.service = service;
       this.batch = batch;
       this.log = log;
+      this.backo = backo;
     }
 
     @Override public void run() {
@@ -70,19 +73,15 @@ public class AnalyticsClient {
           }
         }
 
-        attempts++;
         if (attempts > 5) {
+          // TODO: configure
           log.e(null, String.format("Giving up on batch: %s.", batch));
           return;
         }
 
-        if (backo == null) {
-          // todo: pool backo instances
-          backo = new Backo.Builder().base(TimeUnit.SECONDS, 30).jitter(1).build();
-        }
-
         try {
-          backo.backOff();
+          backo.sleep(attempts);
+          attempts++;
         } catch (InterruptedException e) {
           log.e(e, String.format("Thread interrupted while backing off for batch: %s.", batch));
           return;
@@ -100,7 +99,7 @@ public class AnalyticsClient {
           messages.add(message);
 
           if (messages.size() >= size) {
-            flushExecutor.submit(new UploadBatchTask(service, Batch.create(messages), log));
+            flushExecutor.submit(new UploadBatchTask(service, Batch.create(messages), log, backo));
             messages = new ArrayList<>();
           }
         }
