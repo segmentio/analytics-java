@@ -114,6 +114,7 @@ public class Analytics {
       return this;
     }
 
+    /** Add a message interceptor for transforming every message. */
     public Builder addMessageInterceptor(MessageInterceptor interceptor) {
       if (interceptor == null) {
         throw new IllegalArgumentException("Null interceptor");
