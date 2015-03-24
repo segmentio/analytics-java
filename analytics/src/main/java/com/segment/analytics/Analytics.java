@@ -91,6 +91,15 @@ public class Analytics {
       this.writeKey = writeKey;
     }
 
+    /** Set a custom networking client. */
+    public Builder client(Client client) {
+      if (client == null) {
+        throw new NullPointerException("Null client");
+      }
+      this.client = client;
+      return this;
+    }
+
     /** Configure debug logging mechanism. By default, nothing is logged. */
     public Builder log(Log log) {
       if (log == null) {
