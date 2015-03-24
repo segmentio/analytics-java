@@ -8,16 +8,15 @@ import com.segment.analytics.internal.gson.PayloadTypeTypeAdapter;
 import com.segment.analytics.internal.http.SegmentService;
 import com.segment.analytics.messages.Message;
 import com.squareup.okhttp.Credentials;
-import com.squareup.okhttp.OkHttpClient;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.ThreadFactory;
 import retrofit.RequestInterceptor;
 import retrofit.RestAdapter;
 import retrofit.client.Client;
-import retrofit.client.OkClient;
 import retrofit.converter.GsonConverter;
 
 import static com.segment.analytics.internal.Utils.isNullOrEmpty;
@@ -73,6 +72,8 @@ public class Analytics {
     private Log log;
     private Client client;
     private List<MessageInterceptor> messageInterceptors;
+    private ExecutorService networkExecutor;
+    private ThreadFactory threadFactory;
 
     /**
      * Start building a new {@link Analytics} instance.
@@ -92,6 +93,24 @@ public class Analytics {
         throw new NullPointerException("Null log");
       }
       this.log = log;
+      return this;
+    }
+
+    /** Set the executor on which all HTTP requests will be made. */
+    public Builder networkExecutor(ExecutorService networkExecutor) {
+      if (networkExecutor == null) {
+        throw new NullPointerException("Null networkExecutor");
+      }
+      this.networkExecutor = networkExecutor;
+      return this;
+    }
+
+    /** Set the ThreadFactory used to create threads. */
+    public Builder threadFactory(ThreadFactory threadFactory) {
+      if (threadFactory == null) {
+        throw new NullPointerException("Null threadFactory");
+      }
+      this.threadFactory = threadFactory;
       return this;
     }
 
@@ -116,13 +135,17 @@ public class Analytics {
           .registerTypeAdapter(Message.Type.class, new PayloadTypeTypeAdapter())
           .create();
 
-      if (client == null) {
-        OkHttpClient okHttpClient = new OkHttpClient();
-        client = new OkClient(okHttpClient);
-      }
-
       if (log == null) {
         log = Log.NONE;
+      }
+      if (client == null) {
+        client = Platform.get().defaultClient();
+      }
+      if (networkExecutor == null) {
+        networkExecutor = Platform.get().defaultNetworkExecutor();
+      }
+      if (threadFactory == null) {
+        threadFactory = Platform.get().defaultThreadFactory();
       }
 
       RestAdapter restAdapter = new RestAdapter.Builder().setConverter(new GsonConverter(gson))
@@ -145,7 +168,7 @@ public class Analytics {
 
       AnalyticsClient analyticsClient =
           new AnalyticsClient(new LinkedBlockingDeque<Message>(), segmentService, 25, log,
-              Executors.defaultThreadFactory(), Executors.newSingleThreadExecutor());
+              threadFactory, networkExecutor);
 
       return new Analytics(analyticsClient, messageInterceptors);
     }
