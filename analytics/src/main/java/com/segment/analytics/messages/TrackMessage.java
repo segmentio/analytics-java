@@ -19,9 +19,19 @@ import static com.segment.analytics.internal.Utils.isNullOrEmpty;
 
   @Nullable public abstract Map<String, Object> properties();
 
-  public static class Builder extends PayloadBuilder<TrackMessage, Builder> {
+  public Builder toBuilder() {
+    return new Builder(this);
+  }
+
+  public static class Builder extends MessageBuilder<TrackMessage, Builder> {
     private String event;
     private Map<String, Object> properties;
+
+    private Builder(TrackMessage track) {
+      super(track);
+      event = track.event();
+      properties = track.properties();
+    }
 
     private Builder(String event) {
       if (isNullOrEmpty(event)) {

@@ -15,8 +15,16 @@ import static com.segment.analytics.internal.Utils.isNullOrEmpty;
 
   public abstract String previousId();
 
-  public static class Builder extends PayloadBuilder<AliasMessage, Builder> {
+  public Builder toBuilder() {
+    return new Builder(this);
+  }
+
+  public static class Builder extends MessageBuilder<AliasMessage, Builder> {
     private String previousId;
+
+    private Builder(AliasMessage alias) {
+      previousId = alias.previousId();
+    }
 
     private Builder(String previousId) {
       if (isNullOrEmpty(previousId)) {
