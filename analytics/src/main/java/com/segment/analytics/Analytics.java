@@ -5,8 +5,7 @@ import com.google.gson.GsonBuilder;
 import com.segment.analytics.internal.AnalyticsClient;
 import com.segment.analytics.internal.Channel;
 import com.segment.analytics.internal.gson.AutoValueAdapterFactory;
-import com.segment.analytics.internal.gson.ChannelTypeAdapter;
-import com.segment.analytics.internal.gson.PayloadTypeTypeAdapter;
+import com.segment.analytics.internal.gson.LowerCaseEnumTypeAdapterFactory;
 import com.segment.analytics.internal.http.SegmentService;
 import com.segment.analytics.messages.Message;
 import com.squareup.okhttp.Credentials;
@@ -132,8 +131,8 @@ public class Analytics {
     public Analytics build() {
       Gson gson = new GsonBuilder() //
           .registerTypeAdapterFactory(new AutoValueAdapterFactory())
-          .registerTypeAdapter(Message.Type.class, new PayloadTypeTypeAdapter())
-          .registerTypeAdapter(Channel.class, new ChannelTypeAdapter())
+          .registerTypeAdapterFactory(new LowerCaseEnumTypeAdapterFactory<>(Message.Type.class))
+          .registerTypeAdapterFactory(new LowerCaseEnumTypeAdapterFactory(Channel.class))
           .create();
 
       if (channel == null) {
