@@ -35,7 +35,7 @@ import static com.segment.analytics.internal.Utils.isNullOrEmpty;
 
     @Override protected AliasMessage realBuild() {
       return new AutoValue_AliasMessage(Type.ALIAS, UUID.randomUUID(), new Date(), context,
-          anonymousId, userId, previousId);
+          anonymousId, userId, integrations, previousId);
     }
 
     @Override Builder self() {

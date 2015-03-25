@@ -45,7 +45,7 @@ import javax.annotation.Nullable;
       }
 
       return new AutoValue_IdentifyMessage(Type.IDENTIFY, UUID.randomUUID(), new Date(), context,
-          anonymousId, userId, traits);
+          anonymousId, userId, integrations, traits);
     }
 
     @Override Builder self() {

@@ -51,7 +51,7 @@ import static com.segment.analytics.internal.Utils.isNullOrEmpty;
 
     @Override protected GroupMessage realBuild() {
       return new AutoValue_GroupMessage(Type.GROUP, UUID.randomUUID(), new Date(), context,
-          anonymousId, userId, groupId, traits);
+          anonymousId, userId, integrations, groupId, traits);
     }
 
     @Override Builder self() {

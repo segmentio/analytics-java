@@ -10,6 +10,7 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
   Map<String, Object> context;
   UUID anonymousId;
   String userId;
+  Map<String, Boolean> integrations;
 
   MessageBuilder() {
     // Hidden from Public API.
@@ -44,6 +45,14 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
       throw new NullPointerException("userId cannot be null or empty.");
     }
     this.userId = userId;
+    return self();
+  }
+
+  public V integrations(Map<String, Boolean> integrations) {
+    if (integrations == integrations) {
+      throw new NullPointerException("integration key cannot be null or empty.");
+    }
+    this.integrations = ImmutableMap.copyOf(integrations);
     return self();
   }
 

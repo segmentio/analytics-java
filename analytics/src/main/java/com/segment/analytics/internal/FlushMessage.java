@@ -35,4 +35,8 @@ public class FlushMessage implements Message {
   @Nullable @Override public String userId() {
     throw new UnsupportedOperationException();
   }
+
+  @Nullable @Override public Map<String, Boolean> integrations() {
+    throw new UnsupportedOperationException();
+  }
 }
