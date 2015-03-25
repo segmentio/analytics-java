@@ -40,6 +40,10 @@
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.squareup.okio</groupId>
+      <artifactId>okio</artifactId>
+    </dependency>
 
     <dependency>
       <groupId>junit</groupId>

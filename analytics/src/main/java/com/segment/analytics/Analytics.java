@@ -7,7 +7,6 @@ import com.segment.analytics.internal.gson.AutoValueAdapterFactory;
 import com.segment.analytics.internal.gson.LowerCaseEnumTypeAdapterFactory;
 import com.segment.analytics.internal.http.SegmentService;
 import com.segment.analytics.messages.Message;
-import com.squareup.okhttp.Credentials;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -20,6 +19,7 @@ import retrofit.RestAdapter;
 import retrofit.client.Client;
 import retrofit.converter.GsonConverter;
 
+import static com.segment.analytics.internal.Utils.basicCredentials;
 import static com.segment.analytics.internal.Utils.isNullOrEmpty;
 
 /**
@@ -89,6 +89,15 @@ public class Analytics {
         throw new NullPointerException("category cannot be null or empty.");
       }
       this.writeKey = writeKey;
+    }
+
+    /** Set a custom networking client. */
+    public Builder client(Client client) {
+      if (client == null) {
+        throw new NullPointerException("Null client");
+      }
+      this.client = client;
+      return this;
     }
 
     /** Configure debug logging mechanism. By default, nothing is logged. */
@@ -198,7 +207,7 @@ public class Analytics {
           .setClient(client)
           .setRequestInterceptor(new RequestInterceptor() {
             @Override public void intercept(RequestFacade request) {
-              request.addHeader("Authorization", Credentials.basic(writeKey, ""));
+              request.addHeader("Authorization", basicCredentials(writeKey, ""));
             }
           })
           .setLogLevel(RestAdapter.LogLevel.FULL)
