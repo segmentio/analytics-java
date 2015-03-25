@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import retrofit.RequestInterceptor;
 import retrofit.RestAdapter;
 import retrofit.client.Client;
@@ -75,6 +76,8 @@ public class Analytics {
     private List<MessageInterceptor> messageInterceptors;
     private ExecutorService networkExecutor;
     private ThreadFactory threadFactory;
+    private int flushQueueSize;
+    private long flushIntervalInMillis;
 
     /**
      * Start building a new {@link Analytics} instance.
@@ -97,6 +100,50 @@ public class Analytics {
       return this;
     }
 
+    /** Add a message interceptor for transforming every message. */
+    public Builder messageInterceptor(MessageInterceptor interceptor) {
+      if (interceptor == null) {
+        throw new IllegalArgumentException("Null interceptor");
+      }
+      if (messageInterceptors == null) {
+        messageInterceptors = new ArrayList<>();
+      }
+      if (messageInterceptors.contains(interceptor)) {
+        throw new IllegalStateException("MessageInterceptor is already registered.");
+      }
+      messageInterceptors.add(interceptor);
+      return this;
+    }
+
+    /**
+     * Set the queueSize at which flushes should be triggered.
+     * <p></p>
+     * Note: Although functionally stable, this is a beta API and the name might be changed in a
+     * later release.
+     */
+    public Builder flushQueueSize(int flushQueueSize) {
+      if (flushQueueSize < 1) {
+        throw new IllegalArgumentException("flushQueueSize must not be less than 1.");
+      }
+      this.flushQueueSize = flushQueueSize;
+      return this;
+    }
+
+    /**
+     * Set the interval at which the queue should be flushed.
+     * <p></p>
+     * Note: Although functionally stable, this is a beta API and the name might be changed in a
+     * later release.
+     */
+    public Builder flushInterval(int flushInterval, TimeUnit unit) {
+      long flushIntervalInMillis = unit.toMillis(flushInterval);
+      if (flushIntervalInMillis < 1000) {
+        throw new IllegalArgumentException("flushIntervalInMillis must not be less than 1 second.");
+      }
+      this.flushIntervalInMillis = flushIntervalInMillis;
+      return this;
+    }
+
     /** Set the executor on which all HTTP requests will be made. */
     public Builder networkExecutor(ExecutorService networkExecutor) {
       if (networkExecutor == null) {
@@ -115,21 +162,6 @@ public class Analytics {
       return this;
     }
 
-    /** Add a message interceptor for transforming every message. */
-    public Builder addMessageInterceptor(MessageInterceptor interceptor) {
-      if (interceptor == null) {
-        throw new IllegalArgumentException("Null interceptor");
-      }
-      if (messageInterceptors == null) {
-        messageInterceptors = new ArrayList<>();
-      }
-      if (messageInterceptors.contains(interceptor)) {
-        throw new IllegalStateException("MessageInterceptor is already registered.");
-      }
-      messageInterceptors.add(interceptor);
-      return this;
-    }
-
     /** Create a {@link Analytics} client. */
     public Analytics build() {
       Gson gson = new GsonBuilder() //
@@ -142,6 +174,12 @@ public class Analytics {
       }
       if (log == null) {
         log = Log.NONE;
+      }
+      if (flushIntervalInMillis == 0) {
+        flushIntervalInMillis = Platform.get().defaultFlushIntervalInMillis();
+      }
+      if (flushQueueSize == 0) {
+        flushQueueSize = Platform.get().defaultFlushQueueSize();
       }
       if (messageInterceptors == null) {
         messageInterceptors = Collections.emptyList();
@@ -174,8 +212,8 @@ public class Analytics {
       SegmentService segmentService = restAdapter.create(SegmentService.class);
 
       AnalyticsClient analyticsClient =
-          new AnalyticsClient(new LinkedBlockingDeque<Message>(), segmentService, 25, log,
-              threadFactory, networkExecutor);
+          new AnalyticsClient(new LinkedBlockingDeque<Message>(), segmentService, flushQueueSize,
+              flushIntervalInMillis, log, threadFactory, networkExecutor);
 
       return new Analytics(analyticsClient, messageInterceptors);
     }

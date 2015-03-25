@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import retrofit.RetrofitError;
@@ -18,13 +20,15 @@ public class AnalyticsClient {
   private final Log log;
   private final Thread looperThread;
   private final ExecutorService flushExecutor;
+  private final ScheduledExecutorService flushScheduler;
   private final Backo backo;
 
-  public AnalyticsClient(BlockingQueue<Message> messageQueue, SegmentService service, int size,
-      Log log, ThreadFactory looperThreadFactory, ExecutorService flushExecutor) {
+  public AnalyticsClient(BlockingQueue<Message> messageQueue, SegmentService service,
+      int maxQueueSize, long flushIntervalInMillis, Log log, ThreadFactory threadFactory,
+      final ExecutorService flushExecutor) {
     this.messageQueue = messageQueue;
     this.service = service;
-    this.size = size;
+    this.size = maxQueueSize;
     this.log = log;
     this.flushExecutor = flushExecutor;
     this.backo = new Backo.Builder() //
@@ -33,8 +37,15 @@ public class AnalyticsClient {
         .jitter(1) //
         .build();
 
-    looperThread = looperThreadFactory.newThread(new Looper());
+    looperThread = threadFactory.newThread(new Looper());
     looperThread.start();
+
+    flushScheduler = Executors.newScheduledThreadPool(1, threadFactory);
+    flushScheduler.scheduleAtFixedRate(new Runnable() {
+      @Override public void run() {
+        flush();
+      }
+    }, flushIntervalInMillis, flushIntervalInMillis, TimeUnit.MILLISECONDS);
   }
 
   public void enqueue(Message message) {
@@ -49,6 +60,7 @@ public class AnalyticsClient {
     looperThread.interrupt();
     messageQueue.clear();
     flushExecutor.shutdown();
+    flushScheduler.shutdown();
   }
 
   static class UploadBatchTask implements Runnable {

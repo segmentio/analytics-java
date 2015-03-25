@@ -35,4 +35,12 @@ class Platform {
   ThreadFactory defaultThreadFactory() {
     return Executors.defaultThreadFactory();
   }
+
+  public long defaultFlushIntervalInMillis() {
+    return 10 * 1000; // 10s
+  }
+
+  public int defaultFlushQueueSize() {
+    return 250;
+  }
 }
