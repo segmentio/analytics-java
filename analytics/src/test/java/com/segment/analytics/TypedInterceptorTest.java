@@ -6,15 +6,14 @@ import com.segment.analytics.messages.IdentifyMessage;
 import com.segment.analytics.messages.ScreenMessage;
 import com.segment.analytics.messages.TrackMessage;
 import org.junit.Test;
-import org.mockito.Mockito;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-public class FanOutInterceptorTest {
+public class TypedInterceptorTest {
   @Test public void messagesFanOutCorrectly() {
-    final FanOutInterceptor mockInterceptor = mock(FanOutInterceptor.class);
-    FanOutInterceptor interceptor = new FanOutInterceptor() {
+    final TypedInterceptor mockInterceptor = mock(TypedInterceptor.class);
+    TypedInterceptor interceptor = new TypedInterceptor() {
       @Override AliasMessage alias(AliasMessage alias) {
         return mockInterceptor.alias(alias);
       }

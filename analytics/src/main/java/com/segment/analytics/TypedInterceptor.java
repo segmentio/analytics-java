@@ -11,8 +11,7 @@ import com.segment.analytics.messages.TrackMessage;
  * A {@link MessageInterceptor} that lets you implement more strongly typed methods and add logic
  * specific to the event type.
  */
-// TODO: rename class and make public
-abstract class FanOutInterceptor implements MessageInterceptor {
+public abstract class TypedInterceptor implements MessageInterceptor {
 
   @Override public final Message intercept(Message message) {
     // todo: non final so messages can be filtered without duplicating logic?
