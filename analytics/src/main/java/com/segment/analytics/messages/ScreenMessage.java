@@ -74,7 +74,7 @@ import static com.segment.analytics.internal.Utils.isNullOrEmpty;
       }
 
       return new AutoValue_ScreenMessage(Type.SCREEN, UUID.randomUUID(), new Date(), context,
-          anonymousId, userId, name, category, properties);
+          anonymousId, userId, integrations, name, category, properties);
     }
   }
 }

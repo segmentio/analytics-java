@@ -18,6 +18,8 @@ public interface Message {
 
   @Nullable public String userId();
 
+  @Nullable public Map<String, Boolean> integrations();
+
   public enum Type {
     IDENTIFY, GROUP, TRACK, SCREEN, ALIAS
   }

@@ -54,7 +54,7 @@ import static com.segment.analytics.internal.Utils.isNullOrEmpty;
 
     @Override protected TrackMessage realBuild() {
       return new AutoValue_TrackMessage(Type.TRACK, UUID.randomUUID(), new Date(), context,
-          anonymousId, userId, event, properties);
+          anonymousId, userId, integrations, event, properties);
     }
   }
 }
