@@ -18,18 +18,17 @@ public class AnalyticsClient {
   private final Log log;
   private final Thread looperThread;
   private final ExecutorService flushExecutor;
-  private final Channel channel;
   private final Backo backo;
 
   public AnalyticsClient(BlockingQueue<Message> messageQueue, SegmentService service, int size,
-      Log log, ThreadFactory looperThreadFactory, ExecutorService flushExecutor, Channel channel) {
+      Log log, ThreadFactory looperThreadFactory, ExecutorService flushExecutor) {
     this.messageQueue = messageQueue;
     this.service = service;
     this.size = size;
     this.log = log;
     this.flushExecutor = flushExecutor;
-    this.channel = channel;
-    this.backo = new Backo.Builder().base(TimeUnit.SECONDS, 30).jitter(1).build();
+    this.backo =
+        new Backo.Builder().base(TimeUnit.SECONDS, 30).cap(TimeUnit.HOURS, 1).jitter(1).build();
 
     looperThread = looperThreadFactory.newThread(new Looper());
     looperThread.start();
@@ -65,20 +64,16 @@ public class AnalyticsClient {
         try {
           // Ignore return value, UploadResponse#success will never return false for 200 OK
           service.upload(batch);
+          return;
         } catch (RetrofitError error) {
           switch (error.getKind()) {
-            case HTTP:
-              log.e(error, String.format("Server rejected batch: %s.", batch));
-              return; // Don't retry
+            case NETWORK:
+              log.e(error, String.format("Could not upload batch: %s.", batch));
+              break;
             default:
               log.e(error, String.format("Could not upload batch: %s.", batch));
+              return; // Don't retry
           }
-        }
-
-        if (attempts > 5) {
-          // TODO: configure
-          log.e(null, String.format("Giving up on batch: %s.", batch));
-          return;
         }
 
         try {
@@ -101,8 +96,7 @@ public class AnalyticsClient {
           messages.add(message);
 
           if (messages.size() >= size) {
-            flushExecutor.submit(
-                new UploadBatchTask(service, Batch.create(messages, channel), log, backo));
+            flushExecutor.submit(new UploadBatchTask(service, Batch.create(messages), log, backo));
             messages = new ArrayList<>();
           }
         }

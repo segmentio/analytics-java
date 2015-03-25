@@ -33,8 +33,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
     when(threadFactory.newThread(any(Runnable.class))).thenReturn(thread);
     client =
-        new AnalyticsClient(blockingQueue, segmentService, 25, log, threadFactory, executorService,
-            Channel.SERVER);
+        new AnalyticsClient(blockingQueue, segmentService, 25, log, threadFactory, executorService);
   }
 
   @Test public void enqueueAddsToQueue(MessageBuilder builder) {

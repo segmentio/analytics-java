@@ -3,7 +3,6 @@ package com.segment.analytics;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.segment.analytics.internal.AnalyticsClient;
-import com.segment.analytics.internal.Channel;
 import com.segment.analytics.internal.gson.AutoValueAdapterFactory;
 import com.segment.analytics.internal.gson.LowerCaseEnumTypeAdapterFactory;
 import com.segment.analytics.internal.http.SegmentService;
@@ -66,7 +65,6 @@ public class Analytics {
   /** Fluent API for creating {@link Analytics} instances. */
   public static class Builder {
     private final String writeKey;
-    private Channel channel;
     private Client client;
     private Log log;
     private List<MessageInterceptor> messageInterceptors;
@@ -132,12 +130,8 @@ public class Analytics {
       Gson gson = new GsonBuilder() //
           .registerTypeAdapterFactory(new AutoValueAdapterFactory())
           .registerTypeAdapterFactory(new LowerCaseEnumTypeAdapterFactory<>(Message.Type.class))
-          .registerTypeAdapterFactory(new LowerCaseEnumTypeAdapterFactory(Channel.class))
           .create();
 
-      if (channel == null) {
-        channel = Platform.get().defaultChannel();
-      }
       if (client == null) {
         client = Platform.get().defaultClient();
       }
@@ -176,7 +170,7 @@ public class Analytics {
 
       AnalyticsClient analyticsClient =
           new AnalyticsClient(new LinkedBlockingDeque<Message>(), segmentService, 25, log,
-              threadFactory, networkExecutor, channel);
+              threadFactory, networkExecutor);
 
       return new Analytics(analyticsClient, messageInterceptors);
     }

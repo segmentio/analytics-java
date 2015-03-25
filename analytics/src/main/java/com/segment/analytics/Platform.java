@@ -1,6 +1,5 @@
 package com.segment.analytics;
 
-import com.segment.analytics.internal.Channel;
 import com.squareup.okhttp.OkHttpClient;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -18,10 +17,6 @@ class Platform {
 
   private static Platform findPlatform() {
     return new Platform();
-  }
-
-  Channel defaultChannel() {
-    return Channel.SERVER;
   }
 
   Client defaultClient() {

@@ -19,13 +19,11 @@ import java.util.Map;
     CONTEXT = ImmutableMap.<String, Object>of("library", library);
   }
 
-  public static Batch create(List<Message> batch, Channel channel) {
-    return new AutoValue_Batch(batch, channel, new Date(), CONTEXT);
+  public static Batch create(List<Message> batch) {
+    return new AutoValue_Batch(batch, new Date(), CONTEXT);
   }
 
   public abstract List<Message> batch();
-
-  public abstract Channel channel();
 
   public abstract Date sentAt();
 
