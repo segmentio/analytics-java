@@ -3,7 +3,9 @@ package com.segment.analytics;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.segment.analytics.internal.AnalyticsClient;
+import com.segment.analytics.internal.Channel;
 import com.segment.analytics.internal.gson.AutoValueAdapterFactory;
+import com.segment.analytics.internal.gson.ChannelTypeAdapter;
 import com.segment.analytics.internal.gson.PayloadTypeTypeAdapter;
 import com.segment.analytics.internal.http.SegmentService;
 import com.segment.analytics.messages.Message;
@@ -40,13 +42,9 @@ public class Analytics {
   private final AnalyticsClient client;
   private final List<MessageInterceptor> messageInterceptors;
 
-  Analytics(AnalyticsClient client, List<MessageInterceptor> interceptors) {
+  Analytics(AnalyticsClient client, List<MessageInterceptor> messageInterceptors) {
     this.client = client;
-    if (interceptors == null) {
-      messageInterceptors = Collections.emptyList();
-    } else {
-      messageInterceptors = Collections.unmodifiableList(interceptors);
-    }
+    this.messageInterceptors = messageInterceptors;
   }
 
   /** Enqueue the given message to be uploaded to Segment's servers. */
@@ -69,8 +67,9 @@ public class Analytics {
   /** Fluent API for creating {@link Analytics} instances. */
   public static class Builder {
     private final String writeKey;
-    private Log log;
+    private Channel channel;
     private Client client;
+    private Log log;
     private List<MessageInterceptor> messageInterceptors;
     private ExecutorService networkExecutor;
     private ThreadFactory threadFactory;
@@ -134,13 +133,22 @@ public class Analytics {
       Gson gson = new GsonBuilder() //
           .registerTypeAdapterFactory(new AutoValueAdapterFactory())
           .registerTypeAdapter(Message.Type.class, new PayloadTypeTypeAdapter())
+          .registerTypeAdapter(Channel.class, new ChannelTypeAdapter())
           .create();
 
-      if (log == null) {
-        log = Log.NONE;
+      if (channel == null) {
+        channel = Platform.get().defaultChannel();
       }
       if (client == null) {
         client = Platform.get().defaultClient();
+      }
+      if (log == null) {
+        log = Log.NONE;
+      }
+      if (messageInterceptors == null) {
+        messageInterceptors = Collections.emptyList();
+      } else {
+        messageInterceptors = Collections.unmodifiableList(messageInterceptors);
       }
       if (networkExecutor == null) {
         networkExecutor = Platform.get().defaultNetworkExecutor();
@@ -169,7 +177,7 @@ public class Analytics {
 
       AnalyticsClient analyticsClient =
           new AnalyticsClient(new LinkedBlockingDeque<Message>(), segmentService, 25, log,
-              threadFactory, networkExecutor);
+              threadFactory, networkExecutor, channel);
 
       return new Analytics(analyticsClient, messageInterceptors);
     }

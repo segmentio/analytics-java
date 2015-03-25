@@ -18,15 +18,17 @@ public class AnalyticsClient {
   private final Log log;
   private final Thread looperThread;
   private final ExecutorService flushExecutor;
+  private final Channel channel;
   private final Backo backo;
 
   public AnalyticsClient(BlockingQueue<Message> messageQueue, SegmentService service, int size,
-      Log log, ThreadFactory looperThreadFactory, ExecutorService flushExecutor) {
+      Log log, ThreadFactory looperThreadFactory, ExecutorService flushExecutor, Channel channel) {
     this.messageQueue = messageQueue;
     this.service = service;
     this.size = size;
     this.log = log;
     this.flushExecutor = flushExecutor;
+    this.channel = channel;
     this.backo = new Backo.Builder().base(TimeUnit.SECONDS, 30).jitter(1).build();
 
     looperThread = looperThreadFactory.newThread(new Looper());
@@ -99,7 +101,8 @@ public class AnalyticsClient {
           messages.add(message);
 
           if (messages.size() >= size) {
-            flushExecutor.submit(new UploadBatchTask(service, Batch.create(messages), log, backo));
+            flushExecutor.submit(
+                new UploadBatchTask(service, Batch.create(messages, channel), log, backo));
             messages = new ArrayList<>();
           }
         }

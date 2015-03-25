@@ -12,16 +12,20 @@ import java.util.Map;
   private static final Map<String, Object> CONTEXT;
 
   static {
-    ImmutableMap<String, String> library =
-        ImmutableMap.of("name", "analytics-java", "version", AnalyticsVersion.get());
+    ImmutableMap<String, String> library = new ImmutableMap.Builder<String, String>() //
+        .put("name", "analytics-java") //
+        .put("version", AnalyticsVersion.get()) //
+        .build();
     CONTEXT = ImmutableMap.<String, Object>of("library", library);
   }
 
-  public static Batch create(List<Message> batch) {
-    return new AutoValue_Batch(batch, new Date(), CONTEXT);
+  public static Batch create(List<Message> batch, Channel channel) {
+    return new AutoValue_Batch(batch, channel, new Date(), CONTEXT);
   }
 
   public abstract List<Message> batch();
+
+  public abstract Channel channel();
 
   public abstract Date sentAt();
 
