@@ -27,8 +27,11 @@ public class AnalyticsClient {
     this.size = size;
     this.log = log;
     this.flushExecutor = flushExecutor;
-    this.backo =
-        new Backo.Builder().base(TimeUnit.SECONDS, 30).cap(TimeUnit.HOURS, 1).jitter(1).build();
+    this.backo = new Backo.Builder() //
+        .base(TimeUnit.SECONDS, 30) //
+        .cap(TimeUnit.HOURS, 1) //
+        .jitter(1) //
+        .build();
 
     looperThread = looperThreadFactory.newThread(new Looper());
     looperThread.start();
@@ -36,6 +39,10 @@ public class AnalyticsClient {
 
   public void enqueue(Message message) {
     messageQueue.add(message);
+  }
+
+  public void flush() {
+    messageQueue.add(FlushMessage.POISON);
   }
 
   public void shutdown() {
@@ -87,15 +94,26 @@ public class AnalyticsClient {
     }
   }
 
+  /**
+   * Looper runs on a background thread and takes messages from the queue. Once it collects enough
+   * messages, it triggers a flush.
+   */
   class Looper implements Runnable {
     @Override public void run() {
       List<Message> messages = new ArrayList<>();
       try {
         while (true) {
           Message message = messageQueue.take();
-          messages.add(message);
 
-          if (messages.size() >= size) {
+          if (message != FlushMessage.POISON) {
+            messages.add(message);
+          } else if (messages.size() < 1) {
+            log.v("No messages to flush.");
+            continue; // we got a hint to flush, but there aren't any messages in the queue
+          }
+
+          if (messages.size() >= size || message == FlushMessage.POISON) {
+            log.v(String.format("Uploading batch with %s messages.", messages.size()));
             flushExecutor.submit(new UploadBatchTask(service, Batch.create(messages), log, backo));
             messages = new ArrayList<>();
           }

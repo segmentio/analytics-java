@@ -8,8 +8,8 @@ import com.segment.analytics.messages.ScreenMessage;
 import com.segment.analytics.messages.TrackMessage;
 
 /**
- * A {@link MessageInterceptor} that lets you implement more strongly typed methods and add logic
- * specific to the event type.
+ * A {@link MessageInterceptor} that lets you implement more strongly typed methods and add
+ * transformations specific to the event type.
  */
 public abstract class TypedInterceptor implements MessageInterceptor {
 

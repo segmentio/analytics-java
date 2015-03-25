@@ -11,17 +11,16 @@ public class Sample {
         new Analytics.Builder("uFIKMspL0GD0klDBZFlE3mklPVtUgPpd").log(Log.STDOUT).build();
 
     final AtomicInteger count = new AtomicInteger();
-
     for (int i = 0; i < 10; i++) {
       new Thread() {
         @Override public void run() {
           super.run();
           for (int i = 0; i < 10; i++) {
-
             analytics.enqueue(TrackMessage.builder("Java Test #" + count.getAndIncrement())
                 .userId("prateek")
                 .build());
           }
+          analytics.flush();
         }
       }.start();
     }

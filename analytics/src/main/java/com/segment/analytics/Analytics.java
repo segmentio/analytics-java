@@ -57,6 +57,11 @@ public class Analytics {
     client.enqueue(message);
   }
 
+  /** Flush events in the message queue. */
+  public void flush() {
+    client.flush();
+  }
+
   /** Stops this instance from processing further requests. */
   public void shutdown() {
     client.shutdown();
