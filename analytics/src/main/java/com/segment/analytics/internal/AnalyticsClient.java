@@ -3,6 +3,7 @@ package com.segment.analytics.internal;
 import com.segment.analytics.Log;
 import com.segment.analytics.internal.http.SegmentService;
 import com.segment.analytics.messages.Message;
+import com.segment.backo.Backo;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
@@ -31,7 +32,7 @@ public class AnalyticsClient {
     this.size = maxQueueSize;
     this.log = log;
     this.flushExecutor = flushExecutor;
-    this.backo = new Backo.Builder() //
+    this.backo = Backo.builder() //
         .base(TimeUnit.SECONDS, 30) //
         .cap(TimeUnit.HOURS, 1) //
         .jitter(1) //
