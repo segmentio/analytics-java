@@ -5,6 +5,10 @@ import java.util.Map;
 import java.util.UUID;
 import javax.annotation.Nullable;
 
+/**
+ * Encapsulates properties common to all messages. Although not enforced by the compiler, either
+ * the {@link Message#anonymousId} or {@link Message#userId} must be provided.
+ */
 public interface Message {
   public Type type();
 

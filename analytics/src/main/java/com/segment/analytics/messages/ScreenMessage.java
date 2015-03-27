@@ -10,14 +10,28 @@ import javax.annotation.Nullable;
 
 import static com.segment.analytics.internal.Utils.isNullOrEmpty;
 
+/**
+ * The screen call lets you record whenever a user sees a screen of your website, along with any
+ * properties about the screen.
+ * <p/>
+ * Use {@link #builder} to construct your own instances.
+ *
+ * @see <a href="https://segment.com/docs/spec/screen/">Screen</a>
+ */
 @AutoValue @AutoGson public abstract class ScreenMessage implements Message {
-  public static Builder builder() {
-    return new Builder();
+
+  /**
+   * Start building an {@link AliasMessage} instance.
+   *
+   * @param name The name of the screen the user is on.
+   * @throws IllegalArgumentException if the screen name is null or empty
+   * @see <a href="https://segment.com/docs/spec/screen/#name">Name</a>
+   */
+  public static Builder builder(String name) {
+    return new Builder(name);
   }
 
   @Nullable public abstract String name();
-
-  @Nullable public abstract String category();
 
   @Nullable public abstract Map<String, Object> properties();
 
@@ -25,37 +39,29 @@ import static com.segment.analytics.internal.Utils.isNullOrEmpty;
     return new Builder(this);
   }
 
+  /** Fluent API for creating {@link ScreenMessage} instances. */
   public static class Builder extends MessageBuilder<ScreenMessage, Builder> {
     private String name;
-    private String category;
     private Map<String, Object> properties;
 
     private Builder(ScreenMessage screen) {
       super(screen);
       name = screen.name();
-      category = screen.category();
       properties = screen.properties();
     }
 
-    private Builder() {
-    }
-
-    public Builder name(String name) {
-      if (name == null) {
-        throw new NullPointerException("Null name");
+    private Builder(String name) {
+      if (isNullOrEmpty(name)) {
+        throw new IllegalArgumentException("screen name cannot be null or empty.");
       }
       this.name = name;
-      return this;
     }
 
-    public Builder category(String category) {
-      if (isNullOrEmpty(category)) {
-        throw new NullPointerException("category cannot be null or empty.");
-      }
-      this.category = category;
-      return this;
-    }
-
+    /**
+     * Set a map of information that describe the screen. These can be anything you want.
+     *
+     * @see <a href="https://segment.com/docs/spec/screen/#properties">Properties</a>
+     */
     public Builder properties(Map<String, Object> properties) {
       if (properties == null) {
         throw new NullPointerException("Null properties");
@@ -69,12 +75,8 @@ import static com.segment.analytics.internal.Utils.isNullOrEmpty;
     }
 
     @Override protected ScreenMessage realBuild() {
-      if (name == null && category == null) {
-        throw new IllegalStateException("Either name or category must be provided.");
-      }
-
       return new AutoValue_ScreenMessage(Type.SCREEN, UUID.randomUUID(), new Date(), context,
-          anonymousId, userId, integrations, name, category, properties);
+          anonymousId, userId, integrations, name, properties);
     }
   }
 }

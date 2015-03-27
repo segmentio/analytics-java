@@ -47,7 +47,7 @@ public class TypedInterceptorTest {
     interceptor.intercept(identify);
     verify(mockInterceptor).identify(identify);
 
-    ScreenMessage screen = ScreenMessage.builder().name("foo").userId("bar").build();
+    ScreenMessage screen = ScreenMessage.builder("foo").userId("bar").build();
     interceptor.intercept(screen);
     verify(mockInterceptor).screen(screen);
 

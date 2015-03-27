@@ -23,7 +23,7 @@ import static org.junit.Assert.fail;
     try {
       AliasMessage.builder(null);
       fail();
-    } catch (NullPointerException e) {
+    } catch (IllegalArgumentException e) {
       assertThat(e).hasMessage("previousId cannot be null or empty.");
     }
   }
@@ -32,7 +32,7 @@ import static org.junit.Assert.fail;
     try {
       GroupMessage.builder(null);
       fail();
-    } catch (NullPointerException e) {
+    } catch (IllegalArgumentException e) {
       assertThat(e).hasMessage("groupId cannot be null or empty.");
     }
 
@@ -60,15 +60,15 @@ import static org.junit.Assert.fail;
 
   @Test public void screenBuilder() {
     try {
-      ScreenMessage.builder().properties(null).build();
+      ScreenMessage.builder("foo").properties(null).build();
     } catch (NullPointerException e) {
       assertThat(e).hasMessage("Null properties");
     }
 
     try {
-      ScreenMessage.builder().userId("foo").build();
-    } catch (IllegalStateException e) {
-      assertThat(e).hasMessage("Either name or category must be provided.");
+      ScreenMessage.builder(null).userId("foo").build();
+    } catch (IllegalArgumentException e) {
+      assertThat(e).hasMessage("screen name cannot be null or empty.");
     }
   }
 
@@ -76,7 +76,7 @@ import static org.junit.Assert.fail;
     try {
       TrackMessage.builder(null);
       fail();
-    } catch (NullPointerException e) {
+    } catch (IllegalArgumentException e) {
       assertThat(e).hasMessage("event cannot be null or empty.");
     }
 

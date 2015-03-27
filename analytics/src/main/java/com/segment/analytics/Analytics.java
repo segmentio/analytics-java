@@ -32,7 +32,7 @@ import static com.segment.analytics.internal.Utils.isNullOrEmpty;
  * servers for you. You only need to instrument Segment once, then flip a switch to install
  * new tools.
  * <p/>
- * This class is the main entry point into the client API. Use {@link Builder} to construct your
+ * This class is the main entry point into the client API. Use {@link #builder} to construct your
  * own instances.
  *
  * @see <a href="https://Segment/">Segment</a>
@@ -44,6 +44,15 @@ public class Analytics {
   Analytics(AnalyticsClient client, List<MessageInterceptor> messageInterceptors) {
     this.client = client;
     this.messageInterceptors = messageInterceptors;
+  }
+
+  /**
+   * Start building an {@link Analytics} instance.
+   *
+   * @param writeKey Your project write key available on the Segment dashboard.
+   */
+  public static Builder builder(String writeKey) {
+    return new Builder(writeKey);
   }
 
   /** Enqueue the given message to be uploaded to Segment's servers. */
@@ -79,14 +88,9 @@ public class Analytics {
     private int flushQueueSize;
     private long flushIntervalInMillis;
 
-    /**
-     * Start building a new {@link Analytics} instance.
-     *
-     * @param writeKey Your project write key available on the Segment dashboard.
-     */
-    public Builder(String writeKey) {
+    Builder(String writeKey) {
       if (isNullOrEmpty(writeKey)) {
-        throw new NullPointerException("category cannot be null or empty.");
+        throw new NullPointerException("writeKey cannot be null or empty.");
       }
       this.writeKey = writeKey;
     }
