@@ -28,7 +28,7 @@ public final class TestUtils {
       }
     }, SCREEN {
       @Override public ScreenMessage.Builder get() {
-        return ScreenMessage.builder().name("foo");
+        return ScreenMessage.builder("foo");
       }
     }, TRACK {
       @Override public TrackMessage.Builder get() {

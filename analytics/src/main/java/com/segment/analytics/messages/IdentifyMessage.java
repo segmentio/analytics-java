@@ -8,8 +8,17 @@ import java.util.Map;
 import java.util.UUID;
 import javax.annotation.Nullable;
 
+/**
+ * The identify call ties a customer and their actions to a recognizable ID and traits like their
+ * email, name, etc.
+ * <p/>
+ * Use {@link #builder} to construct your own instances.
+ *
+ * @see <a href="https://segment.com/docs/spec/identify/">Identify</a>
+ */
 @AutoValue @AutoGson public abstract class IdentifyMessage implements Message {
 
+  /** Start building an {@link IdentifyMessage} instance. */
   public static Builder builder() {
     return new Builder();
   }
@@ -20,6 +29,7 @@ import javax.annotation.Nullable;
     return new Builder(this);
   }
 
+  /** Fluent API for creating {@link IdentifyMessage} instances. */
   public static class Builder extends MessageBuilder<IdentifyMessage, Builder> {
     private Map<String, Object> traits;
 
@@ -31,6 +41,11 @@ import javax.annotation.Nullable;
     private Builder() {
     }
 
+    /**
+     * Set a map of information of the user, like email or name.
+     *
+     * @see <a href="https://segment.com/docs/spec/identify/#traits">Traits</a>
+     */
     public Builder traits(Map<String, Object> traits) {
       if (traits == null) {
         throw new NullPointerException("Null traits");
