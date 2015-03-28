@@ -9,25 +9,27 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 @RunWith(BurstJUnit4.class) public class AnalyticsTest {
 
   @Mock AnalyticsClient client;
-  MessageInterceptor interceptor;
+  @Mock MessageInterceptor interceptor;
   Analytics analytics;
 
   @Before public void setUp() {
     initMocks(this);
-    MessageInterceptor realInterceptor = new MessageInterceptor() {
-      @Override public Message intercept(Message message) {
-        return message;
+    when(interceptor.intercept(any(Message.class))).thenAnswer(new Answer<Message>() {
+      @Override public Message answer(InvocationOnMock invocation) throws Throwable {
+        return (Message) invocation.getArguments()[0];
       }
-    };
-    interceptor = Mockito.spy(realInterceptor);
+    });
     analytics = new Analytics(client, Collections.singletonList(interceptor));
   }
 
