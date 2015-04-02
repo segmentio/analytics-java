@@ -187,16 +187,7 @@ public class Analytics {
       }
       if (log == null) {
         log = new Log() {
-          @Override public void v(String msg) {
-
-          }
-
-          @Override public void d(String msg) {
-
-          }
-
-          @Override public void e(Throwable e, String msg) {
-
+          @Override public void print(Level level, String format, Object... args) {
           }
         };
       }
@@ -229,7 +220,7 @@ public class Analytics {
           .setLogLevel(RestAdapter.LogLevel.FULL)
           .setLog(new RestAdapter.Log() {
             @Override public void log(String message) {
-              log.v(message);
+              log.print(Log.Level.VERBOSE, message);
             }
           })
           .build();

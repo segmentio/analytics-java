@@ -88,10 +88,12 @@ public class AnalyticsClient {
         } catch (RetrofitError error) {
           switch (error.getKind()) {
             case NETWORK:
-              log.e(error, String.format("Could not upload batch: %s.", batch));
+              log.print(Log.Level.VERBOSE, "Could not upload batch: %s.\n%s", batch,
+                  error.toString());
               break;
             default:
-              log.e(error, String.format("Could not upload batch: %s.", batch));
+              log.print(Log.Level.DEBUG, "Could not upload batch: %s.\n%s", batch,
+                  error.toString());
               return; // Don't retry
           }
         }
@@ -100,7 +102,7 @@ public class AnalyticsClient {
           backo.sleep(attempts);
           attempts++;
         } catch (InterruptedException e) {
-          log.e(e, String.format("Thread interrupted while backing off for batch: %s.", batch));
+          log.print(Log.Level.ERROR, "Thread interrupted while backing off for batch: %s.", batch);
           return;
         }
       }
@@ -121,19 +123,19 @@ public class AnalyticsClient {
           if (message != FlushMessage.POISON) {
             messages.add(message);
           } else if (messages.size() < 1) {
-            log.v("No messages to flush.");
-            continue; // we got a hint to flush, but there aren't any messages in the queue
+            log.print(Log.Level.VERBOSE, "No messages to flush.");
+            continue;
           }
 
           if (messages.size() >= size || message == FlushMessage.POISON) {
-            log.v(String.format("Uploading batch with %s messages.", messages.size()));
+            log.print(Log.Level.VERBOSE, "Uploading batch with %s message(s).", messages.size());
             flushExecutor.submit(new UploadBatchTask(service, Batch.create(messages), log, backo));
             messages = new ArrayList<>();
           }
         }
       } catch (InterruptedException e) {
-        log.e(e, "Thread interrupted while polling for messages.");
-        return; // Stop processing messages
+        log.print(Log.Level.ERROR, "Thread interrupted while polling for messages.");
+        return; // Stop processing messages any further
       }
     }
   }

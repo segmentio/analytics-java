@@ -10,17 +10,8 @@ public class Sample {
   public static void main(String... args) throws Exception {
     final Analytics analytics =
         Analytics.builder("uFIKMspL0GD0klDBZFlE3mklPVtUgPpd").log(new Log() {
-          @Override public void v(String msg) {
-            System.out.println(msg);
-          }
-
-          @Override public void d(String msg) {
-            System.out.println(msg);
-          }
-
-          @Override public void e(Throwable e, String msg) {
-            System.out.println(msg);
-            System.out.println(e.getMessage());
+          @Override public void print(Level level, String format, Object... args) {
+            System.out.println(level + "\t:" + String.format(format, args));
           }
         }).build();
 

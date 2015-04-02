@@ -1,10 +1,10 @@
 package com.segment.analytics;
 
 /** Abstraction for logging messages. */
-public interface Log {
-  void v(String msg);
+public abstract class Log {
+  public enum Level {
+    VERBOSE, DEBUG, ERROR
+  }
 
-  void d(String msg);
-
-  void e(Throwable e, String msg);
+  public abstract void print(Level level, String format, Object... args);
 }
