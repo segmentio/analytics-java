@@ -186,7 +186,19 @@ public class Analytics {
         client = Platform.get().defaultClient();
       }
       if (log == null) {
-        log = Log.NONE;
+        log = new Log() {
+          @Override public void v(String msg) {
+
+          }
+
+          @Override public void d(String msg) {
+
+          }
+
+          @Override public void e(Throwable e, String msg) {
+
+          }
+        };
       }
       if (flushIntervalInMillis == 0) {
         flushIntervalInMillis = Platform.get().defaultFlushIntervalInMillis();
