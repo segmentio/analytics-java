@@ -1,7 +1,6 @@
 package com.segment.analytics.internal;
 
 import java.io.UnsupportedEncodingException;
-import okio.ByteString;
 
 public final class Utils {
   private Utils() {
@@ -18,7 +17,7 @@ public final class Utils {
     try {
       String usernameAndPassword = userName + ":" + password;
       byte[] bytes = usernameAndPassword.getBytes("ISO-8859-1");
-      String encoded = ByteString.of(bytes).base64();
+      String encoded = Base64.encode(bytes);
       return "Basic " + encoded;
     } catch (UnsupportedEncodingException e) {
       throw new AssertionError();
