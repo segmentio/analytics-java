@@ -51,6 +51,7 @@ import static com.segment.analytics.internal.Utils.isNullOrEmpty;
     }
 
     private Builder(String name) {
+      super(Type.SCREEN);
       if (isNullOrEmpty(name)) {
         throw new IllegalArgumentException("screen name cannot be null or empty.");
       }
@@ -74,9 +75,11 @@ import static com.segment.analytics.internal.Utils.isNullOrEmpty;
       return this;
     }
 
-    @Override protected ScreenMessage realBuild() {
-      return new AutoValue_ScreenMessage(Type.SCREEN, UUID.randomUUID(), new Date(), context,
-          anonymousId, userId, integrations, name, properties);
+    @Override protected ScreenMessage realBuild(Type type, UUID messageId, Date timestamp,
+        Map<String, Object> context, UUID anonymousId, String userId,
+        Map<String, Boolean> integrations) {
+      return new AutoValue_ScreenMessage(type, messageId, timestamp, context, anonymousId, userId,
+          integrations, name, properties);
     }
   }
 }

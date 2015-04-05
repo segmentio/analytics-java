@@ -1,6 +1,6 @@
 package com.segment.analytics.messages;
 
-import com.segment.analytics.TestUtils.MessageBuilder;
+import com.segment.analytics.TestUtils.MessageBuilderTest;
 import com.squareup.burst.BurstJUnit4;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -10,7 +10,7 @@ import static org.junit.Assert.fail;
 
 @RunWith(BurstJUnit4.class) public class MessageTest {
 
-  @Test public void missingUserIdAndAnonymousIdThrowsException(MessageBuilder builder) {
+  @Test public void missingUserIdAndAnonymousIdThrowsException(MessageBuilderTest builder) {
     try {
       builder.get().build();
       fail();

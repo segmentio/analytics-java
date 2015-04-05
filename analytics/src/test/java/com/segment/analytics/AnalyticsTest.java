@@ -1,46 +1,48 @@
 package com.segment.analytics;
 
-import com.segment.analytics.TestUtils.MessageBuilder;
+import com.segment.analytics.TestUtils.MessageBuilderTest;
 import com.segment.analytics.internal.AnalyticsClient;
 import com.segment.analytics.messages.Message;
+import com.segment.analytics.messages.MessageBuilder;
 import com.squareup.burst.BurstJUnit4;
 import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
-import static org.mockito.Matchers.any;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 @RunWith(BurstJUnit4.class) public class AnalyticsTest {
 
   @Mock AnalyticsClient client;
-  @Mock MessageInterceptor interceptor;
   @Mock Log log;
+  MessageInterceptor interceptor;
   Analytics analytics;
 
   @Before public void setUp() {
     initMocks(this);
-    when(interceptor.intercept(any(Message.class))).thenAnswer(new Answer<Message>() {
-      @Override public Message answer(InvocationOnMock invocation) throws Throwable {
-        return (Message) invocation.getArguments()[0];
+
+    interceptor = new MessageInterceptor() {
+      @Override public boolean intercept(MessageBuilder message) {
+        message.userId("prateek");
+        return true;
       }
-    });
+    };
     analytics = new Analytics(client, Collections.singletonList(interceptor), log);
   }
 
-  @Test public void enqueueIsDispatched(MessageBuilder builder) {
-    Message message = builder.get().userId("prateek").build();
+  @Test public void enqueueIsDispatched(MessageBuilderTest builder) {
+    MessageBuilder messageBuilder = builder.get().userId("prateek");
 
-    analytics.enqueue(message);
+    analytics.enqueue(messageBuilder);
 
-    verify(interceptor).intercept(message);
-    verify(client).enqueue(message);
+    ArgumentCaptor<Message> messageArgumentCaptor = ArgumentCaptor.forClass(Message.class);
+    verify(client).enqueue(messageArgumentCaptor.capture());
+    assertThat(messageArgumentCaptor.getValue().userId()).isEqualTo("prateek");
   }
 
   @Test public void shutdownIsDispatched() {

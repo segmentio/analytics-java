@@ -1,6 +1,7 @@
 package com.segment.analytics.messages;
 
 import com.google.common.collect.ImmutableMap;
+import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
 
@@ -14,18 +15,21 @@ import static com.segment.analytics.internal.Utils.isNullOrEmpty;
  * IllegalStateException} at runtime.
  */
 public abstract class MessageBuilder<T extends Message, V extends MessageBuilder> {
-  Map<String, Object> context;
-  UUID anonymousId;
-  String userId;
-  Map<String, Boolean> integrations;
+  private final Message.Type type;
+  private Map<String, Object> context;
+  private UUID anonymousId;
+  private String userId;
+  private Map<String, Boolean> integrations;
 
-  MessageBuilder() {
-    // Hidden from Public API.
+  // Hidden from Public API.
+  MessageBuilder(Message.Type type) {
+    this.type = type;
     // We would use Auto's Builders, but they don't provide a nice way of hiding internal details,
     // like mapping Maps to ImmutableMaps
   }
 
   MessageBuilder(Message message) {
+    type = message.type();
     context = message.context();
     anonymousId = message.anonymousId();
     userId = message.userId();
@@ -93,7 +97,9 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
     return self();
   }
 
-  protected abstract T realBuild();
+  protected abstract T realBuild(Message.Type type, UUID messageId, Date timestamp,
+      Map<String, Object> context, UUID anonymousId, String userId,
+      Map<String, Boolean> integrations);
 
   abstract V self();
 
@@ -106,6 +112,12 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
     if (anonymousId == null && userId == null) {
       throw new IllegalStateException("Either anonymousId or userId must be provided.");
     }
-    return realBuild();
+    return realBuild(type, UUID.randomUUID(), new Date(), context, anonymousId, userId,
+        integrations);
+  }
+
+  /** Returns the {@link Message.Type} of the message this builder is constructing. */
+  public Message.Type type() {
+    return type;
   }
 }

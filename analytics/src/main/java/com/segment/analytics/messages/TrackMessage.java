@@ -52,6 +52,7 @@ import static com.segment.analytics.internal.Utils.isNullOrEmpty;
     }
 
     private Builder(String event) {
+      super(Type.TRACK);
       if (isNullOrEmpty(event)) {
         throw new IllegalArgumentException("event cannot be null or empty.");
       }
@@ -75,9 +76,11 @@ import static com.segment.analytics.internal.Utils.isNullOrEmpty;
       return this;
     }
 
-    @Override protected TrackMessage realBuild() {
-      return new AutoValue_TrackMessage(Type.TRACK, UUID.randomUUID(), new Date(), context,
-          anonymousId, userId, integrations, event, properties);
+    @Override protected TrackMessage realBuild(Type type, UUID messageId, Date timestamp,
+        Map<String, Object> context, UUID anonymousId, String userId,
+        Map<String, Boolean> integrations) {
+      return new AutoValue_TrackMessage(type, messageId, timestamp, context, anonymousId, userId,
+          integrations, event, properties);
     }
   }
 }

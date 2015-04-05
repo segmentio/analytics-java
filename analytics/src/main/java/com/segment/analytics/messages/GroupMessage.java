@@ -54,6 +54,7 @@ import static com.segment.analytics.internal.Utils.isNullOrEmpty;
     }
 
     private Builder(String groupId) {
+      super(Type.GROUP);
       if (isNullOrEmpty(groupId)) {
         throw new IllegalArgumentException("groupId cannot be null or empty.");
       }
@@ -73,9 +74,11 @@ import static com.segment.analytics.internal.Utils.isNullOrEmpty;
       return this;
     }
 
-    @Override protected GroupMessage realBuild() {
-      return new AutoValue_GroupMessage(Type.GROUP, UUID.randomUUID(), new Date(), context,
-          anonymousId, userId, integrations, groupId, traits);
+    @Override protected GroupMessage realBuild(Type type, UUID messageId, Date timestamp,
+        Map<String, Object> context, UUID anonymousId, String userId,
+        Map<String, Boolean> integrations) {
+      return new AutoValue_GroupMessage(type, messageId, timestamp, context, anonymousId, userId,
+          integrations, groupId, traits);
     }
 
     @Override Builder self() {
