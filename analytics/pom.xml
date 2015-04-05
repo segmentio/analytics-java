@@ -41,10 +41,6 @@
       <artifactId>guava</artifactId>
     </dependency>
     <dependency>
-      <groupId>com.squareup.okio</groupId>
-      <artifactId>okio</artifactId>
-    </dependency>
-    <dependency>
       <groupId>com.segment.backo</groupId>
       <artifactId>backo</artifactId>
     </dependency>
