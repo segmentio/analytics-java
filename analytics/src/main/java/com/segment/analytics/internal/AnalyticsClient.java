@@ -9,10 +9,10 @@ import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import retrofit.RetrofitError;
 
 public class AnalyticsClient {
   private final BlockingQueue<Message> messageQueue;
@@ -20,18 +20,25 @@ public class AnalyticsClient {
   private final int size;
   private final Log log;
   private final Thread looperThread;
-  private final ExecutorService flushExecutor;
+  private final ExecutorService networkExecutor;
   private final ScheduledExecutorService flushScheduler;
   private final Backo backo;
 
-  public AnalyticsClient(BlockingQueue<Message> messageQueue, SegmentService service,
-      int maxQueueSize, long flushIntervalInMillis, Log log, ThreadFactory threadFactory,
-      final ExecutorService flushExecutor) {
+  public static AnalyticsClient create(SegmentService segmentService, int flushQueueSize,
+      long flushIntervalInMillis, Log log, ThreadFactory threadFactory,
+      ExecutorService networkExecutor) {
+    return new AnalyticsClient(new LinkedBlockingQueue<Message>(), segmentService, flushQueueSize,
+        flushIntervalInMillis, log, threadFactory, networkExecutor);
+  }
+
+  AnalyticsClient(BlockingQueue<Message> messageQueue, SegmentService service, int maxQueueSize,
+      long flushIntervalInMillis, Log log, ThreadFactory threadFactory,
+      final ExecutorService networkExecutor) {
     this.messageQueue = messageQueue;
     this.service = service;
     this.size = maxQueueSize;
     this.log = log;
-    this.flushExecutor = flushExecutor;
+    this.networkExecutor = networkExecutor;
     this.backo = Backo.builder() //
         .base(TimeUnit.SECONDS, 30) //
         .cap(TimeUnit.HOURS, 1) //
@@ -60,53 +67,8 @@ public class AnalyticsClient {
   public void shutdown() {
     looperThread.interrupt();
     messageQueue.clear();
-    flushExecutor.shutdown();
+    networkExecutor.shutdown();
     flushScheduler.shutdown();
-  }
-
-  static class UploadBatchTask implements Runnable {
-    private final SegmentService service;
-    private final Batch batch;
-    private final Log log;
-    private final Backo backo;
-
-    public UploadBatchTask(SegmentService service, Batch batch, Log log, Backo backo) {
-      this.service = service;
-      this.batch = batch;
-      this.log = log;
-      this.backo = backo;
-    }
-
-    @Override public void run() {
-      int attempts = 0;
-
-      while (true) {
-        try {
-          // Ignore return value, UploadResponse#success will never return false for 200 OK
-          service.upload(batch);
-          return;
-        } catch (RetrofitError error) {
-          switch (error.getKind()) {
-            case NETWORK:
-              log.print(Log.Level.VERBOSE, "Could not upload batch: %s.\n%s", batch,
-                  error.toString());
-              break;
-            default:
-              log.print(Log.Level.DEBUG, "Could not upload batch: %s.\n%s", batch,
-                  error.toString());
-              return; // Don't retry
-          }
-        }
-
-        try {
-          backo.sleep(attempts);
-          attempts++;
-        } catch (InterruptedException e) {
-          log.print(Log.Level.ERROR, "Thread interrupted while backing off for batch: %s.", batch);
-          return;
-        }
-      }
-    }
   }
 
   /**
@@ -129,7 +91,8 @@ public class AnalyticsClient {
 
           if (messages.size() >= size || message == FlushMessage.POISON) {
             log.print(Log.Level.VERBOSE, "Uploading batch with %s message(s).", messages.size());
-            flushExecutor.submit(new UploadBatchTask(service, Batch.create(messages), log, backo));
+            networkExecutor.submit(
+                new BatchUploadTask(service, Batch.create(messages), log, backo));
             messages = new ArrayList<>();
           }
         }

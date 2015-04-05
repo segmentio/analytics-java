@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import retrofit.RequestInterceptor;
@@ -40,10 +39,12 @@ import static com.segment.analytics.internal.Utils.isNullOrEmpty;
 public class Analytics {
   private final AnalyticsClient client;
   private final List<MessageInterceptor> messageInterceptors;
+  private final Log log;
 
-  Analytics(AnalyticsClient client, List<MessageInterceptor> messageInterceptors) {
+  Analytics(AnalyticsClient client, List<MessageInterceptor> messageInterceptors, Log log) {
     this.client = client;
     this.messageInterceptors = messageInterceptors;
+    this.log = log;
   }
 
   /**
@@ -58,11 +59,12 @@ public class Analytics {
   /** Enqueue the given message to be uploaded to Segment's servers. */
   public void enqueue(Message message) {
     for (int i = 0, size = messageInterceptors.size(); i < size; i++) {
-      message = messageInterceptors.get(i).intercept(message);
-      if (message == null) {
-        // todo: log
+      Message next = messageInterceptors.get(i).intercept(message);
+      if (next == null) {
+        log.print(Log.Level.VERBOSE, "Interceptor skipping message %s.", message);
         return;
       }
+      message = next;
     }
     client.enqueue(message);
   }
@@ -228,10 +230,9 @@ public class Analytics {
       SegmentService segmentService = restAdapter.create(SegmentService.class);
 
       AnalyticsClient analyticsClient =
-          new AnalyticsClient(new LinkedBlockingDeque<Message>(), segmentService, flushQueueSize,
-              flushIntervalInMillis, log, threadFactory, networkExecutor);
-
-      return new Analytics(analyticsClient, messageInterceptors);
+          AnalyticsClient.create(segmentService, flushQueueSize, flushIntervalInMillis, log,
+              threadFactory, networkExecutor);
+      return new Analytics(analyticsClient, messageInterceptors, log);
     }
   }
 }

@@ -21,6 +21,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
   @Mock AnalyticsClient client;
   @Mock MessageInterceptor interceptor;
+  @Mock Log log;
   Analytics analytics;
 
   @Before public void setUp() {
@@ -30,7 +31,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
         return (Message) invocation.getArguments()[0];
       }
     });
-    analytics = new Analytics(client, Collections.singletonList(interceptor));
+    analytics = new Analytics(client, Collections.singletonList(interceptor), log);
   }
 
   @Test public void enqueueIsDispatched(MessageBuilder builder) {
@@ -46,5 +47,11 @@ import static org.mockito.MockitoAnnotations.initMocks;
     analytics.shutdown();
 
     verify(client).shutdown();
+  }
+
+  @Test public void flushIsDispatched() {
+    analytics.flush();
+
+    verify(client).flush();
   }
 }

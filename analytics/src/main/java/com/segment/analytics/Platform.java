@@ -28,8 +28,7 @@ class Platform {
   }
 
   ExecutorService defaultNetworkExecutor() {
-    // todo: use a concurrent executor by default
-    return Executors.newSingleThreadExecutor(defaultThreadFactory());
+    return Executors.newCachedThreadPool(defaultThreadFactory());
   }
 
   ThreadFactory defaultThreadFactory() {
