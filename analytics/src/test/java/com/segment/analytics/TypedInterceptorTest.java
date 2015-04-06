@@ -14,44 +14,44 @@ public class TypedInterceptorTest {
   @Test public void messagesFanOutCorrectly() {
     final TypedInterceptor mockInterceptor = mock(TypedInterceptor.class);
     TypedInterceptor interceptor = new TypedInterceptor() {
-      @Override AliasMessage alias(AliasMessage alias) {
+      @Override boolean alias(AliasMessage.Builder alias) {
         return mockInterceptor.alias(alias);
       }
 
-      @Override GroupMessage group(GroupMessage group) {
+      @Override boolean group(GroupMessage.Builder group) {
         return mockInterceptor.group(group);
       }
 
-      @Override IdentifyMessage identify(IdentifyMessage identify) {
+      @Override boolean identify(IdentifyMessage.Builder identify) {
         return mockInterceptor.identify(identify);
       }
 
-      @Override ScreenMessage screen(ScreenMessage screen) {
+      @Override boolean screen(ScreenMessage.Builder screen) {
         return mockInterceptor.screen(screen);
       }
 
-      @Override TrackMessage track(TrackMessage track) {
+      @Override boolean track(TrackMessage.Builder track) {
         return mockInterceptor.track(track);
       }
     };
 
-    AliasMessage alias = AliasMessage.builder("foo").userId("bar").build();
+    AliasMessage.Builder alias = AliasMessage.builder("foo").userId("bar");
     interceptor.intercept(alias);
     verify(mockInterceptor).alias(alias);
 
-    GroupMessage group = GroupMessage.builder("foo").userId("bar").build();
+    GroupMessage.Builder group = GroupMessage.builder("foo").userId("bar");
     interceptor.intercept(group);
     verify(mockInterceptor).group(group);
 
-    IdentifyMessage identify = IdentifyMessage.builder().userId("bar").build();
+    IdentifyMessage.Builder identify = IdentifyMessage.builder().userId("bar");
     interceptor.intercept(identify);
     verify(mockInterceptor).identify(identify);
 
-    ScreenMessage screen = ScreenMessage.builder("foo").userId("bar").build();
+    ScreenMessage.Builder screen = ScreenMessage.builder("foo").userId("bar");
     interceptor.intercept(screen);
     verify(mockInterceptor).screen(screen);
 
-    TrackMessage track = TrackMessage.builder("foo").userId("bar").build();
+    TrackMessage.Builder track = TrackMessage.builder("foo").userId("bar");
     interceptor.intercept(track);
     verify(mockInterceptor).track(track);
   }

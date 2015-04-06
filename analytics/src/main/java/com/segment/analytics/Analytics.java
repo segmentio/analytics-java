@@ -7,6 +7,7 @@ import com.segment.analytics.internal.gson.AutoValueAdapterFactory;
 import com.segment.analytics.internal.gson.LowerCaseEnumTypeAdapterFactory;
 import com.segment.analytics.internal.http.SegmentService;
 import com.segment.analytics.messages.Message;
+import com.segment.analytics.messages.MessageBuilder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -57,16 +58,15 @@ public class Analytics {
   }
 
   /** Enqueue the given message to be uploaded to Segment's servers. */
-  public void enqueue(Message message) {
+  public void enqueue(MessageBuilder builder) {
     for (int i = 0, size = messageInterceptors.size(); i < size; i++) {
-      Message next = messageInterceptors.get(i).intercept(message);
-      if (next == null) {
-        log.print(Log.Level.VERBOSE, "Interceptor skipping message %s.", message);
+      boolean shouldContinue = messageInterceptors.get(i).intercept(builder);
+      if (!shouldContinue) {
+        log.print(Log.Level.VERBOSE, "Skipping message %s.", builder);
         return;
       }
-      message = next;
     }
-    client.enqueue(message);
+    client.enqueue(builder.build());
   }
 
   /** Flush events in the message queue. */

@@ -4,6 +4,7 @@ import com.segment.analytics.messages.AliasMessage;
 import com.segment.analytics.messages.GroupMessage;
 import com.segment.analytics.messages.IdentifyMessage;
 import com.segment.analytics.messages.Message;
+import com.segment.analytics.messages.MessageBuilder;
 import com.segment.analytics.messages.ScreenMessage;
 import com.segment.analytics.messages.TrackMessage;
 
@@ -12,7 +13,7 @@ public final class TestUtils {
     throw new AssertionError("No instances.");
   }
 
-  @SuppressWarnings("UnusedDeclaration") public enum MessageBuilder {
+  @SuppressWarnings("UnusedDeclaration") public enum MessageBuilderTest {
     ALIAS {
       @Override public AliasMessage.Builder get() {
         return AliasMessage.builder("foo");
@@ -36,6 +37,6 @@ public final class TestUtils {
       }
     };
 
-    public abstract <T extends Message, V extends com.segment.analytics.messages.MessageBuilder> com.segment.analytics.messages.MessageBuilder<T, V> get();
+    public abstract <T extends Message, V extends MessageBuilder> MessageBuilder<T, V> get();
   }
 }

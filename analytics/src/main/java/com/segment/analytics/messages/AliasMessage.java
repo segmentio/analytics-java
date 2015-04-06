@@ -3,6 +3,7 @@ package com.segment.analytics.messages;
 import com.google.auto.value.AutoValue;
 import com.segment.analytics.internal.gson.AutoGson;
 import java.util.Date;
+import java.util.Map;
 import java.util.UUID;
 
 import static com.segment.analytics.internal.Utils.isNullOrEmpty;
@@ -40,19 +41,23 @@ import static com.segment.analytics.internal.Utils.isNullOrEmpty;
     private String previousId;
 
     private Builder(AliasMessage alias) {
+      super(alias);
       previousId = alias.previousId();
     }
 
     private Builder(String previousId) {
+      super(Type.ALIAS);
       if (isNullOrEmpty(previousId)) {
         throw new IllegalArgumentException("previousId cannot be null or empty.");
       }
       this.previousId = previousId;
     }
 
-    @Override protected AliasMessage realBuild() {
-      return new AutoValue_AliasMessage(Type.ALIAS, UUID.randomUUID(), new Date(), context,
-          anonymousId, userId, integrations, previousId);
+    @Override protected AliasMessage realBuild(Type type, UUID messageId, Date timestamp,
+        Map<String, Object> context, UUID anonymousId, String userId,
+        Map<String, Boolean> integrations) {
+      return new AutoValue_AliasMessage(type, messageId, timestamp, context, anonymousId, userId,
+          integrations, previousId);
     }
 
     @Override Builder self() {

@@ -1,7 +1,7 @@
 package com.segment.analytics.internal;
 
 import com.segment.analytics.Log;
-import com.segment.analytics.TestUtils.MessageBuilder;
+import com.segment.analytics.TestUtils.MessageBuilderTest;
 import com.segment.analytics.internal.http.SegmentService;
 import com.segment.analytics.messages.Message;
 import com.segment.analytics.messages.TrackMessage;
@@ -41,7 +41,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
     when(threadFactory.newThread(any(Runnable.class))).thenReturn(thread);
   }
 
-  @Test public void enqueueAddsToQueue(MessageBuilder builder) {
+  @Test public void enqueueAddsToQueue(MessageBuilderTest builder) {
     client = new AnalyticsClient(messageQueue, segmentService, 50, TimeUnit.HOURS.toMillis(1), log,
         threadFactory, networkExecutor);
 

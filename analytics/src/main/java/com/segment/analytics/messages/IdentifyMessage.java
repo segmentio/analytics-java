@@ -39,6 +39,7 @@ import javax.annotation.Nullable;
     }
 
     private Builder() {
+      super(Type.IDENTIFY);
     }
 
     /**
@@ -54,13 +55,15 @@ import javax.annotation.Nullable;
       return this;
     }
 
-    @Override protected IdentifyMessage realBuild() {
+    @Override protected IdentifyMessage realBuild(Type type, UUID messageId, Date timestamp,
+        Map<String, Object> context, UUID anonymousId, String userId,
+        Map<String, Boolean> integrations) {
       if (userId == null && traits == null) {
         throw new IllegalStateException("Either userId or traits must be provided.");
       }
 
-      return new AutoValue_IdentifyMessage(Type.IDENTIFY, UUID.randomUUID(), new Date(), context,
-          anonymousId, userId, integrations, traits);
+      return new AutoValue_IdentifyMessage(type, messageId, timestamp, context, anonymousId, userId,
+          integrations, traits);
     }
 
     @Override Builder self() {
