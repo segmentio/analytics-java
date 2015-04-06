@@ -9,42 +9,42 @@ import com.segment.analytics.messages.ScreenMessage;
 import com.segment.analytics.messages.TrackMessage;
 
 /**
- * A {@link MessageInterceptor} that lets you implement more strongly typed methods and add
+ * A {@link MessageTransformer} that lets you implement more strongly typed methods and add
  * transformations specific to the event type.
  */
-public abstract class TypedInterceptor implements MessageInterceptor {
+public abstract class TypedTransformer implements MessageTransformer {
 
-  @Override public final boolean intercept(MessageBuilder builder) {
+  @Override public final boolean transform(MessageBuilder builder) {
     // todo: non final so messages can be filtered without duplicating logic?
     Message.Type type = builder.type();
     switch (type) {
       case ALIAS:
-        return alias((AliasMessage.Builder) builder);
+        return transformAlias((AliasMessage.Builder) builder);
       case GROUP:
-        return group((GroupMessage.Builder) builder);
+        return transformGroup((GroupMessage.Builder) builder);
       case IDENTIFY:
-        return identify((IdentifyMessage.Builder) builder);
+        return transformIdentify((IdentifyMessage.Builder) builder);
       case SCREEN:
-        return screen((ScreenMessage.Builder) builder);
+        return transformScreen((ScreenMessage.Builder) builder);
       case TRACK:
-        return track((TrackMessage.Builder) builder);
+        return transformTrack((TrackMessage.Builder) builder);
       default:
         throw new IllegalArgumentException("Unknown payload type: " + type);
     }
   }
 
   /** Called for every {@link AliasMessage}. */
-  abstract boolean alias(AliasMessage.Builder builder);
+  abstract boolean transformAlias(AliasMessage.Builder builder);
 
   /** Called for every {@link GroupMessage}. */
-  abstract boolean group(GroupMessage.Builder builder);
+  abstract boolean transformGroup(GroupMessage.Builder builder);
 
   /** Called for every {@link IdentifyMessage}. */
-  abstract boolean identify(IdentifyMessage.Builder builder);
+  abstract boolean transformIdentify(IdentifyMessage.Builder builder);
 
   /** Called for every {@link ScreenMessage}. */
-  abstract boolean screen(ScreenMessage.Builder builder);
+  abstract boolean transformScreen(ScreenMessage.Builder builder);
 
   /** Called for every {@link TrackMessage}. */
-  abstract boolean track(TrackMessage.Builder builder);
+  abstract boolean transformTrack(TrackMessage.Builder builder);
 }

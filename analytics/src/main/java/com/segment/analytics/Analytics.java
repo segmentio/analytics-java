@@ -39,12 +39,12 @@ import static com.segment.analytics.internal.Utils.isNullOrEmpty;
  */
 public class Analytics {
   private final AnalyticsClient client;
-  private final List<MessageInterceptor> messageInterceptors;
+  private final List<MessageTransformer> messageTransformers;
   private final Log log;
 
-  Analytics(AnalyticsClient client, List<MessageInterceptor> messageInterceptors, Log log) {
+  Analytics(AnalyticsClient client, List<MessageTransformer> messageTransformers, Log log) {
     this.client = client;
-    this.messageInterceptors = messageInterceptors;
+    this.messageTransformers = messageTransformers;
     this.log = log;
   }
 
@@ -59,8 +59,8 @@ public class Analytics {
 
   /** Enqueue the given message to be uploaded to Segment's servers. */
   public void enqueue(MessageBuilder builder) {
-    for (int i = 0, size = messageInterceptors.size(); i < size; i++) {
-      boolean shouldContinue = messageInterceptors.get(i).intercept(builder);
+    for (int i = 0, size = messageTransformers.size(); i < size; i++) {
+      boolean shouldContinue = messageTransformers.get(i).transform(builder);
       if (!shouldContinue) {
         log.print(Log.Level.VERBOSE, "Skipping message %s.", builder);
         return;
@@ -84,7 +84,7 @@ public class Analytics {
     private final String writeKey;
     private Client client;
     private Log log;
-    private List<MessageInterceptor> messageInterceptors;
+    private List<MessageTransformer> messageTransformers;
     private ExecutorService networkExecutor;
     private ThreadFactory threadFactory;
     private int flushQueueSize;
@@ -115,24 +115,29 @@ public class Analytics {
       return this;
     }
 
-    /** Add a message interceptor for transforming every message. */
-    public Builder messageInterceptor(MessageInterceptor interceptor) {
-      if (interceptor == null) {
-        throw new IllegalArgumentException("Null interceptor");
+    /**
+     * Add a message interceptor for transforming every message.
+     * <p/>
+     * Note: Although functionally stable, this is a beta API and might be modified in a future
+     * release.
+     */
+    public Builder messageTransformer(MessageTransformer transformer) {
+      if (transformer == null) {
+        throw new IllegalArgumentException("Null transformer");
       }
-      if (messageInterceptors == null) {
-        messageInterceptors = new ArrayList<>();
+      if (messageTransformers == null) {
+        messageTransformers = new ArrayList<>();
       }
-      if (messageInterceptors.contains(interceptor)) {
-        throw new IllegalStateException("MessageInterceptor is already registered.");
+      if (messageTransformers.contains(transformer)) {
+        throw new IllegalStateException("MessageTransformer is already registered.");
       }
-      messageInterceptors.add(interceptor);
+      messageTransformers.add(transformer);
       return this;
     }
 
     /**
      * Set the queueSize at which flushes should be triggered.
-     * <p></p>
+     * <p/>
      * Note: Although functionally stable, this is a beta API and the name might be changed in a
      * later release.
      */
@@ -146,13 +151,14 @@ public class Analytics {
 
     /**
      * Set the interval at which the queue should be flushed.
-     * <p></p>
+     * <p/>
      * Note: Although functionally stable, this is a beta API and the name might be changed in a
      * later release.
      */
     public Builder flushInterval(int flushInterval, TimeUnit unit) {
       long flushIntervalInMillis = unit.toMillis(flushInterval);
       if (flushIntervalInMillis < 1000) {
+        // todo: evaluate a more reasonable flush time
         throw new IllegalArgumentException("flushIntervalInMillis must not be less than 1 second.");
       }
       this.flushIntervalInMillis = flushIntervalInMillis;
@@ -199,10 +205,10 @@ public class Analytics {
       if (flushQueueSize == 0) {
         flushQueueSize = Platform.get().defaultFlushQueueSize();
       }
-      if (messageInterceptors == null) {
-        messageInterceptors = Collections.emptyList();
+      if (messageTransformers == null) {
+        messageTransformers = Collections.emptyList();
       } else {
-        messageInterceptors = Collections.unmodifiableList(messageInterceptors);
+        messageTransformers = Collections.unmodifiableList(messageTransformers);
       }
       if (networkExecutor == null) {
         networkExecutor = Platform.get().defaultNetworkExecutor();
@@ -232,7 +238,7 @@ public class Analytics {
       AnalyticsClient analyticsClient =
           AnalyticsClient.create(segmentService, flushQueueSize, flushIntervalInMillis, log,
               threadFactory, networkExecutor);
-      return new Analytics(analyticsClient, messageInterceptors, log);
+      return new Analytics(analyticsClient, messageTransformers, log);
     }
   }
 }

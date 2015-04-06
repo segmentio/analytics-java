@@ -20,19 +20,19 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
   @Mock AnalyticsClient client;
   @Mock Log log;
-  MessageInterceptor interceptor;
+  MessageTransformer messageTransformer;
   Analytics analytics;
 
   @Before public void setUp() {
     initMocks(this);
 
-    interceptor = new MessageInterceptor() {
-      @Override public boolean intercept(MessageBuilder message) {
-        message.userId("prateek");
+    messageTransformer = new MessageTransformer() {
+      @Override public boolean transform(MessageBuilder builder) {
+        builder.userId("prateek");
         return true;
       }
     };
-    analytics = new Analytics(client, Collections.singletonList(interceptor), log);
+    analytics = new Analytics(client, Collections.singletonList(messageTransformer), log);
   }
 
   @Test public void enqueueIsDispatched(MessageBuilderTest builder) {
