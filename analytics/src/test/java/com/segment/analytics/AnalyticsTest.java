@@ -32,7 +32,8 @@ import static org.mockito.MockitoAnnotations.initMocks;
         return true;
       }
     };
-    analytics = new Analytics(client, Collections.singletonList(messageTransformer), log);
+    analytics = new Analytics(client, Collections.singletonList(messageTransformer),
+        Collections.<MessageInterceptor>emptyList(), log);
   }
 
   @Test public void enqueueIsDispatched(MessageBuilderTest builder) {

@@ -16,22 +16,22 @@ public class TypedTransformerTest {
 
     AliasMessage.Builder alias = AliasMessage.builder("foo").userId("bar");
     transformer.transform(alias);
-    verify(transformer).transformAlias(alias);
+    verify(transformer).alias(alias);
 
     GroupMessage.Builder group = GroupMessage.builder("foo").userId("bar");
     transformer.transform(group);
-    verify(transformer).transformGroup(group);
+    verify(transformer).group(group);
 
     IdentifyMessage.Builder identify = IdentifyMessage.builder().userId("bar");
     transformer.transform(identify);
-    verify(transformer).transformIdentify(identify);
+    verify(transformer).identify(identify);
 
     ScreenMessage.Builder screen = ScreenMessage.builder("foo").userId("bar");
     transformer.transform(screen);
-    verify(transformer).transformScreen(screen);
+    verify(transformer).screen(screen);
 
     TrackMessage.Builder track = TrackMessage.builder("foo").userId("bar");
     transformer.transform(track);
-    verify(transformer).transformTrack(track);
+    verify(transformer).track(track);
   }
 }
