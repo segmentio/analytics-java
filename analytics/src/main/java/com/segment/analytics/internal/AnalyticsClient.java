@@ -1,5 +1,6 @@
 package com.segment.analytics.internal;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.segment.analytics.Log;
 import com.segment.analytics.internal.http.SegmentService;
 import com.segment.analytics.messages.Message;
@@ -13,6 +14,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import retrofit.RetrofitError;
 
 public class AnalyticsClient {
   private final BlockingQueue<Message> messageQueue;
@@ -79,6 +81,7 @@ public class AnalyticsClient {
     @Override public void run() {
       List<Message> messages = new ArrayList<>();
       try {
+        //noinspection InfiniteLoopStatement
         while (true) {
           Message message = messageQueue.take();
 
@@ -98,7 +101,49 @@ public class AnalyticsClient {
         }
       } catch (InterruptedException e) {
         log.print(Log.Level.ERROR, "Thread interrupted while polling for messages.");
-        return; // Stop processing messages any further
+      }
+    }
+  }
+
+  class BatchUploadTask implements Runnable {
+    private final SegmentService service;
+    @VisibleForTesting final Batch batch;
+    private final Log log;
+    private final Backo backo;
+
+    BatchUploadTask(SegmentService service, Batch batch, Log log, Backo backo) {
+      this.service = service;
+      this.batch = batch;
+      this.log = log;
+      this.backo = backo;
+    }
+
+    @Override public void run() {
+      int attempts = 0;
+
+      while (true) {
+        try {
+          // Ignore return value, UploadResponse#success will never return false for 200 OK
+          service.upload(batch);
+          return;
+        } catch (RetrofitError error) {
+          switch (error.getKind()) {
+            case NETWORK:
+              log.print(Log.Level.DEBUG, error, "Could not upload batch. Retrying: %s.", batch);
+              break;
+            default:
+              log.print(Log.Level.ERROR, error, "Could not upload batch: %s.", batch);
+              return; // Don't retry
+          }
+        }
+
+        try {
+          backo.sleep(attempts);
+          attempts++;
+        } catch (InterruptedException e) {
+          log.print(Log.Level.ERROR, "Thread interrupted while backing off for batch: %s.", batch);
+          return;
+        }
       }
     }
   }

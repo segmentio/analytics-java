@@ -13,6 +13,11 @@ public class Sample {
           @Override public void print(Level level, String format, Object... args) {
             System.out.println(level + "\t:" + String.format(format, args));
           }
+
+          @Override public void print(Level level, Throwable error, String format, Object... args) {
+            System.out.println(level + "\t:" + String.format(format, args));
+            System.out.println(error);
+          }
         }).build();
 
     final AtomicInteger count = new AtomicInteger();
@@ -22,8 +27,8 @@ public class Sample {
           super.run();
           for (int i = 0; i < 10; i++) {
             analytics.enqueue(TrackMessage.builder("Java Test")
-                    .properties(ImmutableMap.<String, Object>of("count", count.incrementAndGet()))
-                    .userId("prateek"));
+                .properties(ImmutableMap.<String, Object>of("count", count.incrementAndGet()))
+                .userId("prateek"));
           }
           analytics.flush();
         }

@@ -91,7 +91,8 @@ import static org.mockito.MockitoAnnotations.initMocks;
     final ArgumentCaptor<Runnable> runnableArgumentCaptor = ArgumentCaptor.forClass(Runnable.class);
     verify(networkExecutor, Mockito.timeout(1 * 1000)).submit(runnableArgumentCaptor.capture());
 
-    final BatchUploadTask task = (BatchUploadTask) runnableArgumentCaptor.getValue();
+    final AnalyticsClient.BatchUploadTask task =
+        (AnalyticsClient.BatchUploadTask) runnableArgumentCaptor.getValue();
     assertThat(task.batch.batch()).containsExactly(first, second);
   }
 }

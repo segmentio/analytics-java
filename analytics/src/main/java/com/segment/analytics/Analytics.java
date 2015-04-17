@@ -209,6 +209,10 @@ public class Analytics {
         log = new Log() {
           @Override public void print(Level level, String format, Object... args) {
           }
+
+          @Override public void print(Level level, Throwable error, String format, Object... args) {
+
+          }
         };
       }
       if (flushIntervalInMillis == 0) {

@@ -7,4 +7,6 @@ public abstract class Log {
   }
 
   public abstract void print(Level level, String format, Object... args);
+
+  public abstract void print(Level level, Throwable error, String format, Object... args);
 }

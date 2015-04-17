@@ -1,10 +1,12 @@
 package com.segment.analytics.internal.gson;
 
+import com.google.auto.value.AutoValue;
 import com.google.gson.Gson;
 import com.google.gson.TypeAdapter;
 import com.google.gson.TypeAdapterFactory;
 import com.google.gson.reflect.TypeToken;
 
+/** A {@link TypeAdapterFactory} that allows deserialization of {@link AutoValue} classes. */
 public final class AutoValueAdapterFactory implements TypeAdapterFactory {
   @SuppressWarnings("unchecked") @Override
   public <T> TypeAdapter<T> create(Gson gson, TypeToken<T> type) {
