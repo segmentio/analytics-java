@@ -36,7 +36,7 @@ public class FlushMessage implements Message {
     throw new UnsupportedOperationException();
   }
 
-  @Nullable @Override public Map<String, Boolean> integrations() {
+  @Nullable @Override public Map<String, Object> integrations() {
     throw new UnsupportedOperationException();
   }
 }

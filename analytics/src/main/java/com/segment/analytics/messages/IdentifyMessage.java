@@ -57,7 +57,7 @@ import javax.annotation.Nullable;
 
     @Override protected IdentifyMessage realBuild(Type type, UUID messageId, Date timestamp,
         Map<String, Object> context, UUID anonymousId, String userId,
-        Map<String, Boolean> integrations) {
+        Map<String, Object> integrations) {
       if (userId == null && traits == null) {
         throw new IllegalStateException("Either userId or traits must be provided.");
       }

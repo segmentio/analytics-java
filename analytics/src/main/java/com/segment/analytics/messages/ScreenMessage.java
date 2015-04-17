@@ -77,7 +77,7 @@ import static com.segment.analytics.internal.Utils.isNullOrEmpty;
 
     @Override protected ScreenMessage realBuild(Type type, UUID messageId, Date timestamp,
         Map<String, Object> context, UUID anonymousId, String userId,
-        Map<String, Boolean> integrations) {
+        Map<String, Object> integrations) {
       return new AutoValue_ScreenMessage(type, messageId, timestamp, context, anonymousId, userId,
           integrations, name, properties);
     }

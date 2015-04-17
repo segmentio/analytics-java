@@ -10,21 +10,21 @@ import javax.annotation.Nullable;
  * the {@link Message#anonymousId} or {@link Message#userId} must be provided.
  */
 public interface Message {
-  public Type type();
+  Type type();
 
-  public UUID messageId();
+  UUID messageId();
 
-  public Date timestamp();
+  Date timestamp();
 
-  @Nullable public Map<String, Object> context();
+  @Nullable Map<String, Object> context();
 
-  @Nullable public UUID anonymousId();
+  @Nullable UUID anonymousId();
 
-  @Nullable public String userId();
+  @Nullable String userId();
 
-  @Nullable public Map<String, Boolean> integrations();
+  @Nullable Map<String, Object> integrations();
 
-  public enum Type {
+  enum Type {
     IDENTIFY, GROUP, TRACK, SCREEN, ALIAS
   }
 }

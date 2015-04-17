@@ -78,7 +78,7 @@ import static com.segment.analytics.internal.Utils.isNullOrEmpty;
 
     @Override protected TrackMessage realBuild(Type type, UUID messageId, Date timestamp,
         Map<String, Object> context, UUID anonymousId, String userId,
-        Map<String, Boolean> integrations) {
+        Map<String, Object> integrations) {
       return new AutoValue_TrackMessage(type, messageId, timestamp, context, anonymousId, userId,
           integrations, event, properties);
     }

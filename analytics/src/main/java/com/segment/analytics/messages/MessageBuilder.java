@@ -1,6 +1,7 @@
 package com.segment.analytics.messages;
 
 import com.google.common.collect.ImmutableMap;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
@@ -19,7 +20,7 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
   private Map<String, Object> context;
   private UUID anonymousId;
   private String userId;
-  private Map<String, Boolean> integrations;
+  private ImmutableMap.Builder<String, Object> integrationsBuilder;
 
   // Hidden from Public API.
   MessageBuilder(Message.Type type) {
@@ -45,7 +46,7 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
    *
    * @see <a href="https://segment.com/docs/spec/common/#context">Context</a>
    */
-  public V context(Map<String, Object> context) {
+  public V context(Map<String, ? super Object> context) {
     if (context == null) {
       throw new NullPointerException("Null context");
     }
@@ -84,22 +85,41 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
   }
 
   /**
-   * Set dictionary of integration names that the message should be sent to. 'All' is a special key
+   * Set whether this message is sent to the specified integration or not. 'All' is a special key
    * that applies when no key for a specific integration is found.
    *
    * @see <a href="https://segment.com/docs/spec/common/#integrations">Integrations</a>
    */
-  public V integrations(Map<String, Boolean> integrations) {
-    if (integrations == integrations) {
-      throw new IllegalArgumentException("integration key cannot be null or empty.");
+  public V enableIntegration(String key, boolean enable) {
+    if (isNullOrEmpty(key)) {
+      throw new IllegalArgumentException("Key cannot be null or empty.");
     }
-    this.integrations = ImmutableMap.copyOf(integrations);
+    if (integrationsBuilder == null) {
+      integrationsBuilder = new ImmutableMap.Builder<>();
+    }
+    integrationsBuilder.put(key, enable);
+    return self();
+  }
+
+  /**
+   * Pass in some options that will only be used by the target integration.
+   *
+   * @see <a href="https://segment.com/docs/spec/common/#integrations">Integrations</a>
+   */
+  public V integrationOptions(String key, Map<String, ? super Object> options) {
+    if (isNullOrEmpty(key)) {
+      throw new IllegalArgumentException("Key name cannot be null or empty.");
+    }
+    if (integrationsBuilder == null) {
+      integrationsBuilder = new ImmutableMap.Builder<>();
+    }
+    integrationsBuilder.put(key, ImmutableMap.copyOf(options));
     return self();
   }
 
   protected abstract T realBuild(Message.Type type, UUID messageId, Date timestamp,
       Map<String, Object> context, UUID anonymousId, String userId,
-      Map<String, Boolean> integrations);
+      Map<String, Object> integrations);
 
   abstract V self();
 
@@ -112,6 +132,8 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
     if (anonymousId == null && userId == null) {
       throw new IllegalStateException("Either anonymousId or userId must be provided.");
     }
+    Map<String, Object> integrations = integrationsBuilder == null ? //
+        Collections.<String, Object>emptyMap() : integrationsBuilder.build();
     return realBuild(type, UUID.randomUUID(), new Date(), context, anonymousId, userId,
         integrations);
   }
