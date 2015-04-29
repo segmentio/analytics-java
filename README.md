@@ -7,6 +7,53 @@ analytics-java is a Java client for [Segment](https://segment.com)
 
 Documentation is available at [https://segment.com/libraries/java](https://segment.com/libraries/java).
 
+Analytics for Java is currently in active development, with regular pushes to the open-source repo. Snapshot releases are auto-deployed to sonatype's snapshot repository.
+
+Please note that the artifact IDs have also changed.
+
+*Add to `pom.xml`:*
+
+```xml
+<dependency>
+  <groupId>com.segment.analytics.java</groupId>
+  <artifactId>analytics</artifactId>
+  <version>LATEST</version>
+</dependency>
+```
+
+*or if you're using Gradle:*
+
+```bash
+compile 'com.segment.analytics.java:analytics:+'
+```
+
+## Snapshots
+
+To add a snapshot dependency to your builds, make sure you add the snapshot repository so your build system can look up the dependency.
+
+Maven users can add the following to their `pom.xml`:
+```
+<repository>
+    <id>apache.snapshots</id>
+    <name>Apache Development Snapshot Repository</name>
+    <url>https://repository.apache.org/content/repositories/snapshots/</url>
+    <releases>
+        <enabled>false</enabled>
+    </releases>
+    <snapshots>
+        <enabled>true</enabled>
+    </snapshots>
+</repository>
+```
+
+Gradle users should declare this in their repositories block:
+```
+repositories {
+  mavenCentral()
+  maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
+}
+```
+
 ## License
 
 ```
