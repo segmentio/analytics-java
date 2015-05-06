@@ -12,6 +12,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 
 import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
@@ -41,6 +42,28 @@ import static org.mockito.MockitoAnnotations.initMocks;
     verify(messageTransformer).transform(messageBuilder);
     verify(messageInterceptor).intercept(any(Message.class));
     verify(client).enqueue(message);
+  }
+
+  @Test public void doesNotEnqueueWhenTransformerReturnsFalse(MessageBuilderTest builder) {
+    MessageBuilder messageBuilder = builder.get().userId("prateek");
+    when(messageTransformer.transform(messageBuilder)).thenReturn(false);
+
+    analytics.enqueue(messageBuilder);
+
+    verify(messageTransformer).transform(messageBuilder);
+    verify(messageInterceptor, never()).intercept(any(Message.class));
+    verify(client, never()).enqueue(any(Message.class));
+  }
+
+  @Test public void doesNotEnqueueWhenInterceptorReturnsNull(MessageBuilderTest builder) {
+    MessageBuilder messageBuilder = builder.get().userId("prateek");
+    when(messageTransformer.transform(messageBuilder)).thenReturn(true);
+
+    analytics.enqueue(messageBuilder);
+
+    verify(messageTransformer).transform(messageBuilder);
+    verify(messageInterceptor).intercept(any(Message.class));
+    verify(client, never()).enqueue(any(Message.class));
   }
 
   @Test public void shutdownIsDispatched() {
