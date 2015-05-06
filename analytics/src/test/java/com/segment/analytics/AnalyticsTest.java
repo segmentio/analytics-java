@@ -9,41 +9,38 @@ import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 @RunWith(BurstJUnit4.class) public class AnalyticsTest {
-
   @Mock AnalyticsClient client;
   @Mock Log log;
-  MessageTransformer messageTransformer;
+  @Mock MessageTransformer messageTransformer;
+  @Mock MessageInterceptor messageInterceptor;
   Analytics analytics;
 
   @Before public void setUp() {
     initMocks(this);
 
-    messageTransformer = new MessageTransformer() {
-      @Override public boolean transform(MessageBuilder builder) {
-        builder.userId("prateek");
-        return true;
-      }
-    };
     analytics = new Analytics(client, Collections.singletonList(messageTransformer),
-        Collections.<MessageInterceptor>emptyList(), log);
+        Collections.singletonList(messageInterceptor), log);
   }
 
   @Test public void enqueueIsDispatched(MessageBuilderTest builder) {
     MessageBuilder messageBuilder = builder.get().userId("prateek");
+    Message message = messageBuilder.build();
+    when(messageTransformer.transform(messageBuilder)).thenReturn(true);
+    when(messageInterceptor.intercept(any(Message.class))).thenReturn(message);
 
     analytics.enqueue(messageBuilder);
 
-    ArgumentCaptor<Message> messageArgumentCaptor = ArgumentCaptor.forClass(Message.class);
-    verify(client).enqueue(messageArgumentCaptor.capture());
-    assertThat(messageArgumentCaptor.getValue().userId()).isEqualTo("prateek");
+    verify(messageTransformer).transform(messageBuilder);
+    verify(messageInterceptor).intercept(any(Message.class));
+    verify(client).enqueue(message);
   }
 
   @Test public void shutdownIsDispatched() {
