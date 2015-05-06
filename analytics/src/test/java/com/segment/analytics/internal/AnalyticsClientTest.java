@@ -146,8 +146,8 @@ import static org.mockito.MockitoAnnotations.initMocks;
   @Test public void batchRetriesForNetworkErrors() {
     TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
     Batch batch = Batch.create(Collections.<Message>singletonList(trackMessage));
-    BatchUploadTask batchUploadTask =
-        new BatchUploadTask(segmentService, batch, Backo.builder().build(), log);
+    BatchUploadTask batchUploadTask = new BatchUploadTask(segmentService, batch,
+        Backo.builder().base(TimeUnit.NANOSECONDS, 1).factor(1).build(), log);
     RetrofitError retrofitError = RetrofitError.networkError(null, new IOException());
 
     when(segmentService.upload(batch)).thenThrow(retrofitError)
@@ -163,8 +163,8 @@ import static org.mockito.MockitoAnnotations.initMocks;
   @Test public void batchDoesNotRetryForNonNetworkErrors() {
     TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
     Batch batch = Batch.create(Collections.<Message>singletonList(trackMessage));
-    BatchUploadTask batchUploadTask =
-        new BatchUploadTask(segmentService, batch, Backo.builder().build(), log);
+    BatchUploadTask batchUploadTask = new BatchUploadTask(segmentService, batch,
+        Backo.builder().base(TimeUnit.NANOSECONDS, 1).factor(1).build(), log);
     RetrofitError retrofitError =
         RetrofitError.conversionError(null, null, null, null, new ConversionException("fake"));
     doThrow(retrofitError).when(segmentService).upload(batch);
