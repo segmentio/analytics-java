@@ -88,7 +88,7 @@ public class AnalyticsClient {
 
           if (messages.size() >= size || message == FlushMessage.POISON) {
             log.print(Log.Level.VERBOSE, "Uploading batch with %s message(s).", messages.size());
-            networkExecutor.submit(new BatchUploadTask(service, Batch.create(messages), log));
+            networkExecutor.submit(BatchUploadTask.create(service, Batch.create(messages), log));
             messages = new ArrayList<>();
           }
         }
@@ -99,18 +99,25 @@ public class AnalyticsClient {
   }
 
   static class BatchUploadTask implements Runnable {
-    @VisibleForTesting final Batch batch;
-    private final SegmentService service;
-    private final Log log;
     private static final Backo BACKO = Backo.builder() //
         .base(TimeUnit.SECONDS, 30) //
         .cap(TimeUnit.HOURS, 1) //
         .jitter(1) //
         .build();
 
-    BatchUploadTask(SegmentService service, Batch batch, Log log) {
+    private final SegmentService service;
+    @VisibleForTesting final Batch batch;
+    private final Backo backo;
+    private final Log log;
+
+    static BatchUploadTask create(SegmentService segmentService, Batch batch, Log log) {
+      return new BatchUploadTask(segmentService, batch, BACKO, log);
+    }
+
+    BatchUploadTask(SegmentService service, Batch batch, Backo backo, Log log) {
       this.service = service;
       this.batch = batch;
+      this.backo = backo;
       this.log = log;
     }
 
@@ -134,7 +141,7 @@ public class AnalyticsClient {
         }
 
         try {
-          BACKO.sleep(attempts);
+          backo.sleep(attempts);
           attempts++;
         } catch (InterruptedException e) {
           log.print(Log.Level.ERROR, "Thread interrupted while backing off for batch: %s.", batch);

@@ -39,4 +39,8 @@ public class FlushMessage implements Message {
   @Nullable @Override public Map<String, Object> integrations() {
     throw new UnsupportedOperationException();
   }
+
+  @Override public String toString() {
+    return "FlushMessage{}";
+  }
 }
