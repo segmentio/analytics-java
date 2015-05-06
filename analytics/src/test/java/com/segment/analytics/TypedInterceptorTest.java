@@ -12,7 +12,7 @@ import static org.mockito.Mockito.verify;
 
 public class TypedInterceptorTest {
   @Test public void messagesFanOutCorrectly() {
-    TypedInterceptor interceptor = mock(TypedInterceptor.class);
+    MessageInterceptor.Typed interceptor = mock(MessageInterceptor.Typed.class);
 
     AliasMessage alias = AliasMessage.builder("foo").userId("bar").build();
     interceptor.intercept(alias);

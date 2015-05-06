@@ -12,7 +12,7 @@ import static org.mockito.Mockito.verify;
 
 public class TypedTransformerTest {
   @Test public void messagesFanOutCorrectly() {
-    TypedTransformer transformer = mock(TypedTransformer.class);
+    MessageTransformer.Typed transformer = mock(MessageTransformer.Typed.class);
 
     AliasMessage.Builder alias = AliasMessage.builder("foo").userId("bar");
     transformer.transform(alias);

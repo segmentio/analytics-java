@@ -62,16 +62,16 @@ public class Analytics {
 
   /** Enqueue the given message to be uploaded to Segment's servers. */
   public void enqueue(MessageBuilder builder) {
-    for (int i = 0, size = messageTransformers.size(); i < size; i++) {
-      boolean shouldContinue = messageTransformers.get(i).transform(builder);
+    for (MessageTransformer messageTransformer : messageTransformers) {
+      boolean shouldContinue = messageTransformer.transform(builder);
       if (!shouldContinue) {
         log.print(Log.Level.VERBOSE, "Skipping message %s.", builder);
         return;
       }
     }
     Message message = builder.build();
-    for (int i = 0, size = messageInterceptors.size(); i < size; i++) {
-      message = messageInterceptors.get(i).intercept(message);
+    for (MessageInterceptor messageInterceptor : messageInterceptors) {
+      message = messageInterceptor.intercept(message);
       if (message == null) {
         log.print(Log.Level.VERBOSE, "Skipping message %s.", builder);
         return;
@@ -130,7 +130,7 @@ public class Analytics {
     /** Add a {@link MessageTransformer} for transforming messages. */
     @Beta public Builder messageTransformer(MessageTransformer transformer) {
       if (transformer == null) {
-        throw new IllegalArgumentException("Null transformer");
+        throw new NullPointerException("Null transformer");
       }
       if (messageTransformers == null) {
         messageTransformers = new ArrayList<>();
@@ -145,7 +145,7 @@ public class Analytics {
     /** Add a {@link MessageInterceptor} for intercepting messages. */
     @Beta public Builder messageInterceptor(MessageInterceptor interceptor) {
       if (interceptor == null) {
-        throw new IllegalArgumentException("Null interceptor");
+        throw new NullPointerException("Null interceptor");
       }
       if (messageInterceptors == null) {
         messageInterceptors = new ArrayList<>();
@@ -167,11 +167,10 @@ public class Analytics {
     }
 
     /** Set the interval at which the queue should be flushed. */
-    @Beta public Builder flushInterval(TimeUnit unit, int flushInterval) {
+    @Beta public Builder flushInterval(long flushInterval, TimeUnit unit) {
       long flushIntervalInMillis = unit.toMillis(flushInterval);
-      if (flushIntervalInMillis < 1000) {
-        // todo: evaluate a more reasonable flush time
-        throw new IllegalArgumentException("flushIntervalInMillis must not be less than 1 second.");
+      if (flushInterval < 1000) {
+        throw new IllegalArgumentException("flushInterval must not be less than 1 second.");
       }
       this.flushIntervalInMillis = flushIntervalInMillis;
       return this;
@@ -187,7 +186,7 @@ public class Analytics {
     }
 
     /** Set the {@link ThreadFactory} used to create threads. */
-    public Builder threadFactory(ThreadFactory threadFactory) {
+    @Beta Builder threadFactory(ThreadFactory threadFactory) {
       if (threadFactory == null) {
         throw new NullPointerException("Null threadFactory");
       }
@@ -206,14 +205,7 @@ public class Analytics {
         client = Platform.get().defaultClient();
       }
       if (log == null) {
-        log = new Log() {
-          @Override public void print(Level level, String format, Object... args) {
-          }
-
-          @Override public void print(Level level, Throwable error, String format, Object... args) {
-
-          }
-        };
+        log = Log.NONE;
       }
       if (flushIntervalInMillis == 0) {
         flushIntervalInMillis = Platform.get().defaultFlushIntervalInMillis();
