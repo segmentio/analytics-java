@@ -11,7 +11,7 @@ import javax.annotation.Nullable;
 /**
  * The identify call ties a customer and their actions to a recognizable ID and traits like their
  * email, name, etc.
- * <p/>
+ * <p>
  * Use {@link #builder} to construct your own instances.
  *
  * @see <a href="https://segment.com/docs/spec/identify/">Identify</a>

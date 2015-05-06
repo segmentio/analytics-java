@@ -12,7 +12,7 @@ import static com.segment.analytics.internal.Utils.isNullOrEmpty;
  * The alias message is used to merge two user identities, effectively connecting two sets of user
  * data as one. This is an advanced method, but it is required to manage user identities
  * successfully in some of our integrations.
- * <p/>
+ * <p>
  * Use {@link #builder} to construct your own instances.
  *
  * @see <a href="https://segment.com/docs/spec/alias/">Alias</a>

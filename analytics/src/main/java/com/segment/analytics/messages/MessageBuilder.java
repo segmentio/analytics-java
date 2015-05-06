@@ -39,7 +39,7 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
   /**
    * Set a map of information about the state of the device. You can add any custom data to the
    * context dictionary that you'd like to have access to in the raw logs.
-   * <p/>
+   * <p>
    * Some keys in the context dictionary have semantic meaning and will be collected for you
    * automatically, depending on the library you send data from. Some keys, such as location and
    * speed need to be manually entered.

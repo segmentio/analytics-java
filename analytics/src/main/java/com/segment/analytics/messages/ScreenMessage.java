@@ -13,7 +13,7 @@ import static com.segment.analytics.internal.Utils.isNullOrEmpty;
 /**
  * The screen call lets you record whenever a user sees a screen of your website, along with any
  * properties about the screen.
- * <p/>
+ * <p>
  * Use {@link #builder} to construct your own instances.
  *
  * @see <a href="https://segment.com/docs/spec/screen/">Screen</a>

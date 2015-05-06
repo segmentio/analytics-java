@@ -13,7 +13,7 @@ import static com.segment.analytics.internal.Utils.isNullOrEmpty;
 /**
  * The track API call is how you record any actions your users perform, along with any properties
  * that describe the action.
- * <p/>
+ * <p>
  * Use {@link #builder} to construct your own instances.
  *
  * @see <a href="https://segment.com/docs/spec/track">Track</a>

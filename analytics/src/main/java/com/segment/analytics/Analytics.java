@@ -24,14 +24,14 @@ import static com.segment.analytics.internal.Utils.isNullOrEmpty;
 
 /**
  * The entry point into the Segment for Java library.
- * <p/>
+ * <p>
  * The idea is simple: one pipeline for all your data. Segment is the single hub to collect,
  * translate and route your data with the flip of a switch.
- * <p/>
+ * <p>
  * Analytics for Java will automatically batch events and upload it periodically to Segment's
  * servers for you. You only need to instrument Segment once, then flip a switch to install
  * new tools.
- * <p/>
+ * <p>
  * This class is the main entry point into the client API. Use {@link #builder} to construct your
  * own instances.
  *

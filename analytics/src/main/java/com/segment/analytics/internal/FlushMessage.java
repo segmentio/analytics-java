@@ -6,8 +6,8 @@ import java.util.Map;
 import java.util.UUID;
 import javax.annotation.Nullable;
 
-public class FlushMessage implements Message {
-  public static final FlushMessage POISON = new FlushMessage();
+class FlushMessage implements Message {
+  static final FlushMessage POISON = new FlushMessage();
 
   private FlushMessage() {
   }

@@ -16,7 +16,7 @@ import static com.segment.analytics.internal.Utils.isNullOrEmpty;
  * concept! It also lets you record custom traits about the group, like industry or number of
  * employees. Calling group is a slightly more advanced feature, but it’s helpful if you have
  * accounts with multiple users.
- * <p/>
+ * <p>
  * Use {@link #builder} to construct your own instances.
  *
  * @see <a href="https://segment.com/docs/spec/group/">Group</a>
