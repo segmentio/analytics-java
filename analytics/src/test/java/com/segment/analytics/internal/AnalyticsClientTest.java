@@ -58,7 +58,6 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
     client.shutdown();
 
-    verify(thread).interrupt();
     verify(messageQueue).clear();
     verify(networkExecutor).shutdown();
   }
@@ -84,6 +83,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
     client.enqueue(second);
     client.flush();
 
+    //noinspection StatementWithEmptyBody
     while (messageQueue.size() > 0) {
       // wait to make sure looper reads the flush message
     }

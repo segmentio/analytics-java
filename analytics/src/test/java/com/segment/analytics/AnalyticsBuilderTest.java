@@ -136,4 +136,13 @@ public class AnalyticsBuilderTest {
       assertThat(e).hasMessage("Null networkExecutor");
     }
   }
+
+  @Test public void nullThreadFactory() {
+    try {
+      builder.threadFactory(null);
+      fail("Should fail for null thread factory");
+    } catch (NullPointerException e) {
+      assertThat(e).hasMessage("Null threadFactory");
+    }
+  }
 }

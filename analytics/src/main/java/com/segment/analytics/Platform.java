@@ -8,7 +8,12 @@ import java.util.concurrent.TimeUnit;
 import retrofit.client.Client;
 import retrofit.client.OkClient;
 
+import static java.lang.Thread.MIN_PRIORITY;
+
 class Platform {
+  static final String THREAD_PREFIX = "Analytics-";
+  static final String IDLE_THREAD_NAME = THREAD_PREFIX + "Idle";
+
   private static final Platform PLATFORM = findPlatform();
 
   static Platform get() {
@@ -32,7 +37,16 @@ class Platform {
   }
 
   ThreadFactory defaultThreadFactory() {
-    return Executors.defaultThreadFactory();
+    return new ThreadFactory() {
+      @Override public Thread newThread(final Runnable r) {
+        return new Thread(new Runnable() {
+          @Override public void run() {
+            Thread.currentThread().setPriority(MIN_PRIORITY);
+            r.run();
+          }
+        }, IDLE_THREAD_NAME);
+      }
+    };
   }
 
   public long defaultFlushIntervalInMillis() {

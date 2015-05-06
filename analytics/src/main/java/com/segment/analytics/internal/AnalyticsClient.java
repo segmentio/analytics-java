@@ -21,10 +21,9 @@ public class AnalyticsClient {
   private final SegmentService service;
   private final int size;
   private final Log log;
-  private final Thread looperThread;
   private final ExecutorService networkExecutor;
+  private final ExecutorService looperExecutor;
   private final ScheduledExecutorService flushScheduler;
-  private final Backo backo;
 
   public static AnalyticsClient create(SegmentService segmentService, int flushQueueSize,
       long flushIntervalInMillis, Log log, ThreadFactory threadFactory,
@@ -35,20 +34,15 @@ public class AnalyticsClient {
 
   AnalyticsClient(BlockingQueue<Message> messageQueue, SegmentService service, int maxQueueSize,
       long flushIntervalInMillis, Log log, ThreadFactory threadFactory,
-      final ExecutorService networkExecutor) {
+      ExecutorService networkExecutor) {
     this.messageQueue = messageQueue;
     this.service = service;
     this.size = maxQueueSize;
     this.log = log;
+    this.looperExecutor = Executors.newSingleThreadExecutor(threadFactory);
     this.networkExecutor = networkExecutor;
-    this.backo = Backo.builder() //
-        .base(TimeUnit.SECONDS, 30) //
-        .cap(TimeUnit.HOURS, 1) //
-        .jitter(1) //
-        .build();
 
-    looperThread = threadFactory.newThread(new Looper());
-    looperThread.start();
+    looperExecutor.submit(new Looper());
 
     flushScheduler = Executors.newScheduledThreadPool(1, threadFactory);
     flushScheduler.scheduleAtFixedRate(new Runnable() {
@@ -67,10 +61,10 @@ public class AnalyticsClient {
   }
 
   public void shutdown() {
-    looperThread.interrupt();
     messageQueue.clear();
-    networkExecutor.shutdown();
+    looperExecutor.shutdown();
     flushScheduler.shutdown();
+    networkExecutor.shutdown();
   }
 
   /**
@@ -94,8 +88,7 @@ public class AnalyticsClient {
 
           if (messages.size() >= size || message == FlushMessage.POISON) {
             log.print(Log.Level.VERBOSE, "Uploading batch with %s message(s).", messages.size());
-            networkExecutor.submit(
-                new BatchUploadTask(service, Batch.create(messages), log, backo));
+            networkExecutor.submit(new BatchUploadTask(service, Batch.create(messages), log));
             messages = new ArrayList<>();
           }
         }
@@ -105,17 +98,20 @@ public class AnalyticsClient {
     }
   }
 
-  class BatchUploadTask implements Runnable {
-    private final SegmentService service;
+  static class BatchUploadTask implements Runnable {
     @VisibleForTesting final Batch batch;
+    private final SegmentService service;
     private final Log log;
-    private final Backo backo;
+    private static final Backo BACKO = Backo.builder() //
+        .base(TimeUnit.SECONDS, 30) //
+        .cap(TimeUnit.HOURS, 1) //
+        .jitter(1) //
+        .build();
 
-    BatchUploadTask(SegmentService service, Batch batch, Log log, Backo backo) {
+    BatchUploadTask(SegmentService service, Batch batch, Log log) {
       this.service = service;
       this.batch = batch;
       this.log = log;
-      this.backo = backo;
     }
 
     @Override public void run() {
@@ -129,16 +125,16 @@ public class AnalyticsClient {
         } catch (RetrofitError error) {
           switch (error.getKind()) {
             case NETWORK:
-              log.print(Log.Level.DEBUG, error, "Could not upload batch. Retrying: %s.", batch);
+              log.print(Log.Level.DEBUG, error, "Could not upload batch: %s. Retrying.", batch);
               break;
             default:
-              log.print(Log.Level.ERROR, error, "Could not upload batch: %s.", batch);
+              log.print(Log.Level.ERROR, error, "Could not upload batch: %s. Giving up.", batch);
               return; // Don't retry
           }
         }
 
         try {
-          backo.sleep(attempts);
+          BACKO.sleep(attempts);
           attempts++;
         } catch (InterruptedException e) {
           log.print(Log.Level.ERROR, "Thread interrupted while backing off for batch: %s.", batch);
