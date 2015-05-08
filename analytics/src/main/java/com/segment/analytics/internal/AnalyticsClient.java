@@ -1,12 +1,15 @@
 package com.segment.analytics.internal;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableMap;
 import com.segment.analytics.Log;
-import com.segment.analytics.internal.http.SegmentService;
+import com.segment.analytics.http.SegmentService;
+import com.segment.analytics.messages.Batch;
 import com.segment.analytics.messages.Message;
 import com.segment.backo.Backo;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -17,6 +20,16 @@ import java.util.concurrent.TimeUnit;
 import retrofit.RetrofitError;
 
 public class AnalyticsClient {
+  private static final Map<String, Object> CONTEXT;
+
+  static {
+    ImmutableMap<String, String> library = new ImmutableMap.Builder<String, String>() //
+        .put("name", "analytics-java") //
+        .put("version", AnalyticsVersion.get()) //
+        .build();
+    CONTEXT = ImmutableMap.<String, Object>of("library", library);
+  }
+
   private final BlockingQueue<Message> messageQueue;
   private final SegmentService service;
   private final int size;
@@ -88,7 +101,8 @@ public class AnalyticsClient {
 
           if (messages.size() >= size || message == FlushMessage.POISON) {
             log.print(Log.Level.VERBOSE, "Uploading batch with %s message(s).", messages.size());
-            networkExecutor.submit(BatchUploadTask.create(service, Batch.create(messages), log));
+            networkExecutor.submit(
+                BatchUploadTask.create(service, Batch.create(CONTEXT, messages), log));
             messages = new ArrayList<>();
           }
         }

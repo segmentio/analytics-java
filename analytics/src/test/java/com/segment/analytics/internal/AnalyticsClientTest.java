@@ -2,8 +2,9 @@ package com.segment.analytics.internal;
 
 import com.segment.analytics.Log;
 import com.segment.analytics.TestUtils.MessageBuilderTest;
+import com.segment.analytics.http.SegmentService;
 import com.segment.analytics.internal.AnalyticsClient.BatchUploadTask;
-import com.segment.analytics.internal.http.SegmentService;
+import com.segment.analytics.messages.Batch;
 import com.segment.analytics.messages.Message;
 import com.segment.analytics.messages.TrackMessage;
 import com.segment.backo.Backo;
@@ -35,7 +36,6 @@ import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 @RunWith(BurstJUnit4.class) public class AnalyticsClientTest {
-
   AnalyticsClient client;
   @Mock BlockingQueue<Message> messageQueue;
   @Mock SegmentService segmentService;
@@ -145,7 +145,8 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
   @Test public void batchRetriesForNetworkErrors() {
     TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
-    Batch batch = Batch.create(Collections.<Message>singletonList(trackMessage));
+    Batch batch = Batch.create(Collections.<String, Object>emptyMap(),
+        Collections.<Message>singletonList(trackMessage));
     BatchUploadTask batchUploadTask = new BatchUploadTask(segmentService, batch,
         Backo.builder().base(TimeUnit.NANOSECONDS, 1).factor(1).build(), log);
     RetrofitError retrofitError = RetrofitError.networkError(null, new IOException());
@@ -162,7 +163,8 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
   @Test public void batchDoesNotRetryForNonNetworkErrors() {
     TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
-    Batch batch = Batch.create(Collections.<Message>singletonList(trackMessage));
+    Batch batch = Batch.create(Collections.<String, Object>emptyMap(),
+        Collections.<Message>singletonList(trackMessage));
     BatchUploadTask batchUploadTask = new BatchUploadTask(segmentService, batch,
         Backo.builder().base(TimeUnit.NANOSECONDS, 1).factor(1).build(), log);
     RetrofitError retrofitError =

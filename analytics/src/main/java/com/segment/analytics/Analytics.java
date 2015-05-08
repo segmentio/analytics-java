@@ -2,12 +2,13 @@ package com.segment.analytics;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.segment.analytics.gson.AutoValueAdapterFactory;
+import com.segment.analytics.gson.LowerCaseEnumTypeAdapterFactory;
+import com.segment.analytics.http.SegmentService;
 import com.segment.analytics.internal.AnalyticsClient;
-import com.segment.analytics.internal.gson.AutoValueAdapterFactory;
-import com.segment.analytics.internal.gson.LowerCaseEnumTypeAdapterFactory;
-import com.segment.analytics.internal.http.SegmentService;
 import com.segment.analytics.messages.Message;
 import com.segment.analytics.messages.MessageBuilder;
+import com.squareup.okhttp.Credentials;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -18,9 +19,6 @@ import retrofit.RequestInterceptor;
 import retrofit.RestAdapter;
 import retrofit.client.Client;
 import retrofit.converter.GsonConverter;
-
-import static com.segment.analytics.internal.Utils.basicCredentials;
-import static com.segment.analytics.internal.Utils.isNullOrEmpty;
 
 /**
  * The entry point into the Segment for Java library.
@@ -103,7 +101,7 @@ public class Analytics {
     private long flushIntervalInMillis;
 
     Builder(String writeKey) {
-      if (isNullOrEmpty(writeKey)) {
+      if (writeKey == null || writeKey.trim().length() == 0) {
         throw new NullPointerException("writeKey cannot be null or empty.");
       }
       this.writeKey = writeKey;
@@ -235,7 +233,7 @@ public class Analytics {
           .setClient(client)
           .setRequestInterceptor(new RequestInterceptor() {
             @Override public void intercept(RequestFacade request) {
-              request.addHeader("Authorization", basicCredentials(writeKey, ""));
+              request.addHeader("Authorization", Credentials.basic(writeKey, ""));
             }
           })
           .setLogLevel(RestAdapter.LogLevel.FULL)
