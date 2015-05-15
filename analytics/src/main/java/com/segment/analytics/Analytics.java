@@ -170,7 +170,7 @@ public class Analytics {
     /** Set the interval at which the queue should be flushed. */
     @Beta public Builder flushInterval(long flushInterval, TimeUnit unit) {
       long flushIntervalInMillis = unit.toMillis(flushInterval);
-      if (flushInterval < 1000) {
+      if (flushIntervalInMillis < 1000) {
         throw new IllegalArgumentException("flushInterval must not be less than 1 second.");
       }
       this.flushIntervalInMillis = flushIntervalInMillis;
