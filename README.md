@@ -34,9 +34,9 @@ To add a snapshot dependency to your builds, make sure you add the snapshot repo
 Maven users can add the following to their `pom.xml`:
 ```
 <repository>
-    <id>apache.snapshots</id>
-    <name>Apache Development Snapshot Repository</name>
-    <url>https://repository.apache.org/content/repositories/snapshots/</url>
+    <id>ossrh</id>
+    <name>Sonatype Snapshot Repository</name>
+    <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
     <releases>
         <enabled>false</enabled>
     </releases>
