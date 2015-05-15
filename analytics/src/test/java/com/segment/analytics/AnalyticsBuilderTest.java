@@ -126,6 +126,14 @@ public class AnalyticsBuilderTest {
     } catch (IllegalArgumentException e) {
       assertThat(e).hasMessage("flushInterval must not be less than 1 second.");
     }
+
+    // Exercise a bug where we only checked the number passed without converting to milliseconds
+    try {
+      builder.flushInterval(2000, TimeUnit.NANOSECONDS);
+      fail("Should fail for flushInterval < 1 second");
+    } catch (IllegalArgumentException e) {
+      assertThat(e).hasMessage("flushInterval must not be less than 1 second.");
+    }
   }
 
   @Test public void nullNetworkExecutor() {
