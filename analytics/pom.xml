@@ -20,6 +20,14 @@
       <artifactId>analytics-core</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>com.squareup.okhttp</groupId>
+      <artifactId>okhttp</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.segment.backo</groupId>
+      <artifactId>backo</artifactId>
+    </dependency>
 
     <dependency>
       <groupId>junit</groupId>

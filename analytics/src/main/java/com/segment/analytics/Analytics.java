@@ -90,6 +90,9 @@ public class Analytics {
 
   /** Fluent API for creating {@link Analytics} instances. */
   public static class Builder {
+    private static final String DEFAULT_ENDPOINT = "https://api.segment.io";
+    private static final String AUTHORIZATION_HEADER = "Authorization";
+
     private final String writeKey;
     private Client client;
     private Log log;
@@ -229,11 +232,11 @@ public class Analytics {
       }
 
       RestAdapter restAdapter = new RestAdapter.Builder().setConverter(new GsonConverter(gson))
-          .setEndpoint("https://api.segment.io")
+          .setEndpoint(DEFAULT_ENDPOINT)
           .setClient(client)
           .setRequestInterceptor(new RequestInterceptor() {
             @Override public void intercept(RequestFacade request) {
-              request.addHeader("Authorization", Credentials.basic(writeKey, ""));
+              request.addHeader(AUTHORIZATION_HEADER, Credentials.basic(writeKey, ""));
             }
           })
           .setLogLevel(RestAdapter.LogLevel.FULL)
