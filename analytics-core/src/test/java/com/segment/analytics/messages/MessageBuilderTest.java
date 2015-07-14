@@ -21,6 +21,16 @@ import static org.junit.Assert.fail;
     }
   }
 
+  @Test
+  public void nullTimestampThrowsError(TestUtils.MessageBuilderTest builder) {
+    try {
+      builder.get().timestamp(null);
+      fail();
+    } catch (NullPointerException e) {
+      assertThat(e).hasMessage("Null timestamp");
+    }
+  }
+
   @Test public void providingUserIdBuildsSuccessfully(TestUtils.MessageBuilderTest builder) {
     builder.get().userId("foo").build();
   }
