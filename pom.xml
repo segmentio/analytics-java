@@ -32,7 +32,7 @@
     <!-- Third Party Dependencies -->
     <retrofit.version>1.9.0</retrofit.version>
     <auto.version>1.0</auto.version>
-    <findbugs.version>2.0.1</findbugs.version>
+    <findbugs.version>3.0.1</findbugs.version>
     <gson.version>2.3.1</gson.version>
     <okhttp.version>2.2.0</okhttp.version>
     <guava.version>18.0</guava.version>
@@ -79,7 +79,7 @@
       </dependency>
       <dependency>
         <groupId>com.google.code.findbugs</groupId>
-        <artifactId>jsr305</artifactId>
+        <artifactId>findbugs</artifactId>
         <version>${findbugs.version}</version>
       </dependency>
       <dependency>
