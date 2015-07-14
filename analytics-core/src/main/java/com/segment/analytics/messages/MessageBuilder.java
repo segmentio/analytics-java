@@ -19,6 +19,7 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
   private UUID anonymousId;
   private String userId;
   private ImmutableMap.Builder<String, Object> integrationsBuilder;
+  private Date timestamp;
 
   // Hidden from Public API.
   MessageBuilder(Message.Type type) {
@@ -105,7 +106,8 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
   }
 
   /**
-   * Pass in some options that will only be used by the target integration.
+   * Pass in some options that will only be used by the target integration. This will implicitly
+   * mark the integration as enabled.
    *
    * @see <a href="https://segment.com/docs/spec/common/#integrations">Integrations</a>
    */
@@ -117,6 +119,20 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
       integrationsBuilder = new ImmutableMap.Builder<>();
     }
     integrationsBuilder.put(key, ImmutableMap.copyOf(options));
+    return self();
+  }
+
+  /**
+   * Set a timestamp for the event. By default, the current timestamp is used, but you may override
+   * it for historical import.
+   *
+   * @see <a href="https://segment.com/docs/spec/common/#-timestamp-">Timestamp</a>
+   */
+  public V timestamp(Date timestamp) {
+    if (timestamp == null) {
+      throw new NullPointerException("Null timestamp");
+    }
+    this.timestamp = timestamp;
     return self();
   }
 
@@ -137,8 +153,8 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
     }
     Map<String, Object> integrations = integrationsBuilder == null ? //
         Collections.<String, Object>emptyMap() : integrationsBuilder.build();
-    return realBuild(type, UUID.randomUUID(), new Date(), context, anonymousId, userId,
-        integrations);
+    return realBuild(type, UUID.randomUUID(), timestamp == null ? new Date() : timestamp, context,
+        anonymousId, userId, integrations);
   }
 
   /** Returns the {@link Message.Type} of the message this builder is constructing. */
