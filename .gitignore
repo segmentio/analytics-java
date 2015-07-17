@@ -121,3 +121,7 @@ out/
 # JIRA plugin
 atlassian-ide-plugin.xml
 
+# Eclipse
+.classpath
+.project
+.settings/
