@@ -23,6 +23,7 @@
     <module>analytics-core</module>
     <module>analytics</module>
     <module>analytics-sample</module>
+    <module>analytics-spring-boot-starter</module>
   </modules>
 
   <properties>
@@ -37,6 +38,7 @@
     <okhttp.version>2.2.0</okhttp.version>
     <guava.version>18.0</guava.version>
     <backo.version>1.0.0</backo.version>
+    <spring.boot.version>1.2.5.RELEASE</spring.boot.version>
 
     <!-- Test Dependencies -->
     <junit.version>4.11</junit.version>
@@ -142,8 +144,52 @@
             <target>${java.version}</target>
           </configuration>
         </plugin>
+
+        <!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
+        <plugin>
+          <groupId>org.eclipse.m2e</groupId>
+          <artifactId>lifecycle-mapping</artifactId>
+          <version>1.0.0</version>
+          <configuration>
+            <lifecycleMappingMetadata>
+              <pluginExecutions>
+                <pluginExecution>
+                  <pluginExecutionFilter>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>templating-maven-plugin</artifactId>
+                    <versionRange>[1.0-alpha-3,)</versionRange>
+                    <goals>
+                      <goal>filter-sources</goal>
+                      <goal>filter-test-sources</goal>
+                    </goals>
+                  </pluginExecutionFilter>
+                  <action>
+                    <execute>
+                      <runOnIncremental>true</runOnIncremental>
+                      <runOnConfiguration>true</runOnConfiguration>
+                    </execute>
+                  </action>
+                </pluginExecution>
+                <pluginExecution>
+                  <pluginExecutionFilter>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-enforcer-plugin</artifactId>
+                    <versionRange>[1.0.0,)</versionRange>
+                    <goals>
+                      <goal>enforce</goal>
+                    </goals>
+                  </pluginExecutionFilter>
+                  <action>
+                    <ignore />
+                  </action>
+                </pluginExecution>
+              </pluginExecutions>
+            </lifecycleMappingMetadata>
+          </configuration>
+        </plugin>
       </plugins>
     </pluginManagement>
+
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

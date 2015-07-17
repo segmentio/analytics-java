@@ -1,0 +1,27 @@
+= Spring Boot starter for Segment Analytics
+
+This module provides a link:https://projects.spring.io/spring-boot/[Spring Boot]
+starter for the Segment client.
+
+== Usage
+
+For Maven, include this dependency in your `pom.xml`:
+
+```xml
+<dependency>
+  <groupId>com.segment.analytics.java</groupId>
+  <artifactId>analytics-spring-boot-starter</artifactId>
+  <version>${segment.analytics.version}</version>
+</dependency>
+```
+
+For Gradle,
+
+```bash
+compile 'com.segment.analytics.java:analytics-spring-boot-starter:+'
+```
+
+In your Spring Boot configuration (`application.properties`, environment, or
+similar), provide the property `segment.analytics.writeKey`. The
+autoconfiguration will register an `Analytics` bean in the Spring context
+ready for use.
