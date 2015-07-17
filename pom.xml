@@ -23,6 +23,7 @@
     <module>analytics-core</module>
     <module>analytics</module>
     <module>analytics-sample</module>
+    <module>analytics-spring-boot-starter</module>
   </modules>
 
   <properties>
@@ -37,6 +38,7 @@
     <okhttp.version>2.2.0</okhttp.version>
     <guava.version>18.0</guava.version>
     <backo.version>1.0.0</backo.version>
+    <spring.boot.version>1.2.5.RELEASE</spring.boot.version>
 
     <!-- Test Dependencies -->
     <junit.version>4.11</junit.version>
