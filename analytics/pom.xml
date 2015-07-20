@@ -25,6 +25,11 @@
       <artifactId>okhttp</artifactId>
     </dependency>
     <dependency>
+      <groupId>com.google.code.findbugs</groupId>
+      <artifactId>findbugs</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
       <groupId>com.segment.backo</groupId>
       <artifactId>backo</artifactId>
     </dependency>
