@@ -11,8 +11,7 @@ import retrofit.client.OkClient;
 import static java.lang.Thread.MIN_PRIORITY;
 
 class Platform {
-  static final String THREAD_PREFIX = "Analytics-";
-  static final String IDLE_THREAD_NAME = THREAD_PREFIX + "Idle";
+  static final String THREAD_NAME = "Analytics";
 
   private static final Platform PLATFORM = findPlatform();
 
@@ -44,7 +43,7 @@ class Platform {
             Thread.currentThread().setPriority(MIN_PRIORITY);
             r.run();
           }
-        }, IDLE_THREAD_NAME);
+        }, THREAD_NAME);
       }
     };
   }
@@ -56,6 +55,4 @@ class Platform {
   public int defaultFlushQueueSize() {
     return 250;
   }
-
-
 }
