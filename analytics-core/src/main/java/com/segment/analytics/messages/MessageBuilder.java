@@ -15,7 +15,7 @@ import java.util.UUID;
  */
 public abstract class MessageBuilder<T extends Message, V extends MessageBuilder> {
   private final Message.Type type;
-  private Map<String, Object> context;
+  private Map<String, ?> context;
   private UUID anonymousId;
   private String userId;
   private ImmutableMap.Builder<String, Object> integrationsBuilder;
@@ -50,7 +50,7 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
    *
    * @see <a href="https://segment.com/docs/spec/common/#context">Context</a>
    */
-  public V context(Map<String, ? super Object> context) {
+  public V context(Map<String, ?> context) {
     if (context == null) {
       throw new NullPointerException("Null context");
     }
@@ -137,7 +137,7 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
   }
 
   protected abstract T realBuild(Message.Type type, UUID messageId, Date timestamp,
-      Map<String, Object> context, UUID anonymousId, String userId,
+      Map<String, ?> context, UUID anonymousId, String userId,
       Map<String, Object> integrations);
 
   abstract V self();

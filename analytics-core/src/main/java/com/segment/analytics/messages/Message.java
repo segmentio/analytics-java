@@ -16,7 +16,7 @@ public interface Message {
 
   Date timestamp();
 
-  @Nullable Map<String, Object> context();
+  @Nullable Map<String, ?> context();
 
   @Nullable UUID anonymousId();
 

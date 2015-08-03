@@ -35,7 +35,7 @@ public abstract class GroupMessage implements Message {
 
   public abstract String groupId();
 
-  @Nullable public abstract Map<String, Object> traits();
+  @Nullable public abstract Map<String, ?> traits();
 
   public Builder toBuilder() {
     return new Builder(this);
@@ -44,7 +44,7 @@ public abstract class GroupMessage implements Message {
   /** Fluent API for creating {@link GroupMessage} instances. */
   public static class Builder extends MessageBuilder<GroupMessage, Builder> {
     private String groupId;
-    private Map<String, Object> traits;
+    private Map<String, ?> traits;
 
     private Builder(GroupMessage group) {
       super(group);
@@ -65,7 +65,7 @@ public abstract class GroupMessage implements Message {
      *
      * @see <a href="https://segment.com/docs/spec/group/#traits">Traits</a>
      */
-    public Builder traits(Map<String, Object> traits) {
+    public Builder traits(Map<String, ?> traits) {
       if (traits == null) {
         throw new NullPointerException("Null traits");
       }
@@ -74,7 +74,7 @@ public abstract class GroupMessage implements Message {
     }
 
     @Override protected GroupMessage realBuild(Type type, UUID messageId, Date timestamp,
-        Map<String, Object> context, UUID anonymousId, String userId,
+        Map<String, ?> context, UUID anonymousId, String userId,
         Map<String, Object> integrations) {
       return new AutoValue_GroupMessage(type, messageId, timestamp, context, anonymousId, userId,
           integrations, groupId, traits);

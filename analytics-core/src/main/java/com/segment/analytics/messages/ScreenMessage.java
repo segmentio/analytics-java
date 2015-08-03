@@ -32,7 +32,7 @@ public abstract class ScreenMessage implements Message {
 
   @Nullable public abstract String name();
 
-  @Nullable public abstract Map<String, Object> properties();
+  @Nullable public abstract Map<String, ?> properties();
 
   public Builder toBuilder() {
     return new Builder(this);
@@ -41,7 +41,7 @@ public abstract class ScreenMessage implements Message {
   /** Fluent API for creating {@link ScreenMessage} instances. */
   public static class Builder extends MessageBuilder<ScreenMessage, Builder> {
     private String name;
-    private Map<String, Object> properties;
+    private Map<String, ?> properties;
 
     private Builder(ScreenMessage screen) {
       super(screen);
@@ -62,7 +62,7 @@ public abstract class ScreenMessage implements Message {
      *
      * @see <a href="https://segment.com/docs/spec/screen/#properties">Properties</a>
      */
-    public Builder properties(Map<String, Object> properties) {
+    public Builder properties(Map<String, ?> properties) {
       if (properties == null) {
         throw new NullPointerException("Null properties");
       }
@@ -75,7 +75,7 @@ public abstract class ScreenMessage implements Message {
     }
 
     @Override protected ScreenMessage realBuild(Type type, UUID messageId, Date timestamp,
-        Map<String, Object> context, UUID anonymousId, String userId,
+        Map<String, ?> context, UUID anonymousId, String userId,
         Map<String, Object> integrations) {
       return new AutoValue_ScreenMessage(type, messageId, timestamp, context, anonymousId, userId,
           integrations, name, properties);

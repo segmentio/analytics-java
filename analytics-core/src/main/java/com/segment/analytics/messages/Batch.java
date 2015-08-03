@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 @AutoValue @AutoGson public abstract class Batch {
-  public static Batch create(Map<String, Object> context, List<Message> batch) {
+  public static Batch create(Map<String, ?> context, List<Message> batch) {
     return new AutoValue_Batch(batch, new Date(), context);
   }
 
@@ -15,5 +15,5 @@ import java.util.Map;
 
   public abstract Date sentAt();
 
-  public abstract Map<String, Object> context();
+  public abstract Map<String, ?> context();
 }

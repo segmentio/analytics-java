@@ -24,7 +24,7 @@ public abstract class IdentifyMessage implements Message {
     return new Builder();
   }
 
-  @Nullable public abstract Map<String, Object> traits();
+  @Nullable public abstract Map<String, ?> traits();
 
   public Builder toBuilder() {
     return new Builder(this);
@@ -32,7 +32,7 @@ public abstract class IdentifyMessage implements Message {
 
   /** Fluent API for creating {@link IdentifyMessage} instances. */
   public static class Builder extends MessageBuilder<IdentifyMessage, Builder> {
-    private Map<String, Object> traits;
+    private Map<String, ?> traits;
 
     private Builder(IdentifyMessage identify) {
       super(identify);
@@ -48,7 +48,7 @@ public abstract class IdentifyMessage implements Message {
      *
      * @see <a href="https://segment.com/docs/spec/identify/#traits">Traits</a>
      */
-    public Builder traits(Map<String, Object> traits) {
+    public Builder traits(Map<String, ?> traits) {
       if (traits == null) {
         throw new NullPointerException("Null traits");
       }
@@ -57,7 +57,7 @@ public abstract class IdentifyMessage implements Message {
     }
 
     @Override protected IdentifyMessage realBuild(Type type, UUID messageId, Date timestamp,
-        Map<String, Object> context, UUID anonymousId, String userId,
+        Map<String, ?> context, UUID anonymousId, String userId,
         Map<String, Object> integrations) {
       if (userId == null && traits == null) {
         throw new IllegalStateException("Either userId or traits must be provided.");

@@ -20,14 +20,14 @@ import java.util.concurrent.TimeUnit;
 import retrofit.RetrofitError;
 
 public class AnalyticsClient {
-  private static final Map<String, Object> CONTEXT;
+  private static final Map<String, ?> CONTEXT;
 
   static {
     ImmutableMap<String, String> library = new ImmutableMap.Builder<String, String>() //
         .put("name", "analytics-java") //
         .put("version", AnalyticsVersion.get()) //
         .build();
-    CONTEXT = ImmutableMap.<String, Object>of("library", library);
+    CONTEXT = ImmutableMap.of("library", library);
   }
 
   private final BlockingQueue<Message> messageQueue;

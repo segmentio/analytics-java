@@ -27,7 +27,7 @@ public class Sample {
           super.run();
           for (int i = 0; i < 10; i++) {
             analytics.enqueue(TrackMessage.builder("Java Test")
-                .properties(ImmutableMap.<String, Object>of("count", count.incrementAndGet()))
+                .properties(ImmutableMap.of("count", count.incrementAndGet()))
                 .userId("prateek"));
           }
           analytics.flush();
