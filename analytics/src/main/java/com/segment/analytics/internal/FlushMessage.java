@@ -24,7 +24,7 @@ class FlushMessage implements Message {
     throw new UnsupportedOperationException();
   }
 
-  @Nullable @Override public Map<String, Object> context() {
+  @Nullable @Override public Map<String, ?> context() {
     throw new UnsupportedOperationException();
   }
 

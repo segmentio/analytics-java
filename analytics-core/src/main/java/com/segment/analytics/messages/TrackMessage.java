@@ -32,7 +32,7 @@ public abstract class TrackMessage implements Message {
 
   public abstract String event();
 
-  @Nullable public abstract Map<String, Object> properties();
+  @Nullable public abstract Map<String, ?> properties();
 
   public Builder toBuilder() {
     return new Builder(this);
@@ -41,7 +41,7 @@ public abstract class TrackMessage implements Message {
   /** Fluent API for creating {@link TrackMessage} instances. */
   public static class Builder extends MessageBuilder<TrackMessage, Builder> {
     private String event;
-    private Map<String, Object> properties;
+    private Map<String, ?> properties;
 
     private Builder(TrackMessage track) {
       super(track);
@@ -62,7 +62,7 @@ public abstract class TrackMessage implements Message {
      *
      * @see <a href="https://segment.com/docs/spec/track/#properties">Properties</a>
      */
-    public Builder properties(Map<String, Object> properties) {
+    public Builder properties(Map<String, ?> properties) {
       if (properties == null) {
         throw new NullPointerException("Null properties");
       }
@@ -75,7 +75,7 @@ public abstract class TrackMessage implements Message {
     }
 
     @Override protected TrackMessage realBuild(Type type, UUID messageId, Date timestamp,
-        Map<String, Object> context, UUID anonymousId, String userId,
+        Map<String, ?> context, UUID anonymousId, String userId,
         Map<String, Object> integrations) {
       return new AutoValue_TrackMessage(type, messageId, timestamp, context, anonymousId, userId,
           integrations, event, properties);

@@ -53,7 +53,7 @@ public abstract class AliasMessage implements Message {
     }
 
     @Override protected AliasMessage realBuild(Type type, UUID messageId, Date timestamp,
-        Map<String, Object> context, UUID anonymousId, String userId,
+        Map<String, ?> context, UUID anonymousId, String userId,
         Map<String, Object> integrations) {
       return new AutoValue_AliasMessage(type, messageId, timestamp, context, anonymousId, userId,
           integrations, previousId);
