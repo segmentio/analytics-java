@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableMap;
 import com.segment.analytics.Analytics;
 import com.segment.analytics.Log;
 import com.segment.analytics.messages.TrackMessage;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Sample {
@@ -34,5 +35,10 @@ public class Sample {
         }
       }.start();
     }
+
+    // Give some time for requests to complete.
+    Thread.sleep(TimeUnit.SECONDS.toMillis(30));
+
+    analytics.shutdown();
   }
 }

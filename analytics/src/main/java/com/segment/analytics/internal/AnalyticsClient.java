@@ -75,9 +75,9 @@ public class AnalyticsClient {
 
   public void shutdown() {
     messageQueue.clear();
-    looperExecutor.shutdown();
-    flushScheduler.shutdown();
-    networkExecutor.shutdown();
+    looperExecutor.shutdownNow();
+    flushScheduler.shutdownNow();
+    networkExecutor.shutdown(); // Let in-flight requests complete.
   }
 
   /**
@@ -107,7 +107,7 @@ public class AnalyticsClient {
           }
         }
       } catch (InterruptedException e) {
-        log.print(Log.Level.ERROR, "Thread interrupted while polling for messages.");
+        log.print(Log.Level.DEBUG, "Looper interrupted while polling for messages.");
       }
     }
   }
@@ -158,7 +158,7 @@ public class AnalyticsClient {
           backo.sleep(attempts);
           attempts++;
         } catch (InterruptedException e) {
-          log.print(Log.Level.ERROR, "Thread interrupted while backing off for batch: %s.", batch);
+          log.print(Log.Level.DEBUG, "Thread interrupted while backing off for batch: %s.", batch);
           return;
         }
       }
