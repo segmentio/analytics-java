@@ -50,7 +50,7 @@ public abstract class TrackMessage implements Message {
     }
 
     private Builder(String event) {
-      super(Type.TRACK);
+      super(Type.track);
       if (isNullOrEmpty(event)) {
         throw new IllegalArgumentException("event cannot be null or empty.");
       }

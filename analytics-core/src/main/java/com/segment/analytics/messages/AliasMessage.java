@@ -45,7 +45,7 @@ public abstract class AliasMessage implements Message {
     }
 
     private Builder(String previousId) {
-      super(Type.ALIAS);
+      super(Type.alias);
       if (isNullOrEmpty(previousId)) {
         throw new IllegalArgumentException("previousId cannot be null or empty.");
       }

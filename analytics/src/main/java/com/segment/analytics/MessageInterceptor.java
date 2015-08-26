@@ -25,15 +25,15 @@ public interface MessageInterceptor {
       // todo: non final so messages can be filtered without duplicating logic?
       Message.Type type = message.type();
       switch (type) {
-        case ALIAS:
+        case alias:
           return alias((AliasMessage) message);
-        case GROUP:
+        case group:
           return group((GroupMessage) message);
-        case IDENTIFY:
+        case identify:
           return identify((IdentifyMessage) message);
-        case SCREEN:
+        case screen:
           return screen((ScreenMessage) message);
-        case TRACK:
+        case track:
           return track((TrackMessage) message);
         default:
           throw new IllegalArgumentException("Unknown payload type: " + type);

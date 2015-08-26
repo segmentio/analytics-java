@@ -3,7 +3,6 @@ package com.segment.analytics;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.segment.analytics.gson.AutoValueAdapterFactory;
-import com.segment.analytics.gson.LowerCaseEnumTypeAdapterFactory;
 import com.segment.analytics.http.SegmentService;
 import com.segment.analytics.internal.AnalyticsClient;
 import com.segment.analytics.messages.Message;
@@ -199,7 +198,6 @@ public class Analytics {
     public Analytics build() {
       Gson gson = new GsonBuilder() //
           .registerTypeAdapterFactory(new AutoValueAdapterFactory())
-          .registerTypeAdapterFactory(new LowerCaseEnumTypeAdapterFactory<>(Message.Type.class))
           .create();
 
       if (client == null) {
