@@ -53,7 +53,7 @@ public abstract class GroupMessage implements Message {
     }
 
     private Builder(String groupId) {
-      super(Type.GROUP);
+      super(Type.group);
       if (isNullOrEmpty(groupId)) {
         throw new IllegalArgumentException("groupId cannot be null or empty.");
       }

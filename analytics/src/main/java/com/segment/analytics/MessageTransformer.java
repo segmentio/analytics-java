@@ -28,15 +28,15 @@ public interface MessageTransformer {
       // todo: non final so messages can be filtered without duplicating logic?
       Message.Type type = builder.type();
       switch (type) {
-        case ALIAS:
+        case alias:
           return alias((AliasMessage.Builder) builder);
-        case GROUP:
+        case group:
           return group((GroupMessage.Builder) builder);
-        case IDENTIFY:
+        case identify:
           return identify((IdentifyMessage.Builder) builder);
-        case SCREEN:
+        case screen:
           return screen((ScreenMessage.Builder) builder);
-        case TRACK:
+        case track:
           return track((TrackMessage.Builder) builder);
         default:
           throw new IllegalArgumentException("Unknown payload type: " + type);

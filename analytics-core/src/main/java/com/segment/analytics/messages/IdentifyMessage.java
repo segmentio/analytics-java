@@ -40,7 +40,7 @@ public abstract class IdentifyMessage implements Message {
     }
 
     private Builder() {
-      super(Type.IDENTIFY);
+      super(Type.identify);
     }
 
     /**

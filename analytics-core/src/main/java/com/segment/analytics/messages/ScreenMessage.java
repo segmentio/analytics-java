@@ -50,7 +50,7 @@ public abstract class ScreenMessage implements Message {
     }
 
     private Builder(String name) {
-      super(Type.SCREEN);
+      super(Type.screen);
       if (isNullOrEmpty(name)) {
         throw new IllegalArgumentException("screen name cannot be null or empty.");
       }
