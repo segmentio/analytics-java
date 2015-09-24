@@ -99,7 +99,7 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
       throw new IllegalArgumentException("Key cannot be null or empty.");
     }
     if (integrationsBuilder == null) {
-      integrationsBuilder = new ImmutableMap.Builder<>();
+      integrationsBuilder = new ImmutableMap.Builder<String, Object>();
     }
     integrationsBuilder.put(key, enable);
     return self();
@@ -116,7 +116,7 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
       throw new IllegalArgumentException("Key name cannot be null or empty.");
     }
     if (integrationsBuilder == null) {
-      integrationsBuilder = new ImmutableMap.Builder<>();
+      integrationsBuilder = new ImmutableMap.Builder<String, Object>();
     }
     integrationsBuilder.put(key, ImmutableMap.copyOf(options));
     return self();

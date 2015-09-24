@@ -133,7 +133,7 @@ public class Analytics {
         throw new NullPointerException("Null transformer");
       }
       if (messageTransformers == null) {
-        messageTransformers = new ArrayList<>();
+        messageTransformers = new ArrayList<MessageTransformer>();
       }
       if (messageTransformers.contains(transformer)) {
         throw new IllegalStateException("MessageTransformer is already registered.");
@@ -148,7 +148,7 @@ public class Analytics {
         throw new NullPointerException("Null interceptor");
       }
       if (messageInterceptors == null) {
-        messageInterceptors = new ArrayList<>();
+        messageInterceptors = new ArrayList<MessageInterceptor>();
       }
       if (messageInterceptors.contains(interceptor)) {
         throw new IllegalStateException("MessageInterceptor is already registered.");

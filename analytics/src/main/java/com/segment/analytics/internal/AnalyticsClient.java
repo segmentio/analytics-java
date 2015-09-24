@@ -86,7 +86,7 @@ public class AnalyticsClient {
    */
   class Looper implements Runnable {
     @Override public void run() {
-      List<Message> messages = new ArrayList<>();
+      List<Message> messages = new ArrayList<Message>();
       try {
         //noinspection InfiniteLoopStatement
         while (true) {
@@ -103,7 +103,7 @@ public class AnalyticsClient {
             log.print(Log.Level.VERBOSE, "Uploading batch with %s message(s).", messages.size());
             networkExecutor.submit(
                 BatchUploadTask.create(service, Batch.create(CONTEXT, messages), log));
-            messages = new ArrayList<>();
+            messages = new ArrayList<Message>();
           }
         }
       } catch (InterruptedException e) {
