@@ -82,7 +82,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
   @Test public void flushSubmitsToExecutor() {
     threadFactory = Executors.defaultThreadFactory();
-    messageQueue = new LinkedBlockingQueue<>();
+    messageQueue = new LinkedBlockingQueue<Message>();
     client = new AnalyticsClient(messageQueue, segmentService, 50, TimeUnit.HOURS.toMillis(1), log,
         threadFactory, networkExecutor);
 
@@ -106,7 +106,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
   @Test public void enqueueMaxTriggersFlush() {
     threadFactory = Executors.defaultThreadFactory();
-    messageQueue = new LinkedBlockingQueue<>();
+    messageQueue = new LinkedBlockingQueue<Message>();
     client = new AnalyticsClient(messageQueue, segmentService, 5, TimeUnit.HOURS.toMillis(1), log,
         threadFactory, networkExecutor);
 
@@ -127,7 +127,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
   @Test public void enqueueBeforeMaxDoesNotTriggerFlush() {
     threadFactory = Executors.defaultThreadFactory();
-    messageQueue = new LinkedBlockingQueue<>();
+    messageQueue = new LinkedBlockingQueue<Message>();
     client = new AnalyticsClient(messageQueue, segmentService, 10, TimeUnit.HOURS.toMillis(1), log,
         threadFactory, networkExecutor);
 
