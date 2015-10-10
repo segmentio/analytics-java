@@ -1,13 +1,13 @@
 package com.segment.analytics.internal;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableMap;
 import com.segment.analytics.Log;
 import com.segment.analytics.http.SegmentService;
 import com.segment.analytics.messages.Batch;
 import com.segment.analytics.messages.Message;
 import com.segment.backo.Backo;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -23,11 +23,12 @@ public class AnalyticsClient {
   private static final Map<String, ?> CONTEXT;
 
   static {
-    ImmutableMap<String, String> library = new ImmutableMap.Builder<String, String>() //
-        .put("name", "analytics-java") //
-        .put("version", AnalyticsVersion.get()) //
-        .build();
-    CONTEXT = ImmutableMap.of("library", library);
+    Map<String, String> library = new LinkedHashMap<>();
+    library.put("name", "analytics-java");
+    library.put("version", AnalyticsVersion.get());
+    Map<String, Object> context = new LinkedHashMap<>();
+    context.put("library", Collections.unmodifiableMap(library));
+    CONTEXT = Collections.unmodifiableMap(context);
   }
 
   private final BlockingQueue<Message> messageQueue;
@@ -120,7 +121,7 @@ public class AnalyticsClient {
         .build();
 
     private final SegmentService service;
-    @VisibleForTesting final Batch batch;
+    final Batch batch;
     private final Backo backo;
     private final Log log;
 
