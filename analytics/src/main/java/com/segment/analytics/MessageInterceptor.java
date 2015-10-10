@@ -12,6 +12,7 @@ public interface MessageInterceptor {
   /**
    * Called for every message. This will be called on the same thread the request was made and
    * after all {@link MessageTransformer}'s have been called.
+   * <p>
    * Returning {@code null} will skip processing this message any further.
    */
   Message intercept(Message message);
