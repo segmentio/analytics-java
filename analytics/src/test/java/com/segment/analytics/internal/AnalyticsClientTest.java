@@ -1,5 +1,6 @@
 package com.segment.analytics.internal;
 
+import com.segment.analytics.Callback;
 import com.segment.analytics.Log;
 import com.segment.analytics.TestUtils.MessageBuilderTest;
 import com.segment.analytics.http.SegmentService;
@@ -18,6 +19,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import org.hamcrest.Description;
+import org.hamcrest.TypeSafeMatcher;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -28,6 +31,8 @@ import retrofit.converter.ConversionException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.argThat;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.timeout;
@@ -47,6 +52,7 @@ public class AnalyticsClientTest {
   @Mock BlockingQueue<Message> messageQueue;
   @Mock SegmentService segmentService;
   @Mock ExecutorService networkExecutor;
+  @Mock Callback callback;
 
   @Before public void setUp() {
     initMocks(this);
@@ -56,7 +62,7 @@ public class AnalyticsClientTest {
   // Defers loading the client until tests can initialize all required dependencies.
   AnalyticsClient newClient() {
     return new AnalyticsClient(messageQueue, segmentService, 50, TimeUnit.HOURS.toMillis(1), log,
-        threadFactory, networkExecutor);
+        threadFactory, networkExecutor, callback);
   }
 
   @Test public void enqueueAddsToQueue(MessageBuilderTest builder) throws InterruptedException {
@@ -150,9 +156,9 @@ public class AnalyticsClientTest {
   }
 
   @Test public void batchRetriesForNetworkErrors() {
+    AnalyticsClient client = newClient();
     TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
     Batch batch = batchFor(trackMessage);
-    BatchUploadTask batchUploadTask = new BatchUploadTask(segmentService, batch, BACKO, log);
 
     // Throw a network error 3 times.
     RetrofitError retrofitError = RetrofitError.networkError(null, new IOException());
@@ -161,38 +167,73 @@ public class AnalyticsClientTest {
         .thenThrow(retrofitError)
         .thenReturn(null);
 
+    BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch);
     batchUploadTask.run();
 
     // Verify that we tried to upload 4 times, 3 failed and 1 succeeded.
     verify(segmentService, times(4)).upload(batch);
+    verify(callback).success(trackMessage);
   }
 
-  @Test public void batchDoesNotRetryForNonNetworkErrors() {
+  @Test public void onSuccessNotInvokedForNullCallback() {
+    callback = null;
+    AnalyticsClient client = newClient();
     TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
     Batch batch = batchFor(trackMessage);
 
-    BatchUploadTask batchUploadTask = new BatchUploadTask(segmentService, batch, BACKO, log);
+    BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch);
+    batchUploadTask.run();
+  }
+
+  @Test public void onFailureNotInvokedForNullCallback() {
+    callback = null;
+    AnalyticsClient client = newClient();
+    TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
+    Batch batch = batchFor(trackMessage);
+    RetrofitError retrofitError = RetrofitError.unexpectedError(null, new IOException("fake"));
+    doThrow(retrofitError).when(segmentService).upload(batch);
+
+    BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch);
+    batchUploadTask.run();
+  }
+
+  @Test public void batchDoesNotRetryForNonNetworkErrors() {
+    AnalyticsClient client = newClient();
+    TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
+    Batch batch = batchFor(trackMessage);
     RetrofitError retrofitError =
         RetrofitError.conversionError(null, null, null, null, new ConversionException("fake"));
     doThrow(retrofitError).when(segmentService).upload(batch);
 
+    BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch);
     batchUploadTask.run();
 
     // Verify we only tried to upload once.
     verify(segmentService).upload(batch);
+    verify(callback).failure(trackMessage, retrofitError);
   }
 
   @Test public void givesUpAfterMaxRetries() {
+    AnalyticsClient client = newClient();
     TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
     Batch batch = batchFor(trackMessage);
-
-    BatchUploadTask batchUploadTask = new BatchUploadTask(segmentService, batch, BACKO, log);
     RetrofitError retrofitError = RetrofitError.networkError(null, new IOException());
     when(segmentService.upload(batch)).thenThrow(retrofitError);
 
+    BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch);
     batchUploadTask.run();
 
     // 50 == MAX_ATTEMPTS in AnalyticsClient.java
     verify(segmentService, times(50)).upload(batch);
+    verify(callback).failure(eq(trackMessage), argThat(new TypeSafeMatcher<Throwable>() {
+      @Override public void describeTo(Description description) {
+        description.appendText("expected IOException");
+      }
+
+      @Override protected boolean matchesSafely(Throwable item) {
+        IOException exception = (IOException) item;
+        return exception.getMessage().equals("50 retries exhausted");
+      }
+    }));
   }
 }

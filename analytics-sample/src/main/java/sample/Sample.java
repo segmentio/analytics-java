@@ -1,7 +1,9 @@
 package sample;
 
 import com.segment.analytics.Analytics;
+import com.segment.analytics.Callback;
 import com.segment.analytics.Log;
+import com.segment.analytics.messages.Message;
 import com.segment.analytics.messages.TrackMessage;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -21,9 +23,22 @@ public class Sample {
     }
   };
 
+  /** A {@link com.segment.analytics.Callback} implementation that prints to {@link System#out}. */
+  static final Callback CALLBACK = new Callback() {
+    @Override public void success(Message message) {
+      System.out.println("Successfully uploaded " + message);
+    }
+
+    @Override public void failure(Message message, Throwable throwable) {
+      System.out.println("Could not upload " + message);
+      System.out.println(throwable);
+    }
+  };
+
   public static void main(String... args) throws Exception {
     final Analytics analytics = Analytics.builder("uFIKMspL0GD0klDBZFlE3mklPVtUgPpd") //
         .log(STDOUT) //
+        .callback(CALLBACK) //
         .build();
 
     final AtomicInteger count = new AtomicInteger();
