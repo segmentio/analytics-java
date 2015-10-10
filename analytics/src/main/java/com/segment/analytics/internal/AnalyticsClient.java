@@ -1,6 +1,7 @@
 package com.segment.analytics.internal;
 
 import com.segment.analytics.Log;
+import com.segment.analytics.MessageCallback;
 import com.segment.analytics.http.SegmentService;
 import com.segment.analytics.messages.Batch;
 import com.segment.analytics.messages.Message;
@@ -38,23 +39,25 @@ public class AnalyticsClient {
   private final ExecutorService networkExecutor;
   private final ExecutorService looperExecutor;
   private final ScheduledExecutorService flushScheduler;
+  private final MessageCallback callback;
 
   public static AnalyticsClient create(SegmentService segmentService, int flushQueueSize,
       long flushIntervalInMillis, Log log, ThreadFactory threadFactory,
-      ExecutorService networkExecutor) {
+      ExecutorService networkExecutor, MessageCallback callback) {
     return new AnalyticsClient(new LinkedBlockingQueue<Message>(), segmentService, flushQueueSize,
-        flushIntervalInMillis, log, threadFactory, networkExecutor);
+        flushIntervalInMillis, log, threadFactory, networkExecutor, callback);
   }
 
   AnalyticsClient(BlockingQueue<Message> messageQueue, SegmentService service, int maxQueueSize,
       long flushIntervalInMillis, Log log, ThreadFactory threadFactory,
-      ExecutorService networkExecutor) {
+      ExecutorService networkExecutor, MessageCallback callback) {
     this.messageQueue = messageQueue;
     this.service = service;
     this.size = maxQueueSize;
     this.log = log;
     this.looperExecutor = Executors.newSingleThreadExecutor(threadFactory);
     this.networkExecutor = networkExecutor;
+    this.callback = callback;
 
     looperExecutor.submit(new Looper());
 
@@ -102,8 +105,8 @@ public class AnalyticsClient {
 
           if (messages.size() >= size || message == FlushMessage.POISON) {
             log.print(Log.Level.VERBOSE, "Uploading batch with %s message(s).", messages.size());
-            networkExecutor.submit(
-                BatchUploadTask.create(service, Batch.create(CONTEXT, messages), log));
+            Batch batch = Batch.create(CONTEXT, messages);
+            networkExecutor.submit(BatchUploadTask.create(service, batch, log, callback));
             messages = new ArrayList<>();
           }
         }
@@ -115,54 +118,98 @@ public class AnalyticsClient {
 
   static class BatchUploadTask implements Runnable {
     private static final Backo BACKO = Backo.builder() //
-        .base(TimeUnit.SECONDS, 30) //
+        .base(TimeUnit.SECONDS, 15) //
         .cap(TimeUnit.HOURS, 1) //
         .jitter(1) //
         .build();
+    private static final int MAX_ATTEMPTS = 50; // Max 50 hours ~ 2 days
 
     private final SegmentService service;
-    final Batch batch;
     private final Backo backo;
     private final Log log;
+    private final MessageCallback callback;
+    final Batch batch;
 
-    static BatchUploadTask create(SegmentService segmentService, Batch batch, Log log) {
-      return new BatchUploadTask(segmentService, batch, BACKO, log);
+    public static Runnable create(SegmentService service, Batch batch, Log log,
+        MessageCallback callback) {
+      return new BatchUploadTask(service, batch, BACKO, log, callback);
     }
 
-    BatchUploadTask(SegmentService service, Batch batch, Backo backo, Log log) {
+    BatchUploadTask(SegmentService service, Batch batch, Backo backo, Log log,
+        MessageCallback callback) {
       this.service = service;
       this.batch = batch;
       this.backo = backo;
       this.log = log;
+      this.callback = callback;
     }
 
-    @Override public void run() {
-      int attempts = 0;
+    /** Returns {@code true} to indicate a batch should be retried. {@code false} otherwise. */
+    boolean upload() {
+      try {
+        // Ignore return value, UploadResponse#onSuccess will never return false for 200 OK
+        service.upload(batch);
 
-      while (true) {
-        try {
-          // Ignore return value, UploadResponse#success will never return false for 200 OK
-          service.upload(batch);
-          return;
-        } catch (RetrofitError error) {
-          switch (error.getKind()) {
-            case NETWORK:
-              log.print(Log.Level.DEBUG, error, "Could not upload batch: %s. Retrying.", batch);
-              break;
-            default:
-              log.print(Log.Level.ERROR, error, "Could not upload batch: %s. Giving up.", batch);
-              return; // Don't retry
+        if (callback != null) {
+          for (Message message : batch.batch()) {
+            callback.onSuccess(message);
           }
         }
 
+        return false;
+      } catch (RetrofitError error) {
+        switch (error.getKind()) {
+          case NETWORK:
+            log.print(Log.Level.DEBUG, error, "Could not upload batch: %s. Retrying.", batch);
+            return true;
+          default:
+            log.print(Log.Level.ERROR, error, "Could not upload batch: %s. Giving up.", batch);
+            if (callback != null) {
+              for (Message message : batch.batch()) {
+                callback.onFailure(message, error);
+              }
+            }
+            return false; // Don't retry
+        }
+      }
+    }
+
+    @Override public void run() {
+      for (int attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+        boolean retry = upload();
+        if (!retry) return;
+
         try {
-          backo.sleep(attempts);
-          attempts++;
+          backo.sleep(attempt);
         } catch (InterruptedException e) {
           log.print(Log.Level.DEBUG, "Thread interrupted while backing off for batch: %s.", batch);
           return;
         }
       }
+
+      log.print(Log.Level.ERROR, "Could not upload batch: %s. Giving up after exhausting retries.",
+          batch);
+      if (callback != null) {
+        Throwable t = new RetriesExhaustedException(MAX_ATTEMPTS);
+        for (Message message : batch.batch()) {
+          callback.onFailure(message, t);
+        }
+      }
+    }
+  }
+
+  static class RetriesExhaustedException extends Exception {
+    final int retryCount;
+
+    private RetriesExhaustedException(int retryCount) {
+      super("Exhausted retries: " + retryCount);
+      this.retryCount = retryCount;
+    }
+
+    @Override public String toString() {
+      return "RetriesExhaustedException{" +
+          "retryCount=" + retryCount +
+          '}';
     }
   }
 }

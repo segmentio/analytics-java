@@ -13,7 +13,7 @@ public interface MessageTransformer {
   /**
    * Called for every builder. This will be called on the same thread the request was made and
    * before any {@link MessageInterceptor}'s are called.
-   * <p></p>
+   * <p>
    * Returning {@code false} will skip processing this message any further.
    */
   boolean transform(MessageBuilder builder);

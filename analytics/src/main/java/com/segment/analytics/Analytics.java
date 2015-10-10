@@ -101,6 +101,7 @@ public class Analytics {
     private ThreadFactory threadFactory;
     private int flushQueueSize;
     private long flushIntervalInMillis;
+    private MessageCallback callback;
 
     Builder(String writeKey) {
       if (writeKey == null || writeKey.trim().length() == 0) {
@@ -194,10 +195,19 @@ public class Analytics {
       return this;
     }
 
+    /** Set the {@link MessageCallback} to be notified when a message is processed. */
+    @Beta Builder messageCallback(MessageCallback callback) {
+      if (callback == null) {
+        throw new NullPointerException("Null callback");
+      }
+      this.callback = callback;
+      return this;
+    }
+
     /** Create a {@link Analytics} client. */
     public Analytics build() {
       Gson gson = new GsonBuilder() //
-          .registerTypeAdapterFactory(new AutoValueAdapterFactory())
+          .registerTypeAdapterFactory(new AutoValueAdapterFactory()) //
           .create();
 
       if (client == null) {
@@ -249,7 +259,7 @@ public class Analytics {
 
       AnalyticsClient analyticsClient =
           AnalyticsClient.create(segmentService, flushQueueSize, flushIntervalInMillis, log,
-              threadFactory, networkExecutor);
+              threadFactory, networkExecutor, callback);
       return new Analytics(analyticsClient, messageTransformers, messageInterceptors, log);
     }
   }
