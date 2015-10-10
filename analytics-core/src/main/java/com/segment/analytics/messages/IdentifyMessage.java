@@ -1,7 +1,6 @@
 package com.segment.analytics.messages;
 
 import com.google.auto.value.AutoValue;
-import com.google.common.collect.ImmutableMap;
 import com.segment.analytics.gson.AutoGson;
 import java.util.Date;
 import java.util.Map;

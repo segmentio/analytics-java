@@ -1,8 +1,8 @@
 package com.segment.analytics.messages;
 
-import com.google.common.collect.ImmutableMap;
 import java.util.Collections;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -18,7 +18,7 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
   private Map<String, ?> context;
   private UUID anonymousId;
   private String userId;
-  private ImmutableMap.Builder<String, Object> integrationsBuilder;
+  private Map<String, Object> integrationsBuilder;
   private Date timestamp;
 
   // Hidden from Public API.
@@ -99,7 +99,7 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
       throw new IllegalArgumentException("Key cannot be null or empty.");
     }
     if (integrationsBuilder == null) {
-      integrationsBuilder = new ImmutableMap.Builder<>();
+      integrationsBuilder = new LinkedHashMap<>();
     }
     integrationsBuilder.put(key, enable);
     return self();
@@ -116,7 +116,7 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
       throw new IllegalArgumentException("Key name cannot be null or empty.");
     }
     if (integrationsBuilder == null) {
-      integrationsBuilder = new ImmutableMap.Builder<>();
+      integrationsBuilder = new LinkedHashMap<>();
     }
     integrationsBuilder.put(key, ImmutableMap.copyOf(options));
     return self();
@@ -137,8 +137,7 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
   }
 
   protected abstract T realBuild(Message.Type type, UUID messageId, Date timestamp,
-      Map<String, ?> context, UUID anonymousId, String userId,
-      Map<String, Object> integrations);
+      Map<String, ?> context, UUID anonymousId, String userId, Map<String, Object> integrations);
 
   abstract V self();
 
@@ -152,7 +151,7 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
       throw new IllegalStateException("Either anonymousId or userId must be provided.");
     }
     Map<String, Object> integrations = integrationsBuilder == null ? //
-        Collections.<String, Object>emptyMap() : integrationsBuilder.build();
+        Collections.<String, Object>emptyMap() : ImmutableMap.copyOf(integrationsBuilder);
     return realBuild(type, UUID.randomUUID(), timestamp == null ? new Date() : timestamp, context,
         anonymousId, userId, integrations);
   }
