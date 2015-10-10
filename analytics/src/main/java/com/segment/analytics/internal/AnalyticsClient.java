@@ -102,8 +102,8 @@ public class AnalyticsClient {
 
           if (messages.size() >= size || message == FlushMessage.POISON) {
             log.print(Log.Level.VERBOSE, "Uploading batch with %s message(s).", messages.size());
-            networkExecutor.submit(
-                BatchUploadTask.create(service, Batch.create(CONTEXT, messages), log));
+            Batch batch = Batch.create(CONTEXT, messages);
+            networkExecutor.submit(BatchUploadTask.create(service, batch, log));
             messages = new ArrayList<>();
           }
         }
@@ -115,10 +115,11 @@ public class AnalyticsClient {
 
   static class BatchUploadTask implements Runnable {
     private static final Backo BACKO = Backo.builder() //
-        .base(TimeUnit.SECONDS, 30) //
+        .base(TimeUnit.SECONDS, 15) //
         .cap(TimeUnit.HOURS, 1) //
         .jitter(1) //
         .build();
+    private static final int MAX_ATTEMPTS = 50; // Max 50 hours ~ 2 days
 
     private final SegmentService service;
     final Batch batch;
@@ -136,33 +137,39 @@ public class AnalyticsClient {
       this.log = log;
     }
 
-    @Override public void run() {
-      int attempts = 0;
-
-      while (true) {
-        try {
-          // Ignore return value, UploadResponse#success will never return false for 200 OK
-          service.upload(batch);
-          return;
-        } catch (RetrofitError error) {
-          switch (error.getKind()) {
-            case NETWORK:
-              log.print(Log.Level.DEBUG, error, "Could not upload batch: %s. Retrying.", batch);
-              break;
-            default:
-              log.print(Log.Level.ERROR, error, "Could not upload batch: %s. Giving up.", batch);
-              return; // Don't retry
-          }
+    /** Returns {@code true} to indicate a batch should be retried. {@code false} otherwise. */
+    boolean upload() {
+      try {
+        // Ignore return value, UploadResponse#onSuccess will never return false for 200 OK
+        service.upload(batch);
+        return false;
+      } catch (RetrofitError error) {
+        switch (error.getKind()) {
+          case NETWORK:
+            log.print(Log.Level.DEBUG, error, "Could not upload batch: %s. Retrying.", batch);
+            return true;
+          default:
+            log.print(Log.Level.ERROR, error, "Could not upload batch: %s. Giving up.", batch);
+            return false; // Don't retry
         }
+      }
+    }
+
+    @Override public void run() {
+      for (int attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+        boolean retry = upload();
+        if (!retry) return;
 
         try {
-          backo.sleep(attempts);
-          attempts++;
+          backo.sleep(attempt);
         } catch (InterruptedException e) {
           log.print(Log.Level.DEBUG, "Thread interrupted while backing off for batch: %s.", batch);
           return;
         }
       }
+
+      log.print(Log.Level.ERROR, "Could not upload batch: %s. Giving up after exhausting retries.",
+          batch);
     }
   }
 }
