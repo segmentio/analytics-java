@@ -11,7 +11,7 @@ import javax.annotation.Nullable;
  * <p>
  * For any functions that accept a map, such as {@link #integrations()}, {@link #context()}, {@link
  * TrackMessage#properties()}, {@link ScreenMessage#properties()}, {@link IdentifyMessage#traits()},
- * or {@link GroupMessage#traits()}, we'll make an internal copy of the map provided. If use
+ * or {@link GroupMessage#traits()}, we'll make an internal copy of the map provided. If you use
  * <a href="https://github.com/google/guava">Guava</a>, we'll use it's {@code ImmutableMap#copyOf}
  * methods instead.
  * <p>
