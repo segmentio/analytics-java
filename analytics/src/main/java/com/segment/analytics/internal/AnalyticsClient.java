@@ -67,11 +67,15 @@ public class AnalyticsClient {
   }
 
   public void enqueue(Message message) {
-    messageQueue.add(message);
+    try {
+      messageQueue.put(message);
+    } catch (InterruptedException e) {
+      log.print(Log.Level.ERROR, e, "Interrupted while adding message %s.", message);
+    }
   }
 
   public void flush() {
-    messageQueue.add(FlushMessage.POISON);
+    enqueue(FlushMessage.POISON);
   }
 
   public void shutdown() {
