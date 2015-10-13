@@ -59,13 +59,13 @@ public class AnalyticsClientTest {
         threadFactory, networkExecutor);
   }
 
-  @Test public void enqueueAddsToQueue(MessageBuilderTest builder) {
+  @Test public void enqueueAddsToQueue(MessageBuilderTest builder) throws InterruptedException {
     AnalyticsClient client = newClient();
 
     Message message = builder.get().userId("prateek").build();
     client.enqueue(message);
 
-    verify(messageQueue).add(message);
+    verify(messageQueue).put(message);
   }
 
   @Test public void shutdown() {
@@ -77,12 +77,12 @@ public class AnalyticsClientTest {
     verify(networkExecutor).shutdown();
   }
 
-  @Test public void flushInsertsPoison() {
+  @Test public void flushInsertsPoison() throws InterruptedException {
     AnalyticsClient client = newClient();
 
     client.flush();
 
-    verify(messageQueue).add(FlushMessage.POISON);
+    verify(messageQueue).put(FlushMessage.POISON);
   }
 
   /** Wait until the queue is drained. */
