@@ -1,10 +1,12 @@
 package com.segment.analytics.internal;
 
+import com.segment.analytics.Callback;
 import com.segment.analytics.Log;
 import com.segment.analytics.http.SegmentService;
 import com.segment.analytics.messages.Batch;
 import com.segment.analytics.messages.Message;
 import com.segment.backo.Backo;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -18,6 +20,10 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import retrofit.RetrofitError;
+
+import static com.segment.analytics.Log.Level.DEBUG;
+import static com.segment.analytics.Log.Level.ERROR;
+import static com.segment.analytics.Log.Level.VERBOSE;
 
 public class AnalyticsClient {
   private static final Map<String, ?> CONTEXT;
@@ -35,24 +41,26 @@ public class AnalyticsClient {
   private final SegmentService service;
   private final int size;
   private final Log log;
+  private final Callback callback;
   private final ExecutorService networkExecutor;
   private final ExecutorService looperExecutor;
   private final ScheduledExecutorService flushScheduler;
 
   public static AnalyticsClient create(SegmentService segmentService, int flushQueueSize,
       long flushIntervalInMillis, Log log, ThreadFactory threadFactory,
-      ExecutorService networkExecutor) {
+      ExecutorService networkExecutor, Callback callback) {
     return new AnalyticsClient(new LinkedBlockingQueue<Message>(), segmentService, flushQueueSize,
-        flushIntervalInMillis, log, threadFactory, networkExecutor);
+        flushIntervalInMillis, log, threadFactory, networkExecutor, callback);
   }
 
   AnalyticsClient(BlockingQueue<Message> messageQueue, SegmentService service, int maxQueueSize,
       long flushIntervalInMillis, Log log, ThreadFactory threadFactory,
-      ExecutorService networkExecutor) {
+      ExecutorService networkExecutor, Callback callback) {
     this.messageQueue = messageQueue;
     this.service = service;
     this.size = maxQueueSize;
     this.log = log;
+    this.callback = callback;
     this.looperExecutor = Executors.newSingleThreadExecutor(threadFactory);
     this.networkExecutor = networkExecutor;
 
@@ -70,7 +78,7 @@ public class AnalyticsClient {
     try {
       messageQueue.put(message);
     } catch (InterruptedException e) {
-      log.print(Log.Level.ERROR, e, "Interrupted while adding message %s.", message);
+      log.print(ERROR, e, "Interrupted while adding message %s.", message);
     }
   }
 
@@ -100,19 +108,19 @@ public class AnalyticsClient {
           if (message != FlushMessage.POISON) {
             messages.add(message);
           } else if (messages.size() < 1) {
-            log.print(Log.Level.VERBOSE, "No messages to flush.");
+            log.print(VERBOSE, "No messages to flush.");
             continue;
           }
 
           if (messages.size() >= size || message == FlushMessage.POISON) {
-            log.print(Log.Level.VERBOSE, "Uploading batch with %s message(s).", messages.size());
+            log.print(VERBOSE, "Uploading batch with %s message(s).", messages.size());
             Batch batch = Batch.create(CONTEXT, messages);
-            networkExecutor.submit(BatchUploadTask.create(service, batch, log));
+            networkExecutor.submit(BatchUploadTask.create(AnalyticsClient.this, batch));
             messages = new ArrayList<>();
           }
         }
       } catch (InterruptedException e) {
-        log.print(Log.Level.DEBUG, "Looper interrupted while polling for messages.");
+        log.print(DEBUG, "Looper interrupted while polling for messages.");
       }
     }
   }
@@ -125,35 +133,45 @@ public class AnalyticsClient {
         .build();
     private static final int MAX_ATTEMPTS = 50; // Max 50 hours ~ 2 days
 
-    private final SegmentService service;
-    final Batch batch;
+    private final AnalyticsClient client;
     private final Backo backo;
-    private final Log log;
+    final Batch batch;
 
-    static BatchUploadTask create(SegmentService segmentService, Batch batch, Log log) {
-      return new BatchUploadTask(segmentService, batch, BACKO, log);
+    static BatchUploadTask create(AnalyticsClient client, Batch batch) {
+      return new BatchUploadTask(client, BACKO, batch);
     }
 
-    BatchUploadTask(SegmentService service, Batch batch, Backo backo, Log log) {
-      this.service = service;
+    BatchUploadTask(AnalyticsClient client, Backo backo, Batch batch) {
+      this.client = client;
       this.batch = batch;
       this.backo = backo;
-      this.log = log;
     }
 
     /** Returns {@code true} to indicate a batch should be retried. {@code false} otherwise. */
     boolean upload() {
       try {
         // Ignore return value, UploadResponse#onSuccess will never return false for 200 OK
-        service.upload(batch);
+        client.service.upload(batch);
+
+        client.log.print(VERBOSE, "Uploaded batch: %s.", batch);
+        if (client.callback != null) {
+          for (Message message : batch.batch()) {
+            client.callback.success(message);
+          }
+        }
         return false;
       } catch (RetrofitError error) {
         switch (error.getKind()) {
           case NETWORK:
-            log.print(Log.Level.DEBUG, error, "Could not upload batch: %s. Retrying.", batch);
+            client.log.print(DEBUG, error, "Could not upload batch: %s. Retrying.", batch);
             return true;
           default:
-            log.print(Log.Level.ERROR, error, "Could not upload batch: %s. Giving up.", batch);
+            client.log.print(ERROR, error, "Could not upload batch: %s. Giving up.", batch);
+            if (client.callback != null) {
+              for (Message message : batch.batch()) {
+                client.callback.failure(message, error);
+              }
+            }
             return false; // Don't retry
         }
       }
@@ -167,13 +185,18 @@ public class AnalyticsClient {
         try {
           backo.sleep(attempt);
         } catch (InterruptedException e) {
-          log.print(Log.Level.DEBUG, "Thread interrupted while backing off for batch: %s.", batch);
+          client.log.print(DEBUG, "Thread interrupted while backing off for batch: %s.", batch);
           return;
         }
       }
 
-      log.print(Log.Level.ERROR, "Could not upload batch: %s. Giving up after exhausting retries.",
-          batch);
+      client.log.print(ERROR, "Could not upload batch: %s. Retries exhausted.", batch);
+      IOException exception = new IOException(MAX_ATTEMPTS + " retries exhausted");
+      if (client.callback != null) {
+        for (Message message : batch.batch()) {
+          client.callback.failure(message, exception);
+        }
+      }
     }
   }
 }
