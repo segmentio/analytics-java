@@ -32,7 +32,7 @@ class Platform {
   }
 
   ExecutorService defaultNetworkExecutor() {
-    return Executors.newCachedThreadPool(defaultThreadFactory());
+    return Executors.newSingleThreadExecutor(defaultThreadFactory());
   }
 
   ThreadFactory defaultThreadFactory() {
