@@ -7,6 +7,7 @@ import com.segment.analytics.messages.Message;
 import com.segment.analytics.messages.TrackMessage;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -41,6 +42,9 @@ public class Sample {
         .callback(CALLBACK) //
         .build();
 
+    final String userId = System.getProperty("user.name");
+    final UUID anonymousId = UUID.randomUUID();
+
     final AtomicInteger count = new AtomicInteger();
     for (int i = 0; i < 10; i++) {
       new Thread() {
@@ -51,7 +55,8 @@ public class Sample {
             properties.put("count", count.incrementAndGet());
             analytics.enqueue(TrackMessage.builder("Java Test") //
                 .properties(properties) //
-                .userId("prateek"));
+                .anonymousId(anonymousId) //
+                .userId(userId));
           }
           analytics.flush();
         }
