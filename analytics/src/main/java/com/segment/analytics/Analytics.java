@@ -207,7 +207,8 @@ public class Analytics {
     /** Create a {@link Analytics} client. */
     public Analytics build() {
       Gson gson = new GsonBuilder() //
-          .registerTypeAdapterFactory(new AutoValueAdapterFactory())
+          .setDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
+          .registerTypeAdapterFactory(new AutoValueAdapterFactory()) //
           .create();
 
       if (client == null) {
@@ -239,7 +240,8 @@ public class Analytics {
         threadFactory = Platform.get().defaultThreadFactory();
       }
 
-      RestAdapter restAdapter = new RestAdapter.Builder().setConverter(new GsonConverter(gson))
+      RestAdapter restAdapter = new RestAdapter.Builder()
+          .setConverter(new GsonConverter(gson))
           .setEndpoint(DEFAULT_ENDPOINT)
           .setClient(client)
           .setRequestInterceptor(new RequestInterceptor() {
