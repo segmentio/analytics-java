@@ -113,8 +113,8 @@ public class AnalyticsClient {
           }
 
           if (messages.size() >= size || message == FlushMessage.POISON) {
-            log.print(VERBOSE, "Uploading batch with %s message(s).", messages.size());
             Batch batch = Batch.create(CONTEXT, messages);
+            log.print(VERBOSE, "Batching %s message(s) into batch %s.", messages.size(), batch.sequence());
             networkExecutor.submit(BatchUploadTask.create(AnalyticsClient.this, batch));
             messages = new ArrayList<>();
           }
@@ -150,10 +150,12 @@ public class AnalyticsClient {
     /** Returns {@code true} to indicate a batch should be retried. {@code false} otherwise. */
     boolean upload() {
       try {
+        client.log.print(VERBOSE, "Uploading batch %s.", batch.sequence());
+
         // Ignore return value, UploadResponse#onSuccess will never return false for 200 OK
         client.service.upload(batch);
 
-        client.log.print(VERBOSE, "Uploaded batch: %s.", batch);
+        client.log.print(VERBOSE, "Uploaded batch %s.", batch.sequence());
         if (client.callback != null) {
           for (Message message : batch.batch()) {
             client.callback.success(message);
@@ -163,10 +165,10 @@ public class AnalyticsClient {
       } catch (RetrofitError error) {
         switch (error.getKind()) {
           case NETWORK:
-            client.log.print(DEBUG, error, "Could not upload batch: %s. Retrying.", batch);
+            client.log.print(DEBUG, error, "Could not upload batch %s. Retrying.", batch.sequence());
             return true;
           default:
-            client.log.print(ERROR, error, "Could not upload batch: %s. Giving up.", batch);
+            client.log.print(ERROR, error, "Could not upload batch %s. Giving up.", batch.sequence());
             if (client.callback != null) {
               for (Message message : batch.batch()) {
                 client.callback.failure(message, error);
@@ -181,16 +183,15 @@ public class AnalyticsClient {
       for (int attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
         boolean retry = upload();
         if (!retry) return;
-
         try {
           backo.sleep(attempt);
         } catch (InterruptedException e) {
-          client.log.print(DEBUG, "Thread interrupted while backing off for batch: %s.", batch);
+          client.log.print(DEBUG, "Thread interrupted while backing off for batch %s.", batch.sequence());
           return;
         }
       }
 
-      client.log.print(ERROR, "Could not upload batch: %s. Retries exhausted.", batch);
+      client.log.print(ERROR, "Could not upload batch %s. Retries exhausted.", batch.sequence());
       IOException exception = new IOException(MAX_ATTEMPTS + " retries exhausted");
       if (client.callback != null) {
         for (Message message : batch.batch()) {
