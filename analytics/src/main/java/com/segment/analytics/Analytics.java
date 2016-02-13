@@ -187,7 +187,7 @@ public class Analytics {
     }
 
     /** Set the {@link ThreadFactory} used to create threads. */
-    @Beta Builder threadFactory(ThreadFactory threadFactory) {
+    @Beta public Builder threadFactory(ThreadFactory threadFactory) {
       if (threadFactory == null) {
         throw new NullPointerException("Null threadFactory");
       }
