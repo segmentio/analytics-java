@@ -7,10 +7,6 @@ analytics-java is a Java client for [Segment](https://segment.com)
 
 Documentation is available at [https://segment.com/libraries/java](https://segment.com/libraries/java).
 
-Analytics for Java is currently in active development, with regular pushes to the open-source repo. Snapshot releases are auto-deployed to sonatype's snapshot repository.
-
-Please note that the artifact IDs have also changed.
-
 *Add to `pom.xml`:*
 
 ```xml
@@ -28,6 +24,8 @@ compile 'com.segment.analytics.java:analytics:+'
 ```
 
 ## Snapshots
+
+All changes committed to master are automatically released as snapshots.
 
 To add a snapshot dependency to your builds, make sure you add the snapshot repository so your build system can look up the dependency.
 
