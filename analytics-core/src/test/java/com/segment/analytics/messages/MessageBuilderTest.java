@@ -88,6 +88,20 @@ import static org.junit.Assert.fail;
     }
   }
 
+  @Test public void pageBuilder() {
+    try {
+      PageMessage.builder("foo").properties(null).build();
+    } catch (NullPointerException e) {
+      assertThat(e).hasMessage("Null properties");
+    }
+
+    try {
+      PageMessage.builder(null).userId("foo").build();
+    } catch (IllegalArgumentException e) {
+      assertThat(e).hasMessage("page name cannot be null or empty.");
+    }
+  }
+
   @Test public void trackBuilder() {
     try {
       TrackMessage.builder(null);

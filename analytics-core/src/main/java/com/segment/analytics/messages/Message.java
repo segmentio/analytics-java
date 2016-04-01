@@ -35,6 +35,6 @@ public interface Message {
   @Nullable Map<String, Object> integrations();
 
   enum Type {
-    identify, group, track, screen, alias
+    identify, group, track, screen, page, alias
   }
 }

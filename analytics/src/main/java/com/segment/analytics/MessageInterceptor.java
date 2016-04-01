@@ -4,15 +4,17 @@ import com.segment.analytics.messages.AliasMessage;
 import com.segment.analytics.messages.GroupMessage;
 import com.segment.analytics.messages.IdentifyMessage;
 import com.segment.analytics.messages.Message;
+import com.segment.analytics.messages.PageMessage;
 import com.segment.analytics.messages.ScreenMessage;
 import com.segment.analytics.messages.TrackMessage;
 
 /** Intercept every message after it is built to process it further. */
+@Beta
 public interface MessageInterceptor {
   /**
-   * Called for every message. This will be called on the same thread the request was made and
-   * after all {@link MessageTransformer}'s have been called.
-   * Returning {@code null} will skip processing this message any further.
+   * Called for every message. This will be called on the same thread the request was made and after
+   * all {@link MessageTransformer}'s have been called. Returning {@code null} will skip processing
+   * this message any further.
    */
   Message intercept(Message message);
 
@@ -33,6 +35,8 @@ public interface MessageInterceptor {
           return identify((IdentifyMessage) message);
         case screen:
           return screen((ScreenMessage) message);
+        case page:
+          return page((PageMessage) message);
         case track:
           return track((TrackMessage) message);
         default:
@@ -51,6 +55,9 @@ public interface MessageInterceptor {
 
     /** Called for every {@link ScreenMessage}. */
     abstract ScreenMessage screen(ScreenMessage message);
+
+    /** Called for every {@link PageMessage}. */
+    abstract PageMessage page(PageMessage message);
 
     /** Called for every {@link TrackMessage}. */
     abstract TrackMessage track(TrackMessage message);

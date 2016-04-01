@@ -5,16 +5,17 @@ import com.segment.analytics.messages.GroupMessage;
 import com.segment.analytics.messages.IdentifyMessage;
 import com.segment.analytics.messages.Message;
 import com.segment.analytics.messages.MessageBuilder;
+import com.segment.analytics.messages.PageMessage;
 import com.segment.analytics.messages.ScreenMessage;
 import com.segment.analytics.messages.TrackMessage;
 
 /** Intercept every message before it is built in order to add additional data. */
+@Beta
 public interface MessageTransformer {
   /**
    * Called for every builder. This will be called on the same thread the request was made and
-   * before any {@link MessageInterceptor}'s are called.
-   * <p></p>
-   * Returning {@code false} will skip processing this message any further.
+   * before any {@link MessageInterceptor}'s are called.  Returning {@code false} will skip
+   * processing this message any further.
    */
   boolean transform(MessageBuilder builder);
 
@@ -36,6 +37,8 @@ public interface MessageTransformer {
           return identify((IdentifyMessage.Builder) builder);
         case screen:
           return screen((ScreenMessage.Builder) builder);
+        case page:
+          return page((PageMessage.Builder) builder);
         case track:
           return track((TrackMessage.Builder) builder);
         default:
@@ -54,6 +57,9 @@ public interface MessageTransformer {
 
     /** Called for every {@link ScreenMessage}. */
     abstract boolean screen(ScreenMessage.Builder builder);
+
+    /** Called for every {@link PageMessage}. */
+    abstract boolean page(PageMessage.Builder builder);
 
     /** Called for every {@link TrackMessage}. */
     abstract boolean track(TrackMessage.Builder builder);
