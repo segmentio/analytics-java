@@ -3,6 +3,7 @@ package com.segment.analytics;
 import com.segment.analytics.messages.AliasMessage;
 import com.segment.analytics.messages.GroupMessage;
 import com.segment.analytics.messages.IdentifyMessage;
+import com.segment.analytics.messages.PageMessage;
 import com.segment.analytics.messages.ScreenMessage;
 import com.segment.analytics.messages.TrackMessage;
 import org.junit.Test;
@@ -29,6 +30,10 @@ public class TypedInterceptorTest {
     ScreenMessage screen = ScreenMessage.builder("foo").userId("bar").build();
     interceptor.intercept(screen);
     verify(interceptor).screen(screen);
+
+    PageMessage page = PageMessage.builder("foo").userId("bar").build();
+    interceptor.intercept(page);
+    verify(interceptor).page(page);
 
     TrackMessage track = TrackMessage.builder("foo").userId("bar").build();
     interceptor.intercept(track);
