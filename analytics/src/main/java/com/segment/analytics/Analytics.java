@@ -102,6 +102,7 @@ public class Analytics {
     private int flushQueueSize;
     private long flushIntervalInMillis;
     private Callback callback;
+    private String endpoint = DEFAULT_ENDPOINT;
 
     Builder(String writeKey) {
       if (writeKey == null || writeKey.trim().length() == 0) {
@@ -126,6 +127,14 @@ public class Analytics {
       }
       this.log = log;
       return this;
+    }
+      
+    public Builder endpoint(String endpoint) {
+       if(endpoint == null) {
+        throw new NullPointerException("Endpoint null");
+       }
+       this.endpoint = endpoint;
+       return this;
     }
 
     /** Add a {@link MessageTransformer} for transforming messages. */
@@ -242,7 +251,7 @@ public class Analytics {
 
       RestAdapter restAdapter = new RestAdapter.Builder()
           .setConverter(new GsonConverter(gson))
-          .setEndpoint(DEFAULT_ENDPOINT)
+          .setEndpoint(endpoint)
           .setClient(client)
           .setRequestInterceptor(new RequestInterceptor() {
             @Override public void intercept(RequestFacade request) {
