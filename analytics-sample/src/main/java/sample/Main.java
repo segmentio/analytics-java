@@ -13,7 +13,7 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class Sample {
+public class Main {
   /** A {@link com.segment.analytics.Log} implementation that logs to {@link System#out}. */
   static final Log STDOUT = new Log() {
     @Override public void print(Level level, String format, Object... args) {
@@ -39,7 +39,8 @@ public class Sample {
   };
 
   public static void main(String... args) throws Exception {
-    final Analytics analytics = Analytics.builder("uFIKMspL0GD0klDBZFlE3mklPVtUgPpd") //
+    // https://segment.com/segment-engineering/sources/test-java/debugger
+    final Analytics analytics = Analytics.builder("xemyw6oe3n") //
         .log(STDOUT) //
         .callback(CALLBACK) //
         .build();
