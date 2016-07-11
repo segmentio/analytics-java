@@ -13,12 +13,12 @@ val usage = """
 Analytics Java CLI
 
 Usage:
-  analytics track <event> [--properties=<properties>] [--context=<context>] --writeKey=<writeKey> [--userId=<userId>] [--anonymousId=<anonymousId>] [--integrations=<integrations>] [--timestamp=<timestamp>]
-  analytics screen <name> [--properties=<properties>] [--context=<context>] --writeKey=<writeKey> [--userId=<userId>] [--anonymousId=<anonymousId>] [--integrations=<integrations>] [--timestamp=<timestamp>]
-  analytics page <name> [--properties=<properties>] [--context=<context>] --writeKey=<writeKey> [--userId=<userId>] [--anonymousId=<anonymousId>] [--integrations=<integrations>] [--timestamp=<timestamp>]
-  analytics identify [--traits=<traits>] [--context=<context>] --writeKey=<writeKey> [--userId=<userId>] [--anonymousId=<anonymousId>] [--integrations=<integrations>] [--timestamp=<timestamp>]
-  analytics group --groupId=<groupId> [--traits=<traits>] [--properties=<properties>] [--context=<context>] --writeKey=<writeKey> [--userId=<userId>] [--anonymousId=<anonymousId>] [--integrations=<integrations>] [--timestamp=<timestamp>]
-  analytics alias --userId=<userId> --previousId=<previousId> [--traits=<traits>] [--properties=<properties>] [--context=<context>] --writeKey=<writeKey> [--anonymousId=<anonymousId>] [--integrations=<integrations>] [--timestamp=<timestamp>]
+  analytics track <event> [--properties=<properties>] [--context=<context>] [--writeKey=<writeKey>] [--userId=<userId>] [--anonymousId=<anonymousId>] [--integrations=<integrations>] [--timestamp=<timestamp>]
+  analytics screen <name> [--properties=<properties>] [--context=<context>] [--writeKey=<writeKey>] [--userId=<userId>] [--anonymousId=<anonymousId>] [--integrations=<integrations>] [--timestamp=<timestamp>]
+  analytics page <name> [--properties=<properties>] [--context=<context>] [--writeKey=<writeKey>] [--userId=<userId>] [--anonymousId=<anonymousId>] [--integrations=<integrations>] [--timestamp=<timestamp>]
+  analytics identify [--traits=<traits>] [--context=<context>] [--writeKey=<writeKey>] [--userId=<userId>] [--anonymousId=<anonymousId>] [--integrations=<integrations>] [--timestamp=<timestamp>]
+  analytics group --groupId=<groupId> [--traits=<traits>] [--properties=<properties>] [--context=<context>] [--writeKey=<writeKey>] [--userId=<userId>] [--anonymousId=<anonymousId>] [--integrations=<integrations>] [--timestamp=<timestamp>]
+  analytics alias --userId=<userId> --previousId=<previousId> [--traits=<traits>] [--properties=<properties>] [--context=<context>] [--writeKey=<writeKey>] [--anonymousId=<anonymousId>] [--integrations=<integrations>] [--timestamp=<timestamp>]
 
   analytics -h | --help
   analytics --version
@@ -29,6 +29,7 @@ Options:
 """
 
 private val ISO_8601_DATE_FORMAT = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US)
+private val GSON = Gson()
 
 internal val stdout: Log = object : Log {
     override fun print(level: Log.Level, format: String, vararg args: Any) {
@@ -111,7 +112,12 @@ fun main(vararg rawArgs: String) {
         }
     }
 
-    val analytics = Analytics.builder(args["--writeKey"] as String)
+    var writeKey = args["--writeKey"]
+    if (writeKey == null) {
+        writeKey = System.getenv("SEGMENT_WRITE_KEY")
+    }
+
+    val analytics = Analytics.builder(writeKey as String)
             .log(stdout)
             .flushQueueSize(1)
             .build()
@@ -124,7 +130,6 @@ fun main(vararg rawArgs: String) {
 }
 
 fun parseJson(k: String): Map<String, *> {
-    val gson = Gson()
     val collectionType = object : TypeToken<Map<String, Any>>() {}.getType()
-    return gson.fromJson(k, collectionType)
+    return GSON.fromJson(k, collectionType)
 }
