@@ -115,9 +115,12 @@ fun main(vararg rawArgs: String) {
             .log(stdout)
             .flushQueueSize(1)
             .build()
-    analytics.enqueue(message)
-    Thread.sleep(2 * 1000)
-    analytics.shutdown()
+    try {
+        analytics.enqueue(message)
+        Thread.sleep(2 * 1000)
+    } finally {
+        analytics.shutdown()
+    }
 }
 
 fun parseJson(k: String): Map<String, *> {
