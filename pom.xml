@@ -21,12 +21,14 @@
     <module>analytics-core</module>
     <module>analytics</module>
     <module>analytics-sample</module>
+    <module>analytics-cli</module>
     <module>analytics-spring-boot-starter</module>
   </modules>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>1.7</java.version>
+    <kotlin.version>1.0.3</kotlin.version>
 
     <!-- Third Party Dependencies -->
     <retrofit.version>1.9.0</retrofit.version>
@@ -37,6 +39,7 @@
     <guava.version>18.0</guava.version>
     <backo.version>1.0.0</backo.version>
     <spring.boot.version>1.2.5.RELEASE</spring.boot.version>
+    <docopt.version>0.6.0.20150202</docopt.version>
 
     <!-- Test Dependencies -->
     <junit.version>4.11</junit.version>
@@ -126,6 +129,16 @@
         <groupId>org.mockito</groupId>
         <artifactId>mockito-core</artifactId>
         <version>${mockito.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.offbytwo</groupId>
+        <artifactId>docopt</artifactId>
+        <version>${docopt.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-stdlib</artifactId>
+        <version>${kotlin.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
