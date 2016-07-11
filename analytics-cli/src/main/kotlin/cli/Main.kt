@@ -6,7 +6,7 @@ import com.segment.analytics.Analytics
 import com.segment.analytics.Log
 import com.segment.analytics.messages.*
 import org.docopt.Docopt
-import java.time.Instant
+import java.text.SimpleDateFormat
 import java.util.*
 
 val usage = """
@@ -27,6 +27,8 @@ Options:
   -h --help     Show this screen.
   --version     Show version.
 """
+
+private val ISO_8601_DATE_FORMAT = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US)
 
 internal val stdout: Log = object : Log {
     override fun print(level: Log.Level, format: String, vararg args: Any) {
@@ -93,7 +95,7 @@ fun main(vararg rawArgs: String) {
     }
     val timestamp = args["--timestamp"]
     if (timestamp != null) {
-        message.timestamp(Date.from(Instant.parse(timestamp as String)))
+        message.timestamp(ISO_8601_DATE_FORMAT.parse(timestamp as String))
     }
     val integrations = args["--integrations"]
     if (integrations != null) {
