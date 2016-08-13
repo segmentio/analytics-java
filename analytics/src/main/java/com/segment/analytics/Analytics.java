@@ -3,6 +3,7 @@ package com.segment.analytics;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.segment.analytics.gson.AutoValueAdapterFactory;
+import com.segment.analytics.gson.ISO8601DateAdapter;
 import com.segment.analytics.http.SegmentService;
 import com.segment.analytics.internal.AnalyticsClient;
 import com.segment.analytics.messages.Message;
@@ -10,6 +11,7 @@ import com.segment.analytics.messages.MessageBuilder;
 import com.squareup.okhttp.Credentials;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -207,8 +209,8 @@ public class Analytics {
     /** Create a {@link Analytics} client. */
     public Analytics build() {
       Gson gson = new GsonBuilder() //
-          .setDateFormat("yyyy-MM-dd'T'HH:mm:ssZ")
           .registerTypeAdapterFactory(new AutoValueAdapterFactory()) //
+          .registerTypeAdapter(Date.class, new ISO8601DateAdapter()) //
           .create();
 
       if (client == null) {
