@@ -1,4 +1,9 @@
 
+Version 2.0.0-RC5 (August 12th, 2016)
+=====================================
+
+  * Fix: Correctly format and parse dates as per ISO 8601.
+
 Version 2.0.0-RC4 (May 19th, 2016)
 ==================================
 
