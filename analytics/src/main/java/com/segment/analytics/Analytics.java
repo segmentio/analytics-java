@@ -103,7 +103,7 @@ public class Analytics {
     private ThreadFactory threadFactory;
     private int flushQueueSize;
     private long flushIntervalInMillis;
-    private Callback callback;
+    private List<Callback> callbacks;
 
     Builder(String writeKey) {
       if (writeKey == null || writeKey.trim().length() == 0) {
@@ -197,12 +197,18 @@ public class Analytics {
       return this;
     }
 
-    /** Set the {@link Callback} to be notified when an event is processed. */
-    @Beta public Builder callback(Callback callback) {
+    /** Add a {@link Callback} to be notified when an event is processed. */
+    public Builder callback(Callback callback) {
       if (callback == null) {
         throw new NullPointerException("Null callback");
       }
-      this.callback = callback;
+      if (callbacks == null) {
+        callbacks = new ArrayList<>();
+      }
+      if (callbacks.contains(callback)) {
+        throw new IllegalStateException("Callback is already registered.");
+      }
+      callbacks.add(callback);
       return this;
     }
 
@@ -250,6 +256,11 @@ public class Analytics {
       if (threadFactory == null) {
         threadFactory = Platform.get().defaultThreadFactory();
       }
+      if (callbacks == null) {
+        callbacks = Collections.emptyList();
+      } else {
+        callbacks = Collections.unmodifiableList(callbacks);
+      }
 
       RestAdapter restAdapter = new RestAdapter.Builder()
           .setConverter(new GsonConverter(gson))
@@ -272,7 +283,7 @@ public class Analytics {
 
       AnalyticsClient analyticsClient =
           AnalyticsClient.create(segmentService, flushQueueSize, flushIntervalInMillis, log,
-              threadFactory, networkExecutor, callback);
+              threadFactory, networkExecutor, callbacks);
       return new Analytics(analyticsClient, messageTransformers, messageInterceptors, log);
     }
   }

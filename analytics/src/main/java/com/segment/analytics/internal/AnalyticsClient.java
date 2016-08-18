@@ -41,26 +41,26 @@ public class AnalyticsClient {
   private final SegmentService service;
   private final int size;
   private final Log log;
-  private final Callback callback;
+  private final List<Callback> callbacks;
   private final ExecutorService networkExecutor;
   private final ExecutorService looperExecutor;
   private final ScheduledExecutorService flushScheduler;
 
   public static AnalyticsClient create(SegmentService segmentService, int flushQueueSize,
       long flushIntervalInMillis, Log log, ThreadFactory threadFactory,
-      ExecutorService networkExecutor, Callback callback) {
+      ExecutorService networkExecutor, List<Callback> callbacks) {
     return new AnalyticsClient(new LinkedBlockingQueue<Message>(), segmentService, flushQueueSize,
-        flushIntervalInMillis, log, threadFactory, networkExecutor, callback);
+        flushIntervalInMillis, log, threadFactory, networkExecutor, callbacks);
   }
 
   AnalyticsClient(BlockingQueue<Message> messageQueue, SegmentService service, int maxQueueSize,
       long flushIntervalInMillis, Log log, ThreadFactory threadFactory,
-      ExecutorService networkExecutor, Callback callback) {
+      ExecutorService networkExecutor, List<Callback> callbacks) {
     this.messageQueue = messageQueue;
     this.service = service;
     this.size = maxQueueSize;
     this.log = log;
-    this.callback = callback;
+    this.callbacks = callbacks;
     this.looperExecutor = Executors.newSingleThreadExecutor(threadFactory);
     this.networkExecutor = networkExecutor;
 
@@ -156,9 +156,9 @@ public class AnalyticsClient {
         client.service.upload(batch);
 
         client.log.print(VERBOSE, "Uploaded batch %s.", batch.sequence());
-        if (client.callback != null) {
-          for (Message message : batch.batch()) {
-            client.callback.success(message);
+        for (Message message : batch.batch()) {
+          for (Callback callback : client.callbacks) {
+            callback.success(message);
           }
         }
         return false;
@@ -169,9 +169,9 @@ public class AnalyticsClient {
             return true;
           default:
             client.log.print(ERROR, error, "Could not upload batch %s. Giving up.", batch.sequence());
-            if (client.callback != null) {
-              for (Message message : batch.batch()) {
-                client.callback.failure(message, error);
+            for (Message message : batch.batch()) {
+              for (Callback callback : client.callbacks) {
+                callback.failure(message, error);
               }
             }
             return false; // Don't retry
@@ -193,9 +193,9 @@ public class AnalyticsClient {
 
       client.log.print(ERROR, "Could not upload batch %s. Retries exhausted.", batch.sequence());
       IOException exception = new IOException(MAX_ATTEMPTS + " retries exhausted");
-      if (client.callback != null) {
-        for (Message message : batch.batch()) {
-          client.callback.failure(message, exception);
+      for (Message message : batch.batch()) {
+        for (Callback callback : client.callbacks) {
+          callback.failure(message, exception);
         }
       }
     }
