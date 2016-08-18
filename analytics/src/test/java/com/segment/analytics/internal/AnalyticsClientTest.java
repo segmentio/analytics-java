@@ -62,7 +62,7 @@ public class AnalyticsClientTest {
   // Defers loading the client until tests can initialize all required dependencies.
   AnalyticsClient newClient() {
     return new AnalyticsClient(messageQueue, segmentService, 50, TimeUnit.HOURS.toMillis(1), log,
-        threadFactory, networkExecutor, callback);
+        threadFactory, networkExecutor, Collections.singletonList(callback));
   }
 
   @Test public void enqueueAddsToQueue(MessageBuilderTest builder) throws InterruptedException {
@@ -173,28 +173,6 @@ public class AnalyticsClientTest {
     // Verify that we tried to upload 4 times, 3 failed and 1 succeeded.
     verify(segmentService, times(4)).upload(batch);
     verify(callback).success(trackMessage);
-  }
-
-  @Test public void onSuccessNotInvokedForNullCallback() {
-    callback = null;
-    AnalyticsClient client = newClient();
-    TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
-    Batch batch = batchFor(trackMessage);
-
-    BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch);
-    batchUploadTask.run();
-  }
-
-  @Test public void onFailureNotInvokedForNullCallback() {
-    callback = null;
-    AnalyticsClient client = newClient();
-    TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
-    Batch batch = batchFor(trackMessage);
-    RetrofitError retrofitError = RetrofitError.unexpectedError(null, new IOException("fake"));
-    doThrow(retrofitError).when(segmentService).upload(batch);
-
-    BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch);
-    batchUploadTask.run();
   }
 
   @Test public void batchDoesNotRetryForNonNetworkErrors() {
