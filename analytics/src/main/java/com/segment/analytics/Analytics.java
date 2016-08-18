@@ -206,6 +206,15 @@ public class Analytics {
       return this;
     }
 
+    /** Use a {@link Plugin} to configure the builder. */
+    @Beta public Builder plugin(Plugin plugin) {
+      if (plugin == null) {
+        throw new NullPointerException("Null plugin");
+      }
+      plugin.configure(this);
+      return this;
+    }
+
     /** Create a {@link Analytics} client. */
     public Analytics build() {
       Gson gson = new GsonBuilder() //
