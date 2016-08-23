@@ -274,7 +274,7 @@ public class Analytics {
           .setLogLevel(RestAdapter.LogLevel.FULL)
           .setLog(new RestAdapter.Log() {
             @Override public void log(String message) {
-              log.print(Log.Level.VERBOSE, message);
+              log.print(Log.Level.VERBOSE, "%s", message);
             }
           })
           .build();
