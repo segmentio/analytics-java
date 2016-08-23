@@ -3,6 +3,7 @@ package cli
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.segment.analytics.Analytics
+import com.segment.analytics.BlockingFlushPlugin
 import com.segment.analytics.Log
 import com.segment.analytics.messages.*
 import org.docopt.Docopt
@@ -30,17 +31,6 @@ Options:
 
 private val ISO_8601_DATE_FORMAT = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ", Locale.US)
 private val GSON = Gson()
-
-internal val stdout: Log = object : Log {
-    override fun print(level: Log.Level, format: String, vararg args: Any) {
-        println(String.format(format, *args))
-    }
-
-    override fun print(level: Log.Level, error: Throwable, format: String, vararg args: Any) {
-        println(String.format(format, *args))
-        println(error)
-    }
-}
 
 fun main(vararg rawArgs: String) {
     val args = Docopt(usage).parse(rawArgs.toList())
@@ -117,13 +107,16 @@ fun main(vararg rawArgs: String) {
         writeKey = System.getenv("SEGMENT_WRITE_KEY")
     }
 
+    val blockingFlushPlugin = BlockingFlushPlugin.create()
     val analytics = Analytics.builder(writeKey as String)
-            .log(stdout)
+            .log(Log.STDOUT)
             .flushQueueSize(1)
+            .plugin(blockingFlushPlugin)
             .build()
     try {
         analytics.enqueue(message)
-        Thread.sleep(2 * 1000)
+        analytics.flush()
+        blockingFlushPlugin.block()
     } finally {
         analytics.shutdown()
     }

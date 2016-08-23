@@ -271,7 +271,7 @@ public class Analytics {
               request.addHeader(AUTHORIZATION_HEADER, Credentials.basic(writeKey, ""));
             }
           })
-          .setLogLevel(RestAdapter.LogLevel.FULL)
+          .setLogLevel(RestAdapter.LogLevel.BASIC)
           .setLog(new RestAdapter.Log() {
             @Override public void log(String message) {
               log.print(Log.Level.VERBOSE, "%s", message);
