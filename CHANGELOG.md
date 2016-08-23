@@ -1,4 +1,9 @@
 
+Version 2.0.0-RC7 (August 22nd, 2016)
+=====================================
+
+  * Fix: Previously, logging Retrofit messages could cause errors if the message contained formatting directives.
+
 Version 2.0.0-RC6 (August 18th, 2016)
 =====================================
 
