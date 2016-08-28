@@ -6,6 +6,8 @@ import com.squareup.burst.BurstJUnit4;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.UUID;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
 
@@ -128,5 +130,26 @@ import static org.junit.Assert.fail;
     assertThat(message.integrations()).hasSize(2)
         .containsEntry("foo", false)
         .containsEntry("bar", ImmutableMap.of("qaz", "qux"));
+  }
+
+  @Test
+  public void nullMessageIdThrowsError(TestUtils.MessageBuilderTest builder) {
+    try {
+      builder.get().messageId(null);
+      fail();
+    } catch (NullPointerException e) {
+      assertThat(e).hasMessage("Null messageId");
+    }
+  }
+
+  @Test public void messageId(TestUtils.MessageBuilderTest builder) {
+    UUID messageId = UUID.randomUUID();
+
+    Message message = builder.get()
+            .userId("foo")
+            .messageId(messageId)
+            .build();
+
+    assertThat(message.messageId()).isEqualTo(messageId);
   }
 }
