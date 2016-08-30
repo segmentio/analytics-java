@@ -16,6 +16,8 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import retrofit.Endpoint;
+import retrofit.Endpoints;
 import retrofit.RequestInterceptor;
 import retrofit.RestAdapter;
 import retrofit.client.Client;
@@ -91,12 +93,14 @@ public class Analytics {
 
   /** Fluent API for creating {@link Analytics} instances. */
   public static class Builder {
-    private static final String DEFAULT_ENDPOINT = "https://api.segment.io";
+    private static final Endpoint DEFAULT_ENDPOINT =
+        Endpoints.newFixedEndpoint("https://api.segment.io");
     private static final String AUTHORIZATION_HEADER = "Authorization";
 
     private final String writeKey;
     private Client client;
     private Log log;
+    private Endpoint endpoint;
     private List<MessageTransformer> messageTransformers;
     private List<MessageInterceptor> messageInterceptors;
     private ExecutorService networkExecutor;
@@ -127,6 +131,18 @@ public class Analytics {
         throw new NullPointerException("Null log");
       }
       this.log = log;
+      return this;
+    }
+
+    /**
+     * Set an endpoint that this client should upload events to. Uses {@code https://api.segment.io}
+     * by default.
+     */
+    public Builder endpoint(String endpoint) {
+      if (endpoint == null || endpoint.trim().length() == 0) {
+        throw new NullPointerException("endpoint cannot be null or empty.");
+      }
+      this.endpoint = Endpoints.newFixedEndpoint(endpoint);
       return this;
     }
 
@@ -228,6 +244,9 @@ public class Analytics {
           .registerTypeAdapter(Date.class, new ISO8601DateAdapter()) //
           .create();
 
+      if (endpoint == null) {
+        endpoint = DEFAULT_ENDPOINT;
+      }
       if (client == null) {
         client = Platform.get().defaultClient();
       }
@@ -264,7 +283,7 @@ public class Analytics {
 
       RestAdapter restAdapter = new RestAdapter.Builder()
           .setConverter(new GsonConverter(gson))
-          .setEndpoint(DEFAULT_ENDPOINT)
+          .setEndpoint(endpoint)
           .setClient(client)
           .setRequestInterceptor(new RequestInterceptor() {
             @Override public void intercept(RequestFacade request) {
