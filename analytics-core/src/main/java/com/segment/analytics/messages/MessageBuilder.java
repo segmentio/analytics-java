@@ -43,7 +43,7 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
   }
 
   /**
-   * The Message ID is a unique identifier for this message. If not specified, a random identifier will
+   * The Message ID is a unique identifier for this message. If not specified, a unique identifier will
    * be generated.
    */
   public V messageId(String messageId) {
