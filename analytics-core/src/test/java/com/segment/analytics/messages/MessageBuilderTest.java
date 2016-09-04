@@ -142,6 +142,31 @@ import static org.junit.Assert.fail;
     }
   }
 
+  @Test
+  public void emptyMessageThrowsError(TestUtils.MessageBuilderTest builder) {
+    try {
+      builder.get().messageId("");
+      fail();
+    } catch (IllegalArgumentException e) {
+      assertThat(e).hasMessage("Empty messageId");
+    }
+  }
+
+  @Test
+  public void largeMessageThrowsError(TestUtils.MessageBuilderTest builder) {
+    try {
+      StringBuffer buf = new StringBuffer();
+      for (int i = 0; i < 1024; i++) {
+        buf.append("x");
+      }
+
+      builder.get().messageId(buf.toString());
+      fail();
+    } catch (IllegalArgumentException e) {
+      assertThat(e).hasMessage("messageId longer than " + Message.MAX_MESSAGE_ID_LENGTH + " characters");
+    }
+  }
+
   @Test public void messageId(TestUtils.MessageBuilderTest builder) {
     String messageId = UUID.randomUUID().toString();
 

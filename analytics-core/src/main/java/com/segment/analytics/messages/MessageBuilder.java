@@ -50,6 +50,12 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
     if (messageId == null) {
       throw new NullPointerException("Null messageId");
     }
+    if (messageId.isEmpty()) {
+      throw new IllegalArgumentException("Empty messageId");
+    }
+    if (messageId.length() > Message.MAX_MESSAGE_ID_LENGTH) {
+      throw new IllegalArgumentException("messageId longer than " + Message.MAX_MESSAGE_ID_LENGTH + " characters");
+    }
     this.messageId = messageId;
     return self();
   }

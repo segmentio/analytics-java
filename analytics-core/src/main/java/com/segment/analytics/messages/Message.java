@@ -20,6 +20,8 @@ import javax.annotation.Nullable;
  * <a href="http://bit.ly/1N5v3Cq">Javadocs</a>.
  */
 public interface Message {
+  int MAX_MESSAGE_ID_LENGTH = 256;
+
   Type type();
 
   String messageId();
