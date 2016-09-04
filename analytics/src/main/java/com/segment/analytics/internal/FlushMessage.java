@@ -16,7 +16,7 @@ class FlushMessage implements Message {
     throw new UnsupportedOperationException();
   }
 
-  @Override public UUID messageId() {
+  @Override public String messageId() {
     throw new UnsupportedOperationException();
   }
 

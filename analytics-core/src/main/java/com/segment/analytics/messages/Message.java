@@ -22,7 +22,7 @@ import javax.annotation.Nullable;
 public interface Message {
   Type type();
 
-  UUID messageId();
+  String messageId();
 
   Date timestamp();
 

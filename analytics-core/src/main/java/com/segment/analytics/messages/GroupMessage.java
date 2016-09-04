@@ -72,7 +72,7 @@ public abstract class GroupMessage implements Message {
       return this;
     }
 
-    @Override protected GroupMessage realBuild(Type type, UUID messageId, Date timestamp,
+    @Override protected GroupMessage realBuild(Type type, String messageId, Date timestamp,
         Map<String, ?> context, UUID anonymousId, String userId,
         Map<String, Object> integrations) {
       return new AutoValue_GroupMessage(type, messageId, timestamp, context, anonymousId, userId,

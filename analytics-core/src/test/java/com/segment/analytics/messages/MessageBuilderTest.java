@@ -143,7 +143,7 @@ import static org.junit.Assert.fail;
   }
 
   @Test public void messageId(TestUtils.MessageBuilderTest builder) {
-    UUID messageId = UUID.randomUUID();
+    String messageId = UUID.randomUUID().toString();
 
     Message message = builder.get()
             .userId("foo")
