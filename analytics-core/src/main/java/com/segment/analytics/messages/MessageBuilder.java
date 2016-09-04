@@ -14,6 +14,7 @@ import java.util.UUID;
  * result in a {@link IllegalStateException} at runtime.
  */
 public abstract class MessageBuilder<T extends Message, V extends MessageBuilder> {
+  private String messageId;
   private final Message.Type type;
   private Map<String, ?> context;
   private UUID anonymousId;
@@ -29,6 +30,7 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
   }
 
   MessageBuilder(Message message) {
+    messageId = message.messageId();
     type = message.type();
     context = message.context();
     anonymousId = message.anonymousId();
@@ -38,6 +40,24 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
   /** Returns {@code true} if the given string is null or empty. */
   static boolean isNullOrEmpty(String string) {
     return string == null || string.trim().length() == 0;
+  }
+
+  /**
+   * The Message ID is a unique identifier for this message. If not specified, a unique identifier will
+   * be generated.
+   */
+  public V messageId(String messageId) {
+    if (messageId == null) {
+      throw new NullPointerException("Null messageId");
+    }
+    if (messageId.isEmpty()) {
+      throw new IllegalArgumentException("Empty messageId");
+    }
+    if (messageId.length() > Message.MAX_MESSAGE_ID_LENGTH) {
+      throw new IllegalArgumentException("messageId longer than " + Message.MAX_MESSAGE_ID_LENGTH + " characters");
+    }
+    this.messageId = messageId;
+    return self();
   }
 
   /**
@@ -136,7 +156,7 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
     return self();
   }
 
-  protected abstract T realBuild(Message.Type type, UUID messageId, Date timestamp,
+  protected abstract T realBuild(Message.Type type, String messageId, Date timestamp,
       Map<String, ?> context, UUID anonymousId, String userId, Map<String, Object> integrations);
 
   abstract V self();
@@ -152,7 +172,8 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
     }
     Map<String, Object> integrations = integrationsBuilder == null ? //
         Collections.<String, Object>emptyMap() : ImmutableMap.copyOf(integrationsBuilder);
-    return realBuild(type, UUID.randomUUID(), timestamp == null ? new Date() : timestamp, context,
+    return realBuild(type, messageId == null ? UUID.randomUUID().toString() : messageId,
+        timestamp == null ? new Date() : timestamp, context,
         anonymousId, userId, integrations);
   }
 

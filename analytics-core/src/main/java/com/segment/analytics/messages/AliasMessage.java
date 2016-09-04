@@ -52,7 +52,7 @@ public abstract class AliasMessage implements Message {
       this.previousId = previousId;
     }
 
-    @Override protected AliasMessage realBuild(Type type, UUID messageId, Date timestamp,
+    @Override protected AliasMessage realBuild(Type type, String messageId, Date timestamp,
         Map<String, ?> context, UUID anonymousId, String userId,
         Map<String, Object> integrations) {
       return new AutoValue_AliasMessage(type, messageId, timestamp, context, anonymousId, userId,

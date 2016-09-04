@@ -73,7 +73,7 @@ public abstract class PageMessage implements Message {
       return this;
     }
 
-    @Override protected PageMessage realBuild(Type type, UUID messageId, Date timestamp,
+    @Override protected PageMessage realBuild(Type type, String messageId, Date timestamp,
         Map<String, ?> context, UUID anonymousId, String userId,
         Map<String, Object> integrations) {
       return new AutoValue_PageMessage(type, messageId, timestamp, context, anonymousId, userId,

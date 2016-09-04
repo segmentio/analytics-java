@@ -55,7 +55,7 @@ public abstract class IdentifyMessage implements Message {
       return this;
     }
 
-    @Override protected IdentifyMessage realBuild(Type type, UUID messageId, Date timestamp,
+    @Override protected IdentifyMessage realBuild(Type type, String messageId, Date timestamp,
         Map<String, ?> context, UUID anonymousId, String userId,
         Map<String, Object> integrations) {
       if (userId == null && traits == null) {

@@ -73,7 +73,7 @@ public abstract class ScreenMessage implements Message {
       return this;
     }
 
-    @Override protected ScreenMessage realBuild(Type type, UUID messageId, Date timestamp,
+    @Override protected ScreenMessage realBuild(Type type, String messageId, Date timestamp,
         Map<String, ?> context, UUID anonymousId, String userId,
         Map<String, Object> integrations) {
       return new AutoValue_ScreenMessage(type, messageId, timestamp, context, anonymousId, userId,

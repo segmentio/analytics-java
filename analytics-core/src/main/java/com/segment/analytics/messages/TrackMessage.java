@@ -73,7 +73,7 @@ public abstract class TrackMessage implements Message {
       return this;
     }
 
-    @Override protected TrackMessage realBuild(Type type, UUID messageId, Date timestamp,
+    @Override protected TrackMessage realBuild(Type type, String messageId, Date timestamp,
         Map<String, ?> context, UUID anonymousId, String userId,
         Map<String, Object> integrations) {
       return new AutoValue_TrackMessage(type, messageId, timestamp, context, anonymousId, userId,

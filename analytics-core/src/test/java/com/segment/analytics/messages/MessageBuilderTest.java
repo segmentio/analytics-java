@@ -6,6 +6,8 @@ import com.squareup.burst.BurstJUnit4;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import java.util.UUID;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
 
@@ -128,5 +130,51 @@ import static org.junit.Assert.fail;
     assertThat(message.integrations()).hasSize(2)
         .containsEntry("foo", false)
         .containsEntry("bar", ImmutableMap.of("qaz", "qux"));
+  }
+
+  @Test
+  public void nullMessageIdThrowsError(TestUtils.MessageBuilderTest builder) {
+    try {
+      builder.get().messageId(null);
+      fail();
+    } catch (NullPointerException e) {
+      assertThat(e).hasMessage("Null messageId");
+    }
+  }
+
+  @Test
+  public void emptyMessageThrowsError(TestUtils.MessageBuilderTest builder) {
+    try {
+      builder.get().messageId("");
+      fail();
+    } catch (IllegalArgumentException e) {
+      assertThat(e).hasMessage("Empty messageId");
+    }
+  }
+
+  @Test
+  public void largeMessageThrowsError(TestUtils.MessageBuilderTest builder) {
+    try {
+      StringBuffer buf = new StringBuffer();
+      for (int i = 0; i < 1024; i++) {
+        buf.append("x");
+      }
+
+      builder.get().messageId(buf.toString());
+      fail();
+    } catch (IllegalArgumentException e) {
+      assertThat(e).hasMessage("messageId longer than " + Message.MAX_MESSAGE_ID_LENGTH + " characters");
+    }
+  }
+
+  @Test public void messageId(TestUtils.MessageBuilderTest builder) {
+    String messageId = UUID.randomUUID().toString();
+
+    Message message = builder.get()
+            .userId("foo")
+            .messageId(messageId)
+            .build();
+
+    assertThat(message.messageId()).isEqualTo(messageId);
   }
 }
