@@ -15,11 +15,12 @@ import java.util.UUID;
  */
 public abstract class MessageBuilder<T extends Message, V extends MessageBuilder> {
   private final Message.Type type;
+  private UUID messageId;
+  private Date timestamp;
   private Map<String, ?> context;
   private UUID anonymousId;
   private String userId;
-  private Map<String, Object> integrationsBuilder;
-  private Date timestamp;
+  private Map<String, Object> integrations;
 
   // Hidden from Public API.
   MessageBuilder(Message.Type type) {
@@ -38,6 +39,35 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
   /** Returns {@code true} if the given string is null or empty. */
   static boolean isNullOrEmpty(String string) {
     return string == null || string.trim().length() == 0;
+  }
+
+  /**
+   * The Message ID is a unique identifier for each message. If not provided, one will be generated
+   * for you. This ID is typically used for deduping - messages with the same IDs as previous events
+   * may be dropped.
+   *
+   * @see <a href="https://segment.com/docs/spec/common/">Common Fields</a>
+   */
+  public V messageId(UUID messageId) {
+    if (messageId == null) {
+      throw new NullPointerException("Null messageId");
+    }
+    this.messageId = messageId;
+    return self();
+  }
+
+  /**
+   * Set a timestamp for the event. By default, the current timestamp is used, but you may override
+   * it for historical import.
+   *
+   * @see <a href="https://segment.com/docs/spec/common/#-timestamp-">Timestamp</a>
+   */
+  public V timestamp(Date timestamp) {
+    if (timestamp == null) {
+      throw new NullPointerException("Null timestamp");
+    }
+    this.timestamp = timestamp;
+    return self();
   }
 
   /**
@@ -74,8 +104,7 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
   }
 
   /**
-   * The Anonymous ID is a pseudo-unique substitute for a User ID, for cases when you don’t have an
-   * absolutely unique identifier.
+   * The User ID is a persistent unique identifier for a user (such as a database ID).
    *
    * @see <a href="https://segment.com/docs/spec/identify/#identities">Identities</a>
    * @see <a href="https://segment.com/docs/spec/identify/#user-id">User ID</a>
@@ -98,10 +127,10 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
     if (isNullOrEmpty(key)) {
       throw new IllegalArgumentException("Key cannot be null or empty.");
     }
-    if (integrationsBuilder == null) {
-      integrationsBuilder = new LinkedHashMap<>();
+    if (integrations == null) {
+      integrations = new LinkedHashMap<>();
     }
-    integrationsBuilder.put(key, enable);
+    integrations.put(key, enable);
     return self();
   }
 
@@ -115,24 +144,10 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
     if (isNullOrEmpty(key)) {
       throw new IllegalArgumentException("Key name cannot be null or empty.");
     }
-    if (integrationsBuilder == null) {
-      integrationsBuilder = new LinkedHashMap<>();
+    if (integrations == null) {
+      integrations = new LinkedHashMap<>();
     }
-    integrationsBuilder.put(key, ImmutableMap.copyOf(options));
-    return self();
-  }
-
-  /**
-   * Set a timestamp for the event. By default, the current timestamp is used, but you may override
-   * it for historical import.
-   *
-   * @see <a href="https://segment.com/docs/spec/common/#-timestamp-">Timestamp</a>
-   */
-  public V timestamp(Date timestamp) {
-    if (timestamp == null) {
-      throw new NullPointerException("Null timestamp");
-    }
-    this.timestamp = timestamp;
+    integrations.put(key, ImmutableMap.copyOf(options));
     return self();
   }
 
@@ -150,10 +165,25 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
     if (anonymousId == null && userId == null) {
       throw new IllegalStateException("Either anonymousId or userId must be provided.");
     }
-    Map<String, Object> integrations = integrationsBuilder == null ? //
-        Collections.<String, Object>emptyMap() : ImmutableMap.copyOf(integrationsBuilder);
-    return realBuild(type, UUID.randomUUID(), timestamp == null ? new Date() : timestamp, context,
-        anonymousId, userId, integrations);
+
+    Date timestamp = this.timestamp;
+    if (timestamp == null) {
+      timestamp = new Date();
+    }
+
+    UUID messageId = this.messageId;
+    if (messageId == null) {
+      messageId = UUID.randomUUID();
+    }
+
+    Map<String, Object> integrations;
+    if (this.integrations == null) {
+      integrations = Collections.emptyMap();
+    } else {
+      integrations = ImmutableMap.copyOf(this.integrations);
+    }
+
+    return realBuild(type, messageId, timestamp, context, anonymousId, userId, integrations);
   }
 
   /** Returns the {@link Message.Type} of the message this builder is constructing. */

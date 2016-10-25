@@ -4,6 +4,7 @@ import com.segment.analytics.messages.Message;
 import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 class FlushMessage implements Message {
@@ -12,15 +13,15 @@ class FlushMessage implements Message {
   private FlushMessage() {
   }
 
-  @Override public Type type() {
+  @Nonnull @Override public Type type() {
     throw new UnsupportedOperationException();
   }
 
-  @Override public UUID messageId() {
+  @Nonnull @Override public UUID messageId() {
     throw new UnsupportedOperationException();
   }
 
-  @Override public Date timestamp() {
+  @Nonnull @Override public Date timestamp() {
     throw new UnsupportedOperationException();
   }
 
