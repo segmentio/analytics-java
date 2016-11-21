@@ -1,12 +1,11 @@
 package com.segment.analytics;
 
-import com.squareup.okhttp.OkHttpClient;
+import okhttp3.OkHttpClient;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import retrofit.client.Client;
-import retrofit.client.OkClient;
 
 import static java.lang.Thread.MIN_PRIORITY;
 
@@ -23,12 +22,12 @@ class Platform {
     return new Platform();
   }
 
-  Client defaultClient() {
-    OkHttpClient client = new OkHttpClient();
-    client.setConnectTimeout(15, TimeUnit.SECONDS);
-    client.setReadTimeout(15, TimeUnit.SECONDS);
-    client.setWriteTimeout(15, TimeUnit.SECONDS);
-    return new OkClient(client);
+  OkHttpClient defaultClient() {
+    return new OkHttpClient.Builder()
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(15, TimeUnit.SECONDS)
+            .writeTimeout(15, TimeUnit.SECONDS)
+            .build();
   }
 
   ExecutorService defaultNetworkExecutor() {
