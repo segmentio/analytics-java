@@ -1,6 +1,8 @@
 package sample;
 
 import com.segment.analytics.Analytics;
+import com.segment.analytics.BlockingFlushPlugin;
+import com.segment.analytics.Log;
 import com.segment.analytics.messages.TrackMessage;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -9,12 +11,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class Main {
   public static void main(String... args) throws Exception {
-    final BlockingFlush blockingFlush = BlockingFlush.create();
+    final BlockingFlushPlugin blockingFlushPlugin = BlockingFlushPlugin.create();
 
     // https://segment.com/segment-engineering/sources/test-java/debugger
     final Analytics analytics = Analytics.builder("xemyw6oe3n") //
-        .plugin(blockingFlush.plugin())
-        .plugin(new LoggingPlugin())
+        .log(Log.STDOUT)
+        .plugin(blockingFlushPlugin)
         .build();
 
     final String userId = System.getProperty("user.name");
@@ -33,7 +35,7 @@ public class Main {
     }
 
     analytics.flush();
-    blockingFlush.block();
+    blockingFlushPlugin.block();
     analytics.shutdown();
   }
 }
