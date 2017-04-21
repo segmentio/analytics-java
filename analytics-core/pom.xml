@@ -14,7 +14,7 @@
 
   <dependencies>
     <dependency>
-      <groupId>com.squareup.retrofit</groupId>
+      <groupId>com.squareup.retrofit2</groupId>
       <artifactId>retrofit</artifactId>
     </dependency>
     <dependency>
@@ -62,6 +62,11 @@
       <artifactId>mockito-core</artifactId>
       <scope>test</scope>
     </dependency>
+      <dependency>
+          <groupId>com.squareup.retrofit</groupId>
+          <artifactId>retrofit</artifactId>
+          <version>RELEASE</version>
+      </dependency>
   </dependencies>
 
 </project>

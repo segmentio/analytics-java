@@ -147,30 +147,30 @@ public class AnalyticsBuilderTest {
     }
   }
 
-  @Test public void nullEndpoint() {
-    try {
-      builder.endpoint(null);
-      fail("Should fail for null endpoint");
-    } catch (NullPointerException e) {
-      assertThat(e).hasMessage("endpoint cannot be null or empty.");
-    }
-  }
-
-  @Test public void emptyEndpoint() {
-    try {
-      builder.endpoint("");
-      fail("Should fail for empty endpoint");
-    } catch (NullPointerException e) {
-      assertThat(e).hasMessage("endpoint cannot be null or empty.");
-    }
-
-    try {
-      builder.endpoint("  ");
-      fail("Should fail for empty endpoint");
-    } catch (NullPointerException e) {
-      assertThat(e).hasMessage("endpoint cannot be null or empty.");
-    }
-  }
+//  @Test public void nullEndpoint() {
+//    try {
+//      builder.endpoint(null);
+//      fail("Should fail for null endpoint");
+//    } catch (NullPointerException e) {
+//      assertThat(e).hasMessage("endpoint cannot be null or empty.");
+//    }
+//  }
+//
+//  @Test public void emptyEndpoint() {
+//    try {
+//      builder.endpoint("");
+//      fail("Should fail for empty endpoint");
+//    } catch (NullPointerException e) {
+//      assertThat(e).hasMessage("endpoint cannot be null or empty.");
+//    }
+//
+//    try {
+//      builder.endpoint("  ");
+//      fail("Should fail for empty endpoint");
+//    } catch (NullPointerException e) {
+//      assertThat(e).hasMessage("endpoint cannot be null or empty.");
+//    }
+//  }
 
   @Test public void nullThreadFactory() {
     try {
