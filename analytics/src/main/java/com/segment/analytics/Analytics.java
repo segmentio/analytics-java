@@ -6,6 +6,7 @@ import com.segment.analytics.gson.AutoValueAdapterFactory;
 import com.segment.analytics.gson.ISO8601DateAdapter;
 import com.segment.analytics.http.SegmentService;
 import com.segment.analytics.internal.AnalyticsClient;
+import com.segment.analytics.internal.AnalyticsVersion;
 import com.segment.analytics.messages.Message;
 import com.segment.analytics.messages.MessageBuilder;
 import com.squareup.okhttp.Credentials;
@@ -95,12 +96,13 @@ public class Analytics {
   public static class Builder {
     private static final Endpoint DEFAULT_ENDPOINT =
         Endpoints.newFixedEndpoint("https://api.segment.io");
-    private static final String AUTHORIZATION_HEADER = "Authorization";
+    private static final String DEFAULT_USER_AGENT = "analytics-java/" + AnalyticsVersion.get();
 
     private final String writeKey;
     private Client client;
     private Log log;
     private Endpoint endpoint;
+    private String userAgent = DEFAULT_USER_AGENT;
     private List<MessageTransformer> messageTransformers;
     private List<MessageInterceptor> messageInterceptors;
     private ExecutorService networkExecutor;
@@ -143,6 +145,15 @@ public class Analytics {
         throw new NullPointerException("endpoint cannot be null or empty.");
       }
       this.endpoint = Endpoints.newFixedEndpoint(endpoint);
+      return this;
+    }
+
+    /** Sets a user agent for HTTP requests. */
+    public Builder userAgent(String userAgent) {
+      if (userAgent == null || userAgent.trim().length() == 0) {
+        throw new NullPointerException("userAgent cannot be null or empty.");
+      }
+      this.userAgent = userAgent;
       return this;
     }
 
@@ -285,11 +296,7 @@ public class Analytics {
           .setConverter(new GsonConverter(gson))
           .setEndpoint(endpoint)
           .setClient(client)
-          .setRequestInterceptor(new RequestInterceptor() {
-            @Override public void intercept(RequestFacade request) {
-              request.addHeader(AUTHORIZATION_HEADER, Credentials.basic(writeKey, ""));
-            }
-          })
+          .setRequestInterceptor(new AnalyticsRequestInterceptor(writeKey, userAgent))
           .setLogLevel(RestAdapter.LogLevel.FULL)
           .setLog(new RestAdapter.Log() {
             @Override public void log(String message) {
