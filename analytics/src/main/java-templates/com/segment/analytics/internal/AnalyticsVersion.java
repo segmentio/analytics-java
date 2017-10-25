@@ -6,6 +6,6 @@ final class AnalyticsVersion {
   }
 
   static String get() {
-    return "analytics/${project.version}";
+    return "${project.version}";
   }
 }
