@@ -42,6 +42,31 @@ public class AnalyticsBuilderTest {
     }
   }
 
+  @Test public void nullUserAgent() {
+    try {
+      builder.userAgent(null);
+      fail("Should fail for null userAgent");
+    } catch (NullPointerException e) {
+      assertThat(e).hasMessage("userAgent cannot be null or empty.");
+    }
+  }
+
+  @Test public void emptyUserAgent() {
+    try {
+      builder.userAgent("");
+      fail("Should fail for empty userAgent");
+    } catch (NullPointerException e) {
+      assertThat(e).hasMessage("userAgent cannot be null or empty.");
+    }
+
+    try {
+      builder.userAgent("  ");
+      fail("Should fail for empty userAgent");
+    } catch (NullPointerException e) {
+      assertThat(e).hasMessage("userAgent cannot be null or empty.");
+    }
+  }
+
   @Test public void nullClient() {
     try {
       builder.client(null);
