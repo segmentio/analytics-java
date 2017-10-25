@@ -1,6 +1,6 @@
 package com.segment.analytics.internal;
 
-final class AnalyticsVersion {
+public final class AnalyticsVersion {
   private AnalyticsVersion() {
     throw new AssertionError("No instances allowed.");
   }

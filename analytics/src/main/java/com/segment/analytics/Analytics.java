@@ -96,13 +96,14 @@ public class Analytics {
     private static final Endpoint DEFAULT_ENDPOINT =
         Endpoints.newFixedEndpoint("https://api.segment.io");
     private static final String AUTHORIZATION_HEADER = "Authorization";
-    private static final String USERAGENT_HEADER = "User-Agent";
+    private static final String USER_AGENT_HEADER = "User-Agent";
+    private static final String DEFAULT_USER_AGENT = "analytics-java/" + AnalyticsVersion.get();
 
     private final String writeKey;
     private Client client;
     private Log log;
     private Endpoint endpoint;
-    private String userAgent;
+    private String userAgent = DEFAULT_USER_AGENT;
     private List<MessageTransformer> messageTransformers;
     private List<MessageInterceptor> messageInterceptors;
     private ExecutorService networkExecutor;
@@ -148,9 +149,7 @@ public class Analytics {
       return this;
     }
 
-    /**
-     * Set the user agent for this client
-     */
+    /** Sets a user agent for HTTP requests. */
     public Builder userAgent(String userAgent) {
       if (userAgent == null || userAgent.trim().length() == 0) {
         throw new NullPointerException("userAgent cannot be null or empty.");
@@ -300,9 +299,7 @@ public class Analytics {
           .setClient(client)
           .setRequestInterceptor(new RequestInterceptor() {
             @Override public void intercept(RequestFacade request) {
-              if (userAgent != null) {
-                  request.addHeader(USERAGENT_HEADER, userAgent);
-              }
+              request.addHeader(USER_AGENT_HEADER, userAgent);
               request.addHeader(AUTHORIZATION_HEADER, Credentials.basic(writeKey, ""));
             }
           })
