@@ -4,7 +4,6 @@ import com.google.auto.value.AutoValue;
 import com.segment.analytics.gson.AutoGson;
 import java.util.Date;
 import java.util.Map;
-import java.util.UUID;
 import javax.annotation.Nullable;
 
 /**
@@ -55,8 +54,8 @@ public abstract class IdentifyMessage implements Message {
       return this;
     }
 
-    @Override protected IdentifyMessage realBuild(Type type, UUID messageId, Date timestamp,
-        Map<String, ?> context, UUID anonymousId, String userId,
+    @Override protected IdentifyMessage realBuild(Type type, String messageId, Date timestamp,
+        Map<String, ?> context, String anonymousId, String userId,
         Map<String, Object> integrations) {
       if (userId == null && traits == null) {
         throw new IllegalStateException("Either userId or traits must be provided.");

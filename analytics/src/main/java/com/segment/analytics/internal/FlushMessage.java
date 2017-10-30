@@ -17,7 +17,7 @@ class FlushMessage implements Message {
     throw new UnsupportedOperationException();
   }
 
-  @Nonnull @Override public UUID messageId() {
+  @Nonnull @Override public String messageId() {
     throw new UnsupportedOperationException();
   }
 
@@ -29,7 +29,7 @@ class FlushMessage implements Message {
     throw new UnsupportedOperationException();
   }
 
-  @Nullable @Override public UUID anonymousId() {
+  @Nullable @Override public String anonymousId() {
     throw new UnsupportedOperationException();
   }
 

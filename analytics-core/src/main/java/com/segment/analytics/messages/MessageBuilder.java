@@ -15,10 +15,10 @@ import java.util.UUID;
  */
 public abstract class MessageBuilder<T extends Message, V extends MessageBuilder> {
   private final Message.Type type;
-  private UUID messageId;
+  private String messageId;
   private Date timestamp;
   private Map<String, ?> context;
-  private UUID anonymousId;
+  private String anonymousId;
   private String userId;
   private Map<String, Object> integrations;
 
@@ -46,11 +46,27 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
    * for you. This ID is typically used for deduping - messages with the same IDs as previous events
    * may be dropped.
    *
+   * @deprecated Use {@link #messageId(String)} instead.
    * @see <a href="https://segment.com/docs/spec/common/">Common Fields</a>
    */
   public V messageId(UUID messageId) {
     if (messageId == null) {
       throw new NullPointerException("Null messageId");
+    }
+    this.messageId = messageId.toString();
+    return self();
+  }
+
+  /**
+   * The Message ID is a unique identifier for each message. If not provided, one will be generated
+   * for you. This ID is typically used for deduping - messages with the same IDs as previous events
+   * may be dropped.
+   *
+   * @see <a href="https://segment.com/docs/spec/common/">Common Fields</a>
+   */
+  public V messageId(String messageId) {
+    if (isNullOrEmpty(messageId)) {
+      throw new IllegalArgumentException("messageId cannot be null or empty.");
     }
     this.messageId = messageId;
     return self();
@@ -92,12 +108,28 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
    * The Anonymous ID is a pseudo-unique substitute for a User ID, for cases when you don’t have an
    * absolutely unique identifier.
    *
+   * @deprecated Use {@link #anonymousId(String)} instead.
    * @see <a href="https://segment.com/docs/spec/identify/#identities">Identities</a>
    * @see <a href="https://segment.com/docs/spec/identify/#anonymous-id">Anonymous ID</a>
    */
   public V anonymousId(UUID anonymousId) {
     if (anonymousId == null) {
       throw new NullPointerException("Null anonymousId");
+    }
+    this.anonymousId = anonymousId.toString();
+    return self();
+  }
+
+  /**
+   * The Anonymous ID is a pseudo-unique substitute for a User ID, for cases when you don’t have an
+   * absolutely unique identifier.
+   *
+   * @see <a href="https://segment.com/docs/spec/identify/#identities">Identities</a>
+   * @see <a href="https://segment.com/docs/spec/identify/#anonymous-id">Anonymous ID</a>
+   */
+  public V anonymousId(String anonymousId) {
+    if (isNullOrEmpty(anonymousId)) {
+      throw new IllegalArgumentException("anonymousId cannot be null or empty.");
     }
     this.anonymousId = anonymousId;
     return self();
@@ -151,8 +183,8 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
     return self();
   }
 
-  protected abstract T realBuild(Message.Type type, UUID messageId, Date timestamp,
-      Map<String, ?> context, UUID anonymousId, String userId, Map<String, Object> integrations);
+  protected abstract T realBuild(Message.Type type, String messageId, Date timestamp,
+      Map<String, ?> context, String anonymousId, String userId, Map<String, Object> integrations);
 
   abstract V self();
 
@@ -171,9 +203,9 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
       timestamp = new Date();
     }
 
-    UUID messageId = this.messageId;
+    String messageId = this.messageId;
     if (messageId == null) {
-      messageId = UUID.randomUUID();
+      messageId = UUID.randomUUID().toString();
     }
 
     Map<String, Object> integrations;

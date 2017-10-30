@@ -4,7 +4,6 @@ import com.google.auto.value.AutoValue;
 import com.segment.analytics.gson.AutoGson;
 import java.util.Date;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * The alias message is used to merge two user identities, effectively connecting two sets of user
@@ -52,8 +51,8 @@ public abstract class AliasMessage implements Message {
       this.previousId = previousId;
     }
 
-    @Override protected AliasMessage realBuild(Type type, UUID messageId, Date timestamp,
-        Map<String, ?> context, UUID anonymousId, String userId,
+    @Override protected AliasMessage realBuild(Type type, String messageId, Date timestamp,
+        Map<String, ?> context, String anonymousId, String userId,
         Map<String, Object> integrations) {
       return new AutoValue_AliasMessage(type, messageId, timestamp, context, anonymousId, userId,
           integrations, previousId);
