@@ -2,7 +2,6 @@ package com.segment.analytics.messages;
 
 import java.util.Date;
 import java.util.Map;
-import java.util.UUID;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -23,13 +22,13 @@ import javax.annotation.Nullable;
 public interface Message {
   @Nonnull Type type();
 
-  @Nonnull UUID messageId();
+  @Nonnull String messageId();
 
   @Nonnull Date timestamp();
 
   @Nullable Map<String, ?> context();
 
-  @Nullable UUID anonymousId();
+  @Nullable String anonymousId();
 
   @Nullable String userId();
 

@@ -14,9 +14,29 @@ import static org.junit.Assert.fail;
 public class MessageBuilderTest {
 
   @Test
-  public void nullMessageIdThrowsException(TestUtils.MessageBuilderTest builder) {
+  public void nullStringMessageIdThrowsException(TestUtils.MessageBuilderTest builder) {
     try {
-      builder.get().messageId(null);
+      builder.get().messageId((String) null);
+      fail();
+    } catch (IllegalArgumentException e) {
+      assertThat(e).hasMessage("messageId cannot be null or empty.");
+    }
+  }
+
+  @Test
+  public void emptyStringMessageIdThrowsException(TestUtils.MessageBuilderTest builder) {
+    try {
+      builder.get().messageId("");
+      fail();
+    } catch (IllegalArgumentException e) {
+      assertThat(e).hasMessage("messageId cannot be null or empty.");
+    }
+  }
+
+  @Test
+  public void nullUUIDMessageIdThrowsException(TestUtils.MessageBuilderTest builder) {
+    try {
+      builder.get().messageId((UUID) null);
       fail();
     } catch (NullPointerException e) {
       assertThat(e).hasMessage("Null messageId");
@@ -47,7 +67,37 @@ public class MessageBuilderTest {
     UUID uuid = UUID.randomUUID();
     // Must also provide a userId because identify requires `userId` or `traits`.
     Message message = builder.get().anonymousId(uuid).userId("foo").build();
-    assertThat(message.anonymousId()).isEqualTo(uuid);
+    assertThat(message.anonymousId()).isEqualTo(uuid.toString());
+  }
+
+  @Test
+  public void nullStringAnonymousIdThrowsException(TestUtils.MessageBuilderTest builder) {
+    try {
+      builder.get().anonymousId((String) null);
+      fail();
+    } catch (IllegalArgumentException e) {
+      assertThat(e).hasMessage("anonymousId cannot be null or empty.");
+    }
+  }
+
+  @Test
+  public void emptyStringAnonymousIdThrowsException(TestUtils.MessageBuilderTest builder) {
+    try {
+      builder.get().anonymousId("");
+      fail();
+    } catch (IllegalArgumentException e) {
+      assertThat(e).hasMessage("anonymousId cannot be null or empty.");
+    }
+  }
+
+  @Test
+  public void nullUUIDAnonymousIdThrowsException(TestUtils.MessageBuilderTest builder) {
+    try {
+      builder.get().anonymousId((UUID) null);
+      fail();
+    } catch (NullPointerException e) {
+      assertThat(e).hasMessage("Null anonymousId");
+    }
   }
 
   @Test
