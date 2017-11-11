@@ -1,4 +1,19 @@
 
+Version 2.1.0 (November 10, 2017)
+===============================
+
+  * [New](https://github.com/segmentio/analytics-java/pull/113): Allow setting `String` message and anonymous IDs. Previously only UUIDs were accepted. This is a breaking API change and might require you to update your code if you were accessing the `messageId` or `anonymousId` in a transformer or interceptor.
+
+  * [New](https://github.com/segmentio/analytics-java/pull/109): Set a custom user-agent for HTTP requests. The default user agent is "analytics-java/version". This user agent is also customizable and can be override for special cases.
+
+```java
+final Analytics analytics = Analytics.builder(writeKey) //
+        .userAgent("custom user agent")
+        .build();
+```
+
+  * [Fix](https://github.com/segmentio/analytics-java/pull/112): Previously the version was being sent as "analytics/version" instead of simply "version".
+
 Version 2.0.0 (April 4th, 2017)
 ===============================
 
