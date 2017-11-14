@@ -18,6 +18,10 @@
       <artifactId>retrofit</artifactId>
     </dependency>
     <dependency>
+      <groupId>com.jakewharton.retrofit</groupId>
+      <artifactId>retrofit1-okhttp3-client</artifactId>
+    </dependency>
+    <dependency>
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
     </dependency>

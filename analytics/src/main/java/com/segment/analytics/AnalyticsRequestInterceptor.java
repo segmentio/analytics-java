@@ -1,6 +1,6 @@
 package com.segment.analytics;
 
-import com.squareup.okhttp.Credentials;
+import okhttp3.Credentials;
 import retrofit.RequestInterceptor;
 
 import javax.annotation.Nonnull;
