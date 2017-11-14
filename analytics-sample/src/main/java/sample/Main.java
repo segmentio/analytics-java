@@ -18,7 +18,7 @@ public class Main {
         .build();
 
     final String userId = System.getProperty("user.name");
-    final UUID anonymousId = UUID.randomUUID();
+    final String anonymousId = UUID.randomUUID().toString();
 
     final AtomicInteger count = new AtomicInteger();
     for (int i = 0; i < 10; i++) {
