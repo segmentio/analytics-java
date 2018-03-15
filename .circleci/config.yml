@@ -7,6 +7,7 @@ jobs:
     steps:
       - checkout
       - run: mvn package -B
+      - run: .buildscript/e2e.sh
   build-jdk8:
     docker:
       - image: circleci/openjdk:8-jdk-browsers
@@ -16,6 +17,7 @@ jobs:
     steps:
       - checkout
       - run: mvn package -B
+      - run: .buildscript/e2e.sh
       - run: .buildscript/deploy_snapshot.sh
 
 workflows:

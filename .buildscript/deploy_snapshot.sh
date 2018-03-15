@@ -10,6 +10,8 @@ USERNAME="segmentio"
 JDK="oraclejdk8"
 BRANCH="master"
 
+set -e
+
 if [ "$CIRCLE_PROJECT_REPONAME" != "$REPO" ]; then
   echo "Skipping snapshot deployment: wrong repository. Expected '$REPO' but was '$CIRCLE_PROJECT_REPONAME'."
 elif [ "$CIRCLE_PROJECT_USERNAME" != "$USERNAME" ]; then
