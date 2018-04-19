@@ -167,6 +167,24 @@ public class AnalyticsClient {
           case NETWORK:
             client.log.print(DEBUG, error, "Could not upload batch %s. Retrying.", batch.sequence());
             return true;
+          case HTTP:
+            // Retry 5xx and 429 responses.
+            int status = error.getResponse().getStatus();
+            if (is5xx(status)) {
+              client.log.print(DEBUG, error, "Could not upload batch %s due to server error. Retrying.", batch.sequence());
+              return true;
+            }
+            if (status == 429) {
+              client.log.print(DEBUG, error, "Could not upload batch %s due to rate limiting. Retrying.", batch.sequence());
+              return true;
+            }
+            client.log.print(ERROR, error, "Could not upload batch %s due to HTTP erro. Giving up.", batch.sequence());
+            for (Message message : batch.batch()) {
+              for (Callback callback : client.callbacks) {
+                callback.failure(message, error);
+              }
+            }
+            return false; // Don't retry
           default:
             client.log.print(ERROR, error, "Could not upload batch %s. Giving up.", batch.sequence());
             for (Message message : batch.batch()) {
@@ -198,6 +216,10 @@ public class AnalyticsClient {
           callback.failure(message, exception);
         }
       }
+    }
+
+    private static boolean is5xx(int status) {
+      return status >= 500 && status < 600;
     }
   }
 }
