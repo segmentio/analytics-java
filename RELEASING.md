@@ -1,5 +1,5 @@
 Releasing
-========
+=========
 
  1. Verify the build: `mvn clean verify`.
  2. Update the `CHANGELOG.md` for the impending release.

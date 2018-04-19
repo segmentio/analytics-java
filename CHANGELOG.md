@@ -1,6 +1,11 @@
 
+Version 2.1.1 (April 19, 2018)
+==============================
+
+  * [Fix](https://github.com/segmentio/analytics-java/pull/117): This fix gracefully retries temporary HTTP errors such as 5xx server errors. Previously such HTTP errors were not being retried.
+
 Version 2.1.0 (November 10, 2017)
-===============================
+=================================
 
   * [New](https://github.com/segmentio/analytics-java/pull/113): Allow setting `String` message and anonymous IDs. Previously only UUIDs were accepted. This is a breaking API change and might require you to update your code if you were accessing the `messageId` or `anonymousId` in a transformer or interceptor.
 
