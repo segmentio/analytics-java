@@ -27,6 +27,8 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import retrofit.RetrofitError;
+import retrofit.client.Header;
+import retrofit.client.Response;
 import retrofit.converter.ConversionException;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -173,6 +175,66 @@ public class AnalyticsClientTest {
     // Verify that we tried to upload 4 times, 3 failed and 1 succeeded.
     verify(segmentService, times(4)).upload(batch);
     verify(callback).success(trackMessage);
+  }
+
+  @Test public void batchRetriesForHTTP5xxErrors() {
+    AnalyticsClient client = newClient();
+    TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
+    Batch batch = batchFor(trackMessage);
+
+    // Throw a HTTP error 3 times.
+    Response response = new Response("https://api.segment.io", 500, "Server Error", Collections.<Header>emptyList(), null);
+    RetrofitError retrofitError = RetrofitError.httpError(null, response, null, null);
+    when(segmentService.upload(batch)).thenThrow(retrofitError)
+            .thenThrow(retrofitError)
+            .thenThrow(retrofitError)
+            .thenReturn(null);
+
+    BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch);
+    batchUploadTask.run();
+
+    // Verify that we tried to upload 4 times, 3 failed and 1 succeeded.
+    verify(segmentService, times(4)).upload(batch);
+    verify(callback).success(trackMessage);
+  }
+
+  @Test public void batchRetriesForHTTP429Errors() {
+    AnalyticsClient client = newClient();
+    TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
+    Batch batch = batchFor(trackMessage);
+
+    // Throw a HTTP error 3 times.
+    Response response = new Response("https://api.segment.io", 429, "Rate Limited", Collections.<Header>emptyList(), null);
+    RetrofitError retrofitError = RetrofitError.httpError(null, response, null, null);
+    when(segmentService.upload(batch)).thenThrow(retrofitError)
+            .thenThrow(retrofitError)
+            .thenThrow(retrofitError)
+            .thenReturn(null);
+
+    BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch);
+    batchUploadTask.run();
+
+    // Verify that we tried to upload 4 times, 3 failed and 1 succeeded.
+    verify(segmentService, times(4)).upload(batch);
+    verify(callback).success(trackMessage);
+  }
+
+  @Test public void batchDoesNotRetryForNon5xxAndNon429HTTPErrors() {
+    AnalyticsClient client = newClient();
+    TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
+    Batch batch = batchFor(trackMessage);
+
+    // Throw a HTTP error that should not be retried.
+    Response response = new Response("https://api.segment.io", 404, "Not Found", Collections.<Header>emptyList(), null);
+    RetrofitError retrofitError = RetrofitError.httpError(null, response, null, null);
+    doThrow(retrofitError).when(segmentService).upload(batch);
+
+    BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch);
+    batchUploadTask.run();
+
+    // Verify we only tried to upload once.
+    verify(segmentService).upload(batch);
+    verify(callback).failure(trackMessage, retrofitError);
   }
 
   @Test public void batchDoesNotRetryForNonNetworkErrors() {
