@@ -178,7 +178,7 @@ public class AnalyticsClient {
               client.log.print(DEBUG, error, "Could not upload batch %s due to rate limiting. Retrying.", batch.sequence());
               return true;
             }
-            client.log.print(ERROR, error, "Could not upload batch %s due to HTTP erro. Giving up.", batch.sequence());
+            client.log.print(ERROR, error, "Could not upload batch %s due to HTTP error. Giving up.", batch.sequence());
             for (Message message : batch.batch()) {
               for (Callback callback : client.callbacks) {
                 callback.failure(message, error);
