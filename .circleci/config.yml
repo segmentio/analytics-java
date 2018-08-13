@@ -1,13 +1,5 @@
 version: 2
 jobs:
-  build-jdklatest:
-    docker:
-      - image: circleci/openjdk
-    working_directory: ~/analytics-java
-    steps:
-      - checkout
-      - run: mvn package -B
-      - run: .buildscript/e2e.sh
   build-jdk8:
     docker:
       - image: circleci/openjdk:8-jdk-browsers
