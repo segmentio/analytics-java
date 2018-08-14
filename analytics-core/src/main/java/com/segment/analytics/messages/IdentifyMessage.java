@@ -9,12 +9,13 @@ import javax.annotation.Nullable;
 /**
  * The identify call ties a customer and their actions to a recognizable ID and traits like their
  * email, name, etc.
- * <p>
- * Use {@link #builder} to construct your own instances.
+ *
+ * <p>Use {@link #builder} to construct your own instances.
  *
  * @see <a href="https://segment.com/docs/spec/identify/">Identify</a>
  */
-@AutoValue @AutoGson //
+@AutoValue
+@AutoGson //
 public abstract class IdentifyMessage implements Message {
 
   /** Start building an {@link IdentifyMessage} instance. */
@@ -22,7 +23,8 @@ public abstract class IdentifyMessage implements Message {
     return new Builder();
   }
 
-  @Nullable public abstract Map<String, ?> traits();
+  @Nullable
+  public abstract Map<String, ?> traits();
 
   public Builder toBuilder() {
     return new Builder(this);
@@ -54,18 +56,25 @@ public abstract class IdentifyMessage implements Message {
       return this;
     }
 
-    @Override protected IdentifyMessage realBuild(Type type, String messageId, Date timestamp,
-        Map<String, ?> context, String anonymousId, String userId,
+    @Override
+    protected IdentifyMessage realBuild(
+        Type type,
+        String messageId,
+        Date timestamp,
+        Map<String, ?> context,
+        String anonymousId,
+        String userId,
         Map<String, Object> integrations) {
       if (userId == null && traits == null) {
         throw new IllegalStateException("Either userId or traits must be provided.");
       }
 
-      return new AutoValue_IdentifyMessage(type, messageId, timestamp, context, anonymousId, userId,
-          integrations, traits);
+      return new AutoValue_IdentifyMessage(
+          type, messageId, timestamp, context, anonymousId, userId, integrations, traits);
     }
 
-    @Override Builder self() {
+    @Override
+    Builder self() {
       return this;
     }
   }

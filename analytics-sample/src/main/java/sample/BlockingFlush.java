@@ -40,23 +40,29 @@ public class BlockingFlush {
 
   public Plugin plugin() {
     return new Plugin() {
-      @Override public void configure(Analytics.Builder builder) {
-        builder.messageTransformer(new MessageTransformer() {
-          @Override public boolean transform(MessageBuilder builder) {
-            phaser.register();
-            return true;
-          }
-        });
+      @Override
+      public void configure(Analytics.Builder builder) {
+        builder.messageTransformer(
+            new MessageTransformer() {
+              @Override
+              public boolean transform(MessageBuilder builder) {
+                phaser.register();
+                return true;
+              }
+            });
 
-        builder.callback(new Callback() {
-          @Override public void success(Message message) {
-            phaser.arrive();
-          }
+        builder.callback(
+            new Callback() {
+              @Override
+              public void success(Message message) {
+                phaser.arrive();
+              }
 
-          @Override public void failure(Message message, Throwable throwable) {
-            phaser.arrive();
-          }
-        });
+              @Override
+              public void failure(Message message, Throwable throwable) {
+                phaser.arrive();
+              }
+            });
       }
     };
   }

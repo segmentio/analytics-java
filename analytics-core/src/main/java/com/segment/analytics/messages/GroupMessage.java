@@ -12,12 +12,13 @@ import javax.annotation.Nullable;
  * concept! It also lets you record custom traits about the group, like industry or number of
  * employees. Calling group is a slightly more advanced feature, but it’s helpful if you have
  * accounts with multiple users.
- * <p>
- * Use {@link #builder} to construct your own instances.
+ *
+ * <p>Use {@link #builder} to construct your own instances.
  *
  * @see <a href="https://segment.com/docs/spec/group/">Group</a>
  */
-@AutoValue @AutoGson //
+@AutoValue
+@AutoGson //
 public abstract class GroupMessage implements Message {
 
   /**
@@ -33,7 +34,8 @@ public abstract class GroupMessage implements Message {
 
   public abstract String groupId();
 
-  @Nullable public abstract Map<String, ?> traits();
+  @Nullable
+  public abstract Map<String, ?> traits();
 
   public Builder toBuilder() {
     return new Builder(this);
@@ -71,14 +73,21 @@ public abstract class GroupMessage implements Message {
       return this;
     }
 
-    @Override protected GroupMessage realBuild(Type type, String messageId, Date timestamp,
-        Map<String, ?> context, String anonymousId, String userId,
+    @Override
+    protected GroupMessage realBuild(
+        Type type,
+        String messageId,
+        Date timestamp,
+        Map<String, ?> context,
+        String anonymousId,
+        String userId,
         Map<String, Object> integrations) {
-      return new AutoValue_GroupMessage(type, messageId, timestamp, context, anonymousId, userId,
-          integrations, groupId, traits);
+      return new AutoValue_GroupMessage(
+          type, messageId, timestamp, context, anonymousId, userId, integrations, groupId, traits);
     }
 
-    @Override Builder self() {
+    @Override
+    Builder self() {
       return this;
     }
   }

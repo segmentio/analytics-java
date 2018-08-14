@@ -1,5 +1,11 @@
 package com.segment.analytics;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.mockito.MockitoAnnotations.initMocks;
+
 import com.segment.analytics.TestUtils.MessageBuilderTest;
 import com.segment.analytics.internal.AnalyticsClient;
 import com.segment.analytics.messages.Message;
@@ -11,27 +17,28 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
-
-@RunWith(BurstJUnit4.class) public class AnalyticsTest {
+@RunWith(BurstJUnit4.class)
+public class AnalyticsTest {
   @Mock AnalyticsClient client;
   @Mock Log log;
   @Mock MessageTransformer messageTransformer;
   @Mock MessageInterceptor messageInterceptor;
   Analytics analytics;
 
-  @Before public void setUp() {
+  @Before
+  public void setUp() {
     initMocks(this);
 
-    analytics = new Analytics(client, Collections.singletonList(messageTransformer),
-        Collections.singletonList(messageInterceptor), log);
+    analytics =
+        new Analytics(
+            client,
+            Collections.singletonList(messageTransformer),
+            Collections.singletonList(messageInterceptor),
+            log);
   }
 
-  @Test public void enqueueIsDispatched(MessageBuilderTest builder) {
+  @Test
+  public void enqueueIsDispatched(MessageBuilderTest builder) {
     MessageBuilder messageBuilder = builder.get().userId("prateek");
     Message message = messageBuilder.build();
     when(messageTransformer.transform(messageBuilder)).thenReturn(true);
@@ -44,7 +51,8 @@ import static org.mockito.MockitoAnnotations.initMocks;
     verify(client).enqueue(message);
   }
 
-  @Test public void doesNotEnqueueWhenTransformerReturnsFalse(MessageBuilderTest builder) {
+  @Test
+  public void doesNotEnqueueWhenTransformerReturnsFalse(MessageBuilderTest builder) {
     MessageBuilder messageBuilder = builder.get().userId("prateek");
     when(messageTransformer.transform(messageBuilder)).thenReturn(false);
 
@@ -55,7 +63,8 @@ import static org.mockito.MockitoAnnotations.initMocks;
     verify(client, never()).enqueue(any(Message.class));
   }
 
-  @Test public void doesNotEnqueueWhenInterceptorReturnsNull(MessageBuilderTest builder) {
+  @Test
+  public void doesNotEnqueueWhenInterceptorReturnsNull(MessageBuilderTest builder) {
     MessageBuilder messageBuilder = builder.get().userId("prateek");
     when(messageTransformer.transform(messageBuilder)).thenReturn(true);
 
@@ -66,13 +75,15 @@ import static org.mockito.MockitoAnnotations.initMocks;
     verify(client, never()).enqueue(any(Message.class));
   }
 
-  @Test public void shutdownIsDispatched() {
+  @Test
+  public void shutdownIsDispatched() {
     analytics.shutdown();
 
     verify(client).shutdown();
   }
 
-  @Test public void flushIsDispatched() {
+  @Test
+  public void flushIsDispatched() {
     analytics.flush();
 
     verify(client).flush();

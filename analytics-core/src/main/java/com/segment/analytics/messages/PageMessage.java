@@ -9,12 +9,13 @@ import javax.annotation.Nullable;
 /**
  * The page call lets you record whenever a user sees a page of your website, along with any
  * properties about the page.
- * <p>
- * Use {@link #builder} to construct your own instances.
+ *
+ * <p>Use {@link #builder} to construct your own instances.
  *
  * @see <a href="https://segment.com/docs/spec/page/">Page</a>
  */
-@AutoValue @AutoGson //
+@AutoValue
+@AutoGson //
 public abstract class PageMessage implements Message {
 
   /**
@@ -30,7 +31,8 @@ public abstract class PageMessage implements Message {
 
   public abstract String name();
 
-  @Nullable public abstract Map<String, ?> properties();
+  @Nullable
+  public abstract Map<String, ?> properties();
 
   public Builder toBuilder() {
     return new Builder(this);
@@ -68,15 +70,22 @@ public abstract class PageMessage implements Message {
       return this;
     }
 
-    @Override Builder self() {
+    @Override
+    Builder self() {
       return this;
     }
 
-    @Override protected PageMessage realBuild(Type type, String messageId, Date timestamp,
-        Map<String, ?> context, String anonymousId, String userId,
+    @Override
+    protected PageMessage realBuild(
+        Type type,
+        String messageId,
+        Date timestamp,
+        Map<String, ?> context,
+        String anonymousId,
+        String userId,
         Map<String, Object> integrations) {
-      return new AutoValue_PageMessage(type, messageId, timestamp, context, anonymousId, userId,
-          integrations, name, properties);
+      return new AutoValue_PageMessage(
+          type, messageId, timestamp, context, anonymousId, userId, integrations, name, properties);
     }
   }
 }

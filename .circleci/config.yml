@@ -9,7 +9,7 @@ jobs:
       - checkout
       - restore_cache:
           key: maven-dep-cache-{{ checksum "pom.xml" }}
-      - run: mvn test
+      - run: mvn spotless:check test verify
       - run: mvn package -B
       - run: .buildscript/e2e.sh
       - save_cache:

@@ -8,8 +8,8 @@ import java.util.UUID;
 
 /**
  * Fluent API to construct instances of a {@link Message}.
- * <p></p>
- * Note: Although it is not enforced by the compiler, either the {@link Message#anonymousId} or
+ *
+ * <p>Note: Although it is not enforced by the compiler, either the {@link Message#anonymousId} or
  * {@link Message#userId} must be provided before calling {@link #build()}. Failure to do so will
  * result in a {@link IllegalStateException} at runtime.
  */
@@ -89,8 +89,8 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
   /**
    * Set a map of information about the state of the device. You can add any custom data to the
    * context dictionary that you'd like to have access to in the raw logs.
-   * <p>
-   * Some keys in the context dictionary have semantic meaning and will be collected for you
+   *
+   * <p>Some keys in the context dictionary have semantic meaning and will be collected for you
    * automatically, depending on the library you send data from. Some keys, such as location and
    * speed need to be manually entered.
    *
@@ -183,8 +183,14 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
     return self();
   }
 
-  protected abstract T realBuild(Message.Type type, String messageId, Date timestamp,
-      Map<String, ?> context, String anonymousId, String userId, Map<String, Object> integrations);
+  protected abstract T realBuild(
+      Message.Type type,
+      String messageId,
+      Date timestamp,
+      Map<String, ?> context,
+      String anonymousId,
+      String userId,
+      Map<String, Object> integrations);
 
   abstract V self();
 

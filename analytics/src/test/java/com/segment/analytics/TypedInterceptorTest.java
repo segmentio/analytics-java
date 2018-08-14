@@ -1,5 +1,8 @@
 package com.segment.analytics;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+
 import com.segment.analytics.messages.AliasMessage;
 import com.segment.analytics.messages.GroupMessage;
 import com.segment.analytics.messages.IdentifyMessage;
@@ -8,11 +11,9 @@ import com.segment.analytics.messages.ScreenMessage;
 import com.segment.analytics.messages.TrackMessage;
 import org.junit.Test;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-
 public class TypedInterceptorTest {
-  @Test public void messagesFanOutCorrectly() {
+  @Test
+  public void messagesFanOutCorrectly() {
     MessageInterceptor.Typed interceptor = mock(MessageInterceptor.Typed.class);
 
     AliasMessage alias = AliasMessage.builder("foo").userId("bar").build();
