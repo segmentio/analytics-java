@@ -1,20 +1,60 @@
 version: 2
+
 jobs:
-  build-jdk8:
+  java-base-test: &java-base-test
+    working_directory: ~/analytics-java
     docker:
       - image: circleci/openjdk:8-jdk-browsers
-    working_directory: ~/analytics-java
+    steps:
+      - checkout
+      - restore_cache:
+          key: maven-dep-cache-{{ checksum "pom.xml" }}
+      - run: mvn test
+      - run: mvn package -B
+      - run: .buildscript/e2e.sh
+      - save_cache:
+          key: maven-dep-cache-{{ checksum "pom.xml" }}
+          paths:
+            - ~/.m2
+      - persist_to_workspace:
+          root: .
+          paths: [.]
+
+  test-jdk8:
+    <<: *java-base-test
+    docker:
+      - image: circleci/openjdk:8-jdk-browsers
+
+  test:
+    <<: *java-base-test
+    docker:
+      - image: circleci/openjdk:8-jdk-browsers
+
+  publish:
+    <<: *java-base-test
+    docker:
+      - image: circleci/openjdk:8-jdk-browsers
     environment:
       CIRCLE_JDK_VERSION: oraclejdk8
     steps:
       - checkout
-      - run: mvn package -B
-      - run: .buildscript/e2e.sh
+      - attach_workspace: { at: . }
       - run: .buildscript/deploy_snapshot.sh
 
 workflows:
   version: 2
-  build:
+  multi-test:
     jobs:
-      - build-jdklatest
-      - build-jdk8
+      - test-jdk8
+  test_and_publish:
+    jobs:
+      - test:
+          filters:
+            branches:
+              only: master
+      - publish:
+          requires:
+            - test
+          filters:
+            branches:
+              only: master
