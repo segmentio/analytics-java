@@ -20,6 +20,21 @@ jobs:
           root: .
           paths: [.]
 
+  test-jdklatest:
+    <<: *java-base-test
+    docker:
+      - image: circleci/openjdk
+
+  test-jdk10:
+    <<: *java-base-test
+    docker:
+      - image: circleci/openjdk:10-jdk-browsers
+
+  test-jdk9:
+    <<: *java-base-test
+    docker:
+      - image: circleci/openjdk:9-jdk-browsers
+
   test-jdk8:
     <<: *java-base-test
     docker:
@@ -45,6 +60,9 @@ workflows:
   version: 2
   multi-test:
     jobs:
+      - test-jdklatest
+      - test-jdk10
+      - test-jdk9
       - test-jdk8
   test_and_publish:
     jobs:
