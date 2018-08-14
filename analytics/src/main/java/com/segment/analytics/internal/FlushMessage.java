@@ -3,45 +3,58 @@ package com.segment.analytics.internal;
 import com.segment.analytics.messages.Message;
 import java.util.Date;
 import java.util.Map;
-import java.util.UUID;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 class FlushMessage implements Message {
   static final FlushMessage POISON = new FlushMessage();
 
-  private FlushMessage() {
-  }
+  private FlushMessage() {}
 
-  @Nonnull @Override public Type type() {
+  @Nonnull
+  @Override
+  public Type type() {
     throw new UnsupportedOperationException();
   }
 
-  @Nonnull @Override public String messageId() {
+  @Nonnull
+  @Override
+  public String messageId() {
     throw new UnsupportedOperationException();
   }
 
-  @Nonnull @Override public Date timestamp() {
+  @Nonnull
+  @Override
+  public Date timestamp() {
     throw new UnsupportedOperationException();
   }
 
-  @Nullable @Override public Map<String, ?> context() {
+  @Nullable
+  @Override
+  public Map<String, ?> context() {
     throw new UnsupportedOperationException();
   }
 
-  @Nullable @Override public String anonymousId() {
+  @Nullable
+  @Override
+  public String anonymousId() {
     throw new UnsupportedOperationException();
   }
 
-  @Nullable @Override public String userId() {
+  @Nullable
+  @Override
+  public String userId() {
     throw new UnsupportedOperationException();
   }
 
-  @Nullable @Override public Map<String, Object> integrations() {
+  @Nullable
+  @Override
+  public Map<String, Object> integrations() {
     throw new UnsupportedOperationException();
   }
 
-  @Override public String toString() {
+  @Override
+  public String toString() {
     return "FlushMessage{}";
   }
 }

@@ -14,30 +14,41 @@ public final class TestUtils {
     throw new AssertionError("No instances.");
   }
 
-  @SuppressWarnings("UnusedDeclaration") public enum MessageBuilderTest {
+  @SuppressWarnings("UnusedDeclaration")
+  public enum MessageBuilderTest {
     ALIAS {
-      @Override public AliasMessage.Builder get() {
+      @Override
+      public AliasMessage.Builder get() {
         return AliasMessage.builder("foo");
       }
-    }, GROUP {
-      @Override public GroupMessage.Builder get() {
+    },
+    GROUP {
+      @Override
+      public GroupMessage.Builder get() {
         return GroupMessage.builder("foo");
       }
     },
     IDENTIFY {
-      @Override public IdentifyMessage.Builder get() {
+      @Override
+      public IdentifyMessage.Builder get() {
         return IdentifyMessage.builder();
       }
-    }, SCREEN {
-      @Override public ScreenMessage.Builder get() {
+    },
+    SCREEN {
+      @Override
+      public ScreenMessage.Builder get() {
         return ScreenMessage.builder("foo");
       }
-    }, PAGE {
-      @Override public PageMessage.Builder get() {
+    },
+    PAGE {
+      @Override
+      public PageMessage.Builder get() {
         return PageMessage.builder("foo");
       }
-    }, TRACK {
-      @Override public TrackMessage.Builder get() {
+    },
+    TRACK {
+      @Override
+      public TrackMessage.Builder get() {
         return TrackMessage.builder("foo");
       }
     };

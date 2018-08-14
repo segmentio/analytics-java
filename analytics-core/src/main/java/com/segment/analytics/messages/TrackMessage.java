@@ -9,12 +9,13 @@ import javax.annotation.Nullable;
 /**
  * The track API call is how you record any actions your users perform, along with any properties
  * that describe the action.
- * <p>
- * Use {@link #builder} to construct your own instances.
+ *
+ * <p>Use {@link #builder} to construct your own instances.
  *
  * @see <a href="https://segment.com/docs/spec/track">Track</a>
  */
-@AutoValue @AutoGson //
+@AutoValue
+@AutoGson //
 public abstract class TrackMessage implements Message {
 
   /**
@@ -30,7 +31,8 @@ public abstract class TrackMessage implements Message {
 
   public abstract String event();
 
-  @Nullable public abstract Map<String, ?> properties();
+  @Nullable
+  public abstract Map<String, ?> properties();
 
   public Builder toBuilder() {
     return new Builder(this);
@@ -68,15 +70,30 @@ public abstract class TrackMessage implements Message {
       return this;
     }
 
-    @Override Builder self() {
+    @Override
+    Builder self() {
       return this;
     }
 
-    @Override protected TrackMessage realBuild(Type type, String messageId, Date timestamp,
-        Map<String, ?> context, String anonymousId, String userId,
+    @Override
+    protected TrackMessage realBuild(
+        Type type,
+        String messageId,
+        Date timestamp,
+        Map<String, ?> context,
+        String anonymousId,
+        String userId,
         Map<String, Object> integrations) {
-      return new AutoValue_TrackMessage(type, messageId, timestamp, context, anonymousId, userId,
-          integrations, event, properties);
+      return new AutoValue_TrackMessage(
+          type,
+          messageId,
+          timestamp,
+          context,
+          anonymousId,
+          userId,
+          integrations,
+          event,
+          properties);
     }
   }
 }

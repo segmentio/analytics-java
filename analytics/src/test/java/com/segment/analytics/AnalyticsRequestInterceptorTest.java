@@ -1,17 +1,18 @@
 package com.segment.analytics;
 
-import com.segment.analytics.messages.*;
-import org.junit.Test;
-import retrofit.RequestInterceptor;
-import retrofit.RequestInterceptor.RequestFacade;
-
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
+import com.segment.analytics.messages.*;
+import org.junit.Test;
+import retrofit.RequestInterceptor.RequestFacade;
+
 public class AnalyticsRequestInterceptorTest {
-  @Test public void interceptor() {
+  @Test
+  public void interceptor() {
     RequestFacade requestFacade = mock(RequestFacade.class);
-    AnalyticsRequestInterceptor interceptor = new AnalyticsRequestInterceptor("writeKey", "userAgent");
+    AnalyticsRequestInterceptor interceptor =
+        new AnalyticsRequestInterceptor("writeKey", "userAgent");
 
     interceptor.intercept(requestFacade);
 

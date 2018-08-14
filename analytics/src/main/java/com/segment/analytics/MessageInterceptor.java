@@ -23,7 +23,8 @@ public interface MessageInterceptor {
    * transformations specific to the event type.
    */
   abstract class Typed implements MessageInterceptor {
-    @Override public final Message intercept(Message message) {
+    @Override
+    public final Message intercept(Message message) {
       // todo: non final so messages can be filtered without duplicating logic?
       Message.Type type = message.type();
       switch (type) {

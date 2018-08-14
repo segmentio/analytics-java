@@ -1,14 +1,14 @@
 package com.segment.analytics.messages;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.fail;
+
 import com.google.common.collect.ImmutableMap;
 import com.segment.analytics.TestUtils;
 import com.squareup.burst.BurstJUnit4;
 import java.util.UUID;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
 
 @RunWith(BurstJUnit4.class)
 public class MessageBuilderTest {
@@ -120,12 +120,14 @@ public class MessageBuilderTest {
     }
   }
 
-  @Test public void providingUserIdBuildsSuccessfully(TestUtils.MessageBuilderTest builder) {
+  @Test
+  public void providingUserIdBuildsSuccessfully(TestUtils.MessageBuilderTest builder) {
     Message message = builder.get().userId("foo").build();
     assertThat(message.userId()).isEqualToIgnoringCase("foo");
   }
 
-  @Test public void aliasBuilder() {
+  @Test
+  public void aliasBuilder() {
     try {
       AliasMessage.builder(null);
       fail();
@@ -134,7 +136,8 @@ public class MessageBuilderTest {
     }
   }
 
-  @Test public void groupBuilder() {
+  @Test
+  public void groupBuilder() {
     try {
       GroupMessage.builder(null);
       fail();
@@ -150,7 +153,8 @@ public class MessageBuilderTest {
     }
   }
 
-  @Test public void identifyBuilder() {
+  @Test
+  public void identifyBuilder() {
     try {
       IdentifyMessage.builder().traits(null);
     } catch (NullPointerException e) {
@@ -164,7 +168,8 @@ public class MessageBuilderTest {
     }
   }
 
-  @Test public void screenBuilder() {
+  @Test
+  public void screenBuilder() {
     try {
       ScreenMessage.builder("foo").properties(null).build();
     } catch (NullPointerException e) {
@@ -178,7 +183,8 @@ public class MessageBuilderTest {
     }
   }
 
-  @Test public void pageBuilder() {
+  @Test
+  public void pageBuilder() {
     try {
       PageMessage.builder("foo").properties(null).build();
     } catch (NullPointerException e) {
@@ -192,7 +198,8 @@ public class MessageBuilderTest {
     }
   }
 
-  @Test public void trackBuilder() {
+  @Test
+  public void trackBuilder() {
     try {
       TrackMessage.builder(null);
       fail();
@@ -208,22 +215,25 @@ public class MessageBuilderTest {
     }
   }
 
-  @Test public void defaultIntegrationsIsGenerated(TestUtils.MessageBuilderTest builder) {
-    Message message = builder.get()
-        .userId("foo")
-        .build();
+  @Test
+  public void defaultIntegrationsIsGenerated(TestUtils.MessageBuilderTest builder) {
+    Message message = builder.get().userId("foo").build();
 
     assertThat(message.integrations()).isEmpty();
   }
 
-  @Test public void integrations(TestUtils.MessageBuilderTest builder) {
-    Message message = builder.get()
-        .userId("foo")
-        .enableIntegration("foo", false)
-        .integrationOptions("bar", ImmutableMap.of("qaz", "qux"))
-        .build();
+  @Test
+  public void integrations(TestUtils.MessageBuilderTest builder) {
+    Message message =
+        builder
+            .get()
+            .userId("foo")
+            .enableIntegration("foo", false)
+            .integrationOptions("bar", ImmutableMap.of("qaz", "qux"))
+            .build();
 
-    assertThat(message.integrations()).hasSize(2)
+    assertThat(message.integrations())
+        .hasSize(2)
         .containsEntry("foo", false)
         .containsEntry("bar", ImmutableMap.of("qaz", "qux"));
   }

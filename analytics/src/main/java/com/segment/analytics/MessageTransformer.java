@@ -14,7 +14,7 @@ import com.segment.analytics.messages.TrackMessage;
 public interface MessageTransformer {
   /**
    * Called for every builder. This will be called on the same thread the request was made and
-   * before any {@link MessageInterceptor}'s are called.  Returning {@code false} will skip
+   * before any {@link MessageInterceptor}'s are called. Returning {@code false} will skip
    * processing this message any further.
    */
   boolean transform(MessageBuilder builder);
@@ -25,7 +25,8 @@ public interface MessageTransformer {
    */
   abstract class Typed implements MessageTransformer {
 
-    @Override public final boolean transform(MessageBuilder builder) {
+    @Override
+    public final boolean transform(MessageBuilder builder) {
       // todo: non final so messages can be filtered without duplicating logic?
       Message.Type type = builder.type();
       switch (type) {

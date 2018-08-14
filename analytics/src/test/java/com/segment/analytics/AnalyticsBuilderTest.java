@@ -1,23 +1,25 @@
 package com.segment.analytics;
 
-import java.util.concurrent.TimeUnit;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mockito;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
+import java.util.concurrent.TimeUnit;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
 public class AnalyticsBuilderTest {
   Analytics.Builder builder;
 
-  @Before public void setUp() {
+  @Before
+  public void setUp() {
     builder = Analytics.builder("foo");
   }
 
-  @Test public void nullWriteKey() {
+  @Test
+  public void nullWriteKey() {
     try {
       builder = Analytics.builder(null);
       fail("Should fail for null writeKey");
@@ -26,7 +28,8 @@ public class AnalyticsBuilderTest {
     }
   }
 
-  @Test public void emptyWriteKey() {
+  @Test
+  public void emptyWriteKey() {
     try {
       builder = Analytics.builder("");
       fail("Should fail for empty writeKey");
@@ -42,7 +45,8 @@ public class AnalyticsBuilderTest {
     }
   }
 
-  @Test public void nullUserAgent() {
+  @Test
+  public void nullUserAgent() {
     try {
       builder.userAgent(null);
       fail("Should fail for null userAgent");
@@ -51,7 +55,8 @@ public class AnalyticsBuilderTest {
     }
   }
 
-  @Test public void emptyUserAgent() {
+  @Test
+  public void emptyUserAgent() {
     try {
       builder.userAgent("");
       fail("Should fail for empty userAgent");
@@ -67,7 +72,8 @@ public class AnalyticsBuilderTest {
     }
   }
 
-  @Test public void nullClient() {
+  @Test
+  public void nullClient() {
     try {
       builder.client(null);
       fail("Should fail for null client");
@@ -76,7 +82,8 @@ public class AnalyticsBuilderTest {
     }
   }
 
-  @Test public void nullLog() {
+  @Test
+  public void nullLog() {
     try {
       builder.log(null);
       fail("Should fail for null log");
@@ -85,7 +92,8 @@ public class AnalyticsBuilderTest {
     }
   }
 
-  @Test public void nullTransformer() {
+  @Test
+  public void nullTransformer() {
     try {
       builder.messageTransformer(null);
       fail("Should fail for null transformer");
@@ -94,7 +102,8 @@ public class AnalyticsBuilderTest {
     }
   }
 
-  @Test public void duplicateTransformer() {
+  @Test
+  public void duplicateTransformer() {
     MessageTransformer transformer = mock(MessageTransformer.class);
     try {
       builder.messageTransformer(transformer).messageTransformer(transformer);
@@ -104,7 +113,8 @@ public class AnalyticsBuilderTest {
     }
   }
 
-  @Test public void nullInterceptor() {
+  @Test
+  public void nullInterceptor() {
     try {
       builder.messageInterceptor(null);
       fail("Should fail for null interceptor");
@@ -113,7 +123,8 @@ public class AnalyticsBuilderTest {
     }
   }
 
-  @Test public void duplicateInterceptor() {
+  @Test
+  public void duplicateInterceptor() {
     MessageInterceptor interceptor = mock(MessageInterceptor.class);
     try {
       builder.messageInterceptor(interceptor).messageInterceptor(interceptor);
@@ -123,7 +134,8 @@ public class AnalyticsBuilderTest {
     }
   }
 
-  @Test public void invalidFlushQueueSize() {
+  @Test
+  public void invalidFlushQueueSize() {
     try {
       builder.flushQueueSize(0);
       fail("Should fail for non positive flushQueueSize");
@@ -139,7 +151,8 @@ public class AnalyticsBuilderTest {
     }
   }
 
-  @Test public void invalidFlushInterval() {
+  @Test
+  public void invalidFlushInterval() {
     try {
       builder.flushInterval(-1, TimeUnit.SECONDS);
       fail("Should fail for negative flushInterval");
@@ -163,7 +176,8 @@ public class AnalyticsBuilderTest {
     }
   }
 
-  @Test public void nullNetworkExecutor() {
+  @Test
+  public void nullNetworkExecutor() {
     try {
       builder.networkExecutor(null);
       fail("Should fail for null network executor");
@@ -172,7 +186,8 @@ public class AnalyticsBuilderTest {
     }
   }
 
-  @Test public void nullEndpoint() {
+  @Test
+  public void nullEndpoint() {
     try {
       builder.endpoint(null);
       fail("Should fail for null endpoint");
@@ -181,7 +196,8 @@ public class AnalyticsBuilderTest {
     }
   }
 
-  @Test public void emptyEndpoint() {
+  @Test
+  public void emptyEndpoint() {
     try {
       builder.endpoint("");
       fail("Should fail for empty endpoint");
@@ -197,7 +213,8 @@ public class AnalyticsBuilderTest {
     }
   }
 
-  @Test public void nullThreadFactory() {
+  @Test
+  public void nullThreadFactory() {
     try {
       builder.threadFactory(null);
       fail("Should fail for null thread factory");
@@ -206,7 +223,8 @@ public class AnalyticsBuilderTest {
     }
   }
 
-  @Test public void nullCallback() {
+  @Test
+  public void nullCallback() {
     try {
       builder.callback(null);
       fail("Should fail for null callback");
@@ -215,7 +233,8 @@ public class AnalyticsBuilderTest {
     }
   }
 
-  @Test public void nullPlugin() {
+  @Test
+  public void nullPlugin() {
     try {
       builder.plugin(null);
       fail("Should fail for null plugin");
@@ -224,7 +243,8 @@ public class AnalyticsBuilderTest {
     }
   }
 
-  @Test public void pluginCanConfigure() {
+  @Test
+  public void pluginCanConfigure() {
     Plugin plugin = Mockito.mock(Plugin.class);
     builder.plugin(plugin);
     verify(plugin).configure(builder);

@@ -1,5 +1,17 @@
 package com.segment.analytics.internal;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.argThat;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.mockito.MockitoAnnotations.initMocks;
+
 import com.segment.analytics.Callback;
 import com.segment.analytics.Log;
 import com.segment.analytics.TestUtils.MessageBuilderTest;
@@ -31,18 +43,6 @@ import retrofit.client.Header;
 import retrofit.client.Response;
 import retrofit.converter.ConversionException;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
-
 @RunWith(BurstJUnit4.class) //
 public class AnalyticsClientTest {
   // Backo instance for testing which trims down the wait times.
@@ -56,18 +56,27 @@ public class AnalyticsClientTest {
   @Mock ExecutorService networkExecutor;
   @Mock Callback callback;
 
-  @Before public void setUp() {
+  @Before
+  public void setUp() {
     initMocks(this);
     threadFactory = Executors.defaultThreadFactory();
   }
 
   // Defers loading the client until tests can initialize all required dependencies.
   AnalyticsClient newClient() {
-    return new AnalyticsClient(messageQueue, segmentService, 50, TimeUnit.HOURS.toMillis(1), log,
-        threadFactory, networkExecutor, Collections.singletonList(callback));
+    return new AnalyticsClient(
+        messageQueue,
+        segmentService,
+        50,
+        TimeUnit.HOURS.toMillis(1),
+        log,
+        threadFactory,
+        networkExecutor,
+        Collections.singletonList(callback));
   }
 
-  @Test public void enqueueAddsToQueue(MessageBuilderTest builder) throws InterruptedException {
+  @Test
+  public void enqueueAddsToQueue(MessageBuilderTest builder) throws InterruptedException {
     AnalyticsClient client = newClient();
 
     Message message = builder.get().userId("prateek").build();
@@ -76,7 +85,8 @@ public class AnalyticsClientTest {
     verify(messageQueue).put(message);
   }
 
-  @Test public void shutdown() {
+  @Test
+  public void shutdown() {
     AnalyticsClient client = newClient();
 
     client.shutdown();
@@ -85,7 +95,8 @@ public class AnalyticsClientTest {
     verify(networkExecutor).shutdown();
   }
 
-  @Test public void flushInsertsPoison() throws InterruptedException {
+  @Test
+  public void flushInsertsPoison() throws InterruptedException {
     AnalyticsClient client = newClient();
 
     client.flush();
@@ -96,8 +107,7 @@ public class AnalyticsClientTest {
   /** Wait until the queue is drained. */
   static void wait(Queue<?> queue) {
     //noinspection StatementWithEmptyBody
-    while (queue.size() > 0) {
-    }
+    while (queue.size() > 0) {}
   }
 
   /**
@@ -111,7 +121,8 @@ public class AnalyticsClientTest {
     return task.batch;
   }
 
-  @Test public void flushSubmitsToExecutor() {
+  @Test
+  public void flushSubmitsToExecutor() {
     messageQueue = new LinkedBlockingQueue<>();
     AnalyticsClient client = newClient();
 
@@ -125,7 +136,8 @@ public class AnalyticsClientTest {
     assertThat(captureBatch(networkExecutor).batch()).containsExactly(first, second);
   }
 
-  @Test public void enqueueMaxTriggersFlush() {
+  @Test
+  public void enqueueMaxTriggersFlush() {
     messageQueue = new LinkedBlockingQueue<>();
     AnalyticsClient client = newClient();
 
@@ -139,7 +151,8 @@ public class AnalyticsClientTest {
     assertThat(captureBatch(networkExecutor).batch()).hasSize(50);
   }
 
-  @Test public void enqueueBeforeMaxDoesNotTriggerFlush() {
+  @Test
+  public void enqueueBeforeMaxDoesNotTriggerFlush() {
     messageQueue = new LinkedBlockingQueue<>();
     AnalyticsClient client = newClient();
 
@@ -157,14 +170,16 @@ public class AnalyticsClientTest {
     return Batch.create(Collections.<String, Object>emptyMap(), Collections.singletonList(message));
   }
 
-  @Test public void batchRetriesForNetworkErrors() {
+  @Test
+  public void batchRetriesForNetworkErrors() {
     AnalyticsClient client = newClient();
     TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
     Batch batch = batchFor(trackMessage);
 
     // Throw a network error 3 times.
     RetrofitError retrofitError = RetrofitError.networkError(null, new IOException());
-    when(segmentService.upload(batch)).thenThrow(retrofitError)
+    when(segmentService.upload(batch))
+        .thenThrow(retrofitError)
         .thenThrow(retrofitError)
         .thenThrow(retrofitError)
         .thenReturn(null);
@@ -177,18 +192,22 @@ public class AnalyticsClientTest {
     verify(callback).success(trackMessage);
   }
 
-  @Test public void batchRetriesForHTTP5xxErrors() {
+  @Test
+  public void batchRetriesForHTTP5xxErrors() {
     AnalyticsClient client = newClient();
     TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
     Batch batch = batchFor(trackMessage);
 
     // Throw a HTTP error 3 times.
-    Response response = new Response("https://api.segment.io", 500, "Server Error", Collections.<Header>emptyList(), null);
+    Response response =
+        new Response(
+            "https://api.segment.io", 500, "Server Error", Collections.<Header>emptyList(), null);
     RetrofitError retrofitError = RetrofitError.httpError(null, response, null, null);
-    when(segmentService.upload(batch)).thenThrow(retrofitError)
-            .thenThrow(retrofitError)
-            .thenThrow(retrofitError)
-            .thenReturn(null);
+    when(segmentService.upload(batch))
+        .thenThrow(retrofitError)
+        .thenThrow(retrofitError)
+        .thenThrow(retrofitError)
+        .thenReturn(null);
 
     BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch);
     batchUploadTask.run();
@@ -198,18 +217,22 @@ public class AnalyticsClientTest {
     verify(callback).success(trackMessage);
   }
 
-  @Test public void batchRetriesForHTTP429Errors() {
+  @Test
+  public void batchRetriesForHTTP429Errors() {
     AnalyticsClient client = newClient();
     TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
     Batch batch = batchFor(trackMessage);
 
     // Throw a HTTP error 3 times.
-    Response response = new Response("https://api.segment.io", 429, "Rate Limited", Collections.<Header>emptyList(), null);
+    Response response =
+        new Response(
+            "https://api.segment.io", 429, "Rate Limited", Collections.<Header>emptyList(), null);
     RetrofitError retrofitError = RetrofitError.httpError(null, response, null, null);
-    when(segmentService.upload(batch)).thenThrow(retrofitError)
-            .thenThrow(retrofitError)
-            .thenThrow(retrofitError)
-            .thenReturn(null);
+    when(segmentService.upload(batch))
+        .thenThrow(retrofitError)
+        .thenThrow(retrofitError)
+        .thenThrow(retrofitError)
+        .thenReturn(null);
 
     BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch);
     batchUploadTask.run();
@@ -219,13 +242,16 @@ public class AnalyticsClientTest {
     verify(callback).success(trackMessage);
   }
 
-  @Test public void batchDoesNotRetryForNon5xxAndNon429HTTPErrors() {
+  @Test
+  public void batchDoesNotRetryForNon5xxAndNon429HTTPErrors() {
     AnalyticsClient client = newClient();
     TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
     Batch batch = batchFor(trackMessage);
 
     // Throw a HTTP error that should not be retried.
-    Response response = new Response("https://api.segment.io", 404, "Not Found", Collections.<Header>emptyList(), null);
+    Response response =
+        new Response(
+            "https://api.segment.io", 404, "Not Found", Collections.<Header>emptyList(), null);
     RetrofitError retrofitError = RetrofitError.httpError(null, response, null, null);
     doThrow(retrofitError).when(segmentService).upload(batch);
 
@@ -237,7 +263,8 @@ public class AnalyticsClientTest {
     verify(callback).failure(trackMessage, retrofitError);
   }
 
-  @Test public void batchDoesNotRetryForNonNetworkErrors() {
+  @Test
+  public void batchDoesNotRetryForNonNetworkErrors() {
     AnalyticsClient client = newClient();
     TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
     Batch batch = batchFor(trackMessage);
@@ -253,7 +280,8 @@ public class AnalyticsClientTest {
     verify(callback).failure(trackMessage, retrofitError);
   }
 
-  @Test public void givesUpAfterMaxRetries() {
+  @Test
+  public void givesUpAfterMaxRetries() {
     AnalyticsClient client = newClient();
     TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
     Batch batch = batchFor(trackMessage);
@@ -265,15 +293,21 @@ public class AnalyticsClientTest {
 
     // 50 == MAX_ATTEMPTS in AnalyticsClient.java
     verify(segmentService, times(50)).upload(batch);
-    verify(callback).failure(eq(trackMessage), argThat(new TypeSafeMatcher<Throwable>() {
-      @Override public void describeTo(Description description) {
-        description.appendText("expected IOException");
-      }
+    verify(callback)
+        .failure(
+            eq(trackMessage),
+            argThat(
+                new TypeSafeMatcher<Throwable>() {
+                  @Override
+                  public void describeTo(Description description) {
+                    description.appendText("expected IOException");
+                  }
 
-      @Override protected boolean matchesSafely(Throwable item) {
-        IOException exception = (IOException) item;
-        return exception.getMessage().equals("50 retries exhausted");
-      }
-    }));
+                  @Override
+                  protected boolean matchesSafely(Throwable item) {
+                    IOException exception = (IOException) item;
+                    return exception.getMessage().equals("50 retries exhausted");
+                  }
+                }));
   }
 }

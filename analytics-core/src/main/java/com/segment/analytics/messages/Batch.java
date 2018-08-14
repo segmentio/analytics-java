@@ -7,7 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@AutoValue @AutoGson public abstract class Batch {
+@AutoValue
+@AutoGson
+public abstract class Batch {
   private static final AtomicInteger SEQUENCE_GENERATOR = new AtomicInteger();
 
   public static Batch create(Map<String, ?> context, List<Message> batch) {

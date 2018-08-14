@@ -16,25 +16,23 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import okhttp3.Credentials;
 import retrofit.Endpoint;
 import retrofit.Endpoints;
-import retrofit.RequestInterceptor;
 import retrofit.RestAdapter;
 import retrofit.client.Client;
 import retrofit.converter.GsonConverter;
 
 /**
  * The entry point into the Segment for Java library.
- * <p>
- * The idea is simple: one pipeline for all your data. Segment is the single hub to collect,
+ *
+ * <p>The idea is simple: one pipeline for all your data. Segment is the single hub to collect,
  * translate and route your data with the flip of a switch.
- * <p>
- * Analytics for Java will automatically batch events and upload it periodically to Segment's
- * servers for you. You only need to instrument Segment once, then flip a switch to install
- * new tools.
- * <p>
- * This class is the main entry point into the client API. Use {@link #builder} to construct your
+ *
+ * <p>Analytics for Java will automatically batch events and upload it periodically to Segment's
+ * servers for you. You only need to instrument Segment once, then flip a switch to install new
+ * tools.
+ *
+ * <p>This class is the main entry point into the client API. Use {@link #builder} to construct your
  * own instances.
  *
  * @see <a href="https://Segment/">Segment</a>
@@ -45,8 +43,11 @@ public class Analytics {
   private final List<MessageInterceptor> messageInterceptors;
   private final Log log;
 
-  Analytics(AnalyticsClient client, List<MessageTransformer> messageTransformers,
-      List<MessageInterceptor> messageInterceptors, Log log) {
+  Analytics(
+      AnalyticsClient client,
+      List<MessageTransformer> messageTransformers,
+      List<MessageInterceptor> messageInterceptors,
+      Log log) {
     this.client = client;
     this.messageTransformers = messageTransformers;
     this.messageInterceptors = messageInterceptors;
@@ -158,7 +159,8 @@ public class Analytics {
     }
 
     /** Add a {@link MessageTransformer} for transforming messages. */
-    @Beta public Builder messageTransformer(MessageTransformer transformer) {
+    @Beta
+    public Builder messageTransformer(MessageTransformer transformer) {
       if (transformer == null) {
         throw new NullPointerException("Null transformer");
       }
@@ -173,7 +175,8 @@ public class Analytics {
     }
 
     /** Add a {@link MessageInterceptor} for intercepting messages. */
-    @Beta public Builder messageInterceptor(MessageInterceptor interceptor) {
+    @Beta
+    public Builder messageInterceptor(MessageInterceptor interceptor) {
       if (interceptor == null) {
         throw new NullPointerException("Null interceptor");
       }
@@ -188,7 +191,8 @@ public class Analytics {
     }
 
     /** Set the queueSize at which flushes should be triggered. */
-    @Beta public Builder flushQueueSize(int flushQueueSize) {
+    @Beta
+    public Builder flushQueueSize(int flushQueueSize) {
       if (flushQueueSize < 1) {
         throw new IllegalArgumentException("flushQueueSize must not be less than 1.");
       }
@@ -197,7 +201,8 @@ public class Analytics {
     }
 
     /** Set the interval at which the queue should be flushed. */
-    @Beta public Builder flushInterval(long flushInterval, TimeUnit unit) {
+    @Beta
+    public Builder flushInterval(long flushInterval, TimeUnit unit) {
       long flushIntervalInMillis = unit.toMillis(flushInterval);
       if (flushIntervalInMillis < 1000) {
         throw new IllegalArgumentException("flushInterval must not be less than 1 second.");
@@ -216,7 +221,8 @@ public class Analytics {
     }
 
     /** Set the {@link ThreadFactory} used to create threads. */
-    @Beta public Builder threadFactory(ThreadFactory threadFactory) {
+    @Beta
+    public Builder threadFactory(ThreadFactory threadFactory) {
       if (threadFactory == null) {
         throw new NullPointerException("Null threadFactory");
       }
@@ -240,7 +246,8 @@ public class Analytics {
     }
 
     /** Use a {@link Plugin} to configure the builder. */
-    @Beta public Builder plugin(Plugin plugin) {
+    @Beta
+    public Builder plugin(Plugin plugin) {
       if (plugin == null) {
         throw new NullPointerException("Null plugin");
       }
@@ -250,10 +257,11 @@ public class Analytics {
 
     /** Create a {@link Analytics} client. */
     public Analytics build() {
-      Gson gson = new GsonBuilder() //
-          .registerTypeAdapterFactory(new AutoValueAdapterFactory()) //
-          .registerTypeAdapter(Date.class, new ISO8601DateAdapter()) //
-          .create();
+      Gson gson =
+          new GsonBuilder() //
+              .registerTypeAdapterFactory(new AutoValueAdapterFactory()) //
+              .registerTypeAdapter(Date.class, new ISO8601DateAdapter()) //
+              .create();
 
       if (endpoint == null) {
         endpoint = DEFAULT_ENDPOINT;
@@ -292,24 +300,33 @@ public class Analytics {
         callbacks = Collections.unmodifiableList(callbacks);
       }
 
-      RestAdapter restAdapter = new RestAdapter.Builder()
-          .setConverter(new GsonConverter(gson))
-          .setEndpoint(endpoint)
-          .setClient(client)
-          .setRequestInterceptor(new AnalyticsRequestInterceptor(writeKey, userAgent))
-          .setLogLevel(RestAdapter.LogLevel.FULL)
-          .setLog(new RestAdapter.Log() {
-            @Override public void log(String message) {
-              log.print(Log.Level.VERBOSE, "%s", message);
-            }
-          })
-          .build();
+      RestAdapter restAdapter =
+          new RestAdapter.Builder()
+              .setConverter(new GsonConverter(gson))
+              .setEndpoint(endpoint)
+              .setClient(client)
+              .setRequestInterceptor(new AnalyticsRequestInterceptor(writeKey, userAgent))
+              .setLogLevel(RestAdapter.LogLevel.FULL)
+              .setLog(
+                  new RestAdapter.Log() {
+                    @Override
+                    public void log(String message) {
+                      log.print(Log.Level.VERBOSE, "%s", message);
+                    }
+                  })
+              .build();
 
       SegmentService segmentService = restAdapter.create(SegmentService.class);
 
       AnalyticsClient analyticsClient =
-          AnalyticsClient.create(segmentService, flushQueueSize, flushIntervalInMillis, log,
-              threadFactory, networkExecutor, callbacks);
+          AnalyticsClient.create(
+              segmentService,
+              flushQueueSize,
+              flushIntervalInMillis,
+              log,
+              threadFactory,
+              networkExecutor,
+              callbacks);
       return new Analytics(analyticsClient, messageTransformers, messageInterceptors, log);
     }
   }
