@@ -5,6 +5,8 @@ import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.Test;
@@ -114,6 +116,12 @@ public class AnalyticsBuilderTest {
   }
 
   @Test
+  public void buildsWithValidTransformer() {
+    Analytics analytics = builder.messageTransformer(mock(MessageTransformer.class)).build();
+    assertThat(analytics).isNotNull();
+  }
+
+  @Test
   public void nullInterceptor() {
     try {
       builder.messageInterceptor(null);
@@ -135,6 +143,12 @@ public class AnalyticsBuilderTest {
   }
 
   @Test
+  public void buildsWithValidInterceptor() {
+    Analytics analytics = builder.messageInterceptor(mock(MessageInterceptor.class)).build();
+    assertThat(analytics).isNotNull();
+  }
+
+  @Test
   public void invalidFlushQueueSize() {
     try {
       builder.flushQueueSize(0);
@@ -149,6 +163,12 @@ public class AnalyticsBuilderTest {
     } catch (IllegalArgumentException e) {
       assertThat(e).hasMessage("flushQueueSize must not be less than 1.");
     }
+  }
+
+  @Test
+  public void buildsWithValidFlushQueueSize() {
+    Analytics analytics = builder.flushQueueSize(1).build();
+    assertThat(analytics).isNotNull();
   }
 
   @Test
@@ -177,6 +197,12 @@ public class AnalyticsBuilderTest {
   }
 
   @Test
+  public void buildsWithValidFlushInterval() {
+    Analytics analytics = builder.flushInterval(2, TimeUnit.SECONDS).build();
+    assertThat(analytics).isNotNull();
+  }
+
+  @Test
   public void nullNetworkExecutor() {
     try {
       builder.networkExecutor(null);
@@ -184,6 +210,12 @@ public class AnalyticsBuilderTest {
     } catch (NullPointerException e) {
       assertThat(e).hasMessage("Null networkExecutor");
     }
+  }
+
+  @Test
+  public void buildsWithValidNetworkExecutor() {
+    Analytics analytics = builder.networkExecutor(mock(ExecutorService.class)).build();
+    assertThat(analytics).isNotNull();
   }
 
   @Test
@@ -214,6 +246,12 @@ public class AnalyticsBuilderTest {
   }
 
   @Test
+  public void buildsWithValidEndpoint() {
+    Analytics analytics = builder.endpoint("https://api.segment.io").build();
+    assertThat(analytics).isNotNull();
+  }
+
+  @Test
   public void nullThreadFactory() {
     try {
       builder.threadFactory(null);
@@ -224,6 +262,12 @@ public class AnalyticsBuilderTest {
   }
 
   @Test
+  public void buildsWithThreadFactory() {
+    Analytics analytics = builder.threadFactory(mock(ThreadFactory.class)).build();
+    assertThat(analytics).isNotNull();
+  }
+
+  @Test
   public void nullCallback() {
     try {
       builder.callback(null);
@@ -231,6 +275,30 @@ public class AnalyticsBuilderTest {
     } catch (NullPointerException e) {
       assertThat(e).hasMessage("Null callback");
     }
+  }
+
+  @Test
+  public void duplicateCallback() {
+    Callback callback = mock(Callback.class);
+    try {
+      builder.callback(callback).callback(callback);
+    } catch (IllegalStateException e) {
+      assertThat(e).hasMessage("Callback is already registered.");
+    }
+  }
+
+  @Test
+  public void buildsWithValidCallback() {
+    Analytics analytics = builder.callback(mock(Callback.class)).build();
+    assertThat(analytics).isNotNull();
+  }
+
+  @Test
+  public void multipleCallbacks() {
+    Analytics analytics =
+        builder.callback(mock(Callback.class)).callback(mock(Callback.class)).build();
+
+    assertThat(analytics).isNotNull();
   }
 
   @Test
