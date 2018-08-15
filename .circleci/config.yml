@@ -40,6 +40,7 @@ jobs:
     docker:
       - image: circleci/openjdk:8-jdk-browsers
 
+
   test:
     <<: *java-base-test
     docker:
@@ -56,6 +57,16 @@ jobs:
       - attach_workspace: { at: . }
       - run: .buildscript/deploy_snapshot.sh
 
+  coverage:
+    <<: *java-base-test
+    docker:
+      - image: circleci/openjdk:8-jdk-browsers
+    steps:
+      - checkout
+      - attach_workspace: { at: . }
+      - run: mvn cobertura:cobertura
+      - run: bash <(curl -s https://codecov.io/bash)
+
 workflows:
   version: 2
   multi-test:
@@ -64,6 +75,12 @@ workflows:
       - test-jdk10
       - test-jdk9
       - test-jdk8
+  coverage:
+    jobs:
+      - test
+      - coverage:
+          requires:
+            - test
   test_and_publish:
     jobs:
       - test:
