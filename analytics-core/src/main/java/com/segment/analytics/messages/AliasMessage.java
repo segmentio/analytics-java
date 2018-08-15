@@ -15,7 +15,7 @@ import java.util.Map;
  * @see <a href="https://segment.com/docs/spec/alias/">Alias</a>
  */
 @AutoValue
-@AutoGson //
+@AutoGson
 public abstract class AliasMessage implements Message {
 
   /**

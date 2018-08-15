@@ -1,13 +1,11 @@
 package com.segment.analytics;
 
-import com.segment.analytics.messages.AliasMessage;
-import com.segment.analytics.messages.GroupMessage;
-import com.segment.analytics.messages.IdentifyMessage;
-import com.segment.analytics.messages.Message;
-import com.segment.analytics.messages.MessageBuilder;
-import com.segment.analytics.messages.PageMessage;
-import com.segment.analytics.messages.ScreenMessage;
-import com.segment.analytics.messages.TrackMessage;
+import com.segment.analytics.messages.*;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 
 public final class TestUtils {
   private TestUtils() {
@@ -15,7 +13,7 @@ public final class TestUtils {
   }
 
   @SuppressWarnings("UnusedDeclaration")
-  public enum MessageBuilderTest {
+  public enum MessageBuilderFactory {
     ALIAS {
       @Override
       public AliasMessage.Builder get() {
@@ -54,5 +52,13 @@ public final class TestUtils {
     };
 
     public abstract <T extends Message, V extends MessageBuilder> MessageBuilder<T, V> get();
+  }
+
+  public static Date newDate(
+      int year, int month, int day, int hour, int minute, int second, int millis, int offset) {
+    Calendar calendar = new GregorianCalendar(TimeZone.getTimeZone("GMT"));
+    calendar.set(year, month - 1, day, hour, minute, second);
+    calendar.set(Calendar.MILLISECOND, millis);
+    return new Date(calendar.getTimeInMillis() - TimeUnit.MINUTES.toMillis(offset));
   }
 }

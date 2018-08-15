@@ -174,7 +174,7 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
    */
   public V integrationOptions(String key, Map<String, ? super Object> options) {
     if (isNullOrEmpty(key)) {
-      throw new IllegalArgumentException("Key name cannot be null or empty.");
+      throw new IllegalArgumentException("Key cannot be null or empty.");
     }
     if (integrations == null) {
       integrations = new LinkedHashMap<>();
