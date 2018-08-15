@@ -6,7 +6,7 @@ dependencies:
 	mvn install
 
 check:
-	mvn verify
+	mvn spotless:check animal-sniffer:check test verify
 
 build:
 	mvn package -B
