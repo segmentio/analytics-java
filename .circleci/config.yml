@@ -74,6 +74,15 @@ jobs:
       - attach_workspace: { at: . }
       - run: .buildscript/e2e.sh
 
+  snyk:
+    <<: *java-base-test
+    docker:
+      - image: circleci/openjdk:8-jdk-browsers
+    steps:
+      - checkout
+      - attach_workspace: { at: . }
+      - run: curl -sL https://raw.githubusercontent.com/segmentio/snyk_helpers/master/initialization/snyk.sh | sh
+
 workflows:
   version: 2
   multi-test:
@@ -88,10 +97,14 @@ workflows:
       - e2e:
           requires:
             - test
-  coverage:
+  static_analysis:
     jobs:
       - test
       - coverage:
+          requires:
+            - test
+      - snyk:
+          context: snyk
           requires:
             - test
   test_and_publish:
