@@ -9,7 +9,7 @@ jobs:
       - checkout
       - restore_cache:
           key: maven-dep-cache-{{ checksum "pom.xml" }}
-      - run: make check
+      - run: mvn spotless:check animal-sniffer:check test verify
       - run: mvn package -B
       - save_cache:
           key: maven-dep-cache-{{ checksum "pom.xml" }}
@@ -38,7 +38,6 @@ jobs:
     <<: *java-base-test
     docker:
       - image: circleci/openjdk:8-jdk-browsers
-
 
   test:
     <<: *java-base-test
