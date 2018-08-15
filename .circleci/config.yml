@@ -9,7 +9,7 @@ jobs:
       - checkout
       - restore_cache:
           key: maven-dep-cache-{{ checksum "pom.xml" }}
-      - run: mvn spotless:check test verify
+      - run: make check
       - run: mvn package -B
       - save_cache:
           key: maven-dep-cache-{{ checksum "pom.xml" }}
