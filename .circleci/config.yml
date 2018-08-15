@@ -11,7 +11,6 @@ jobs:
           key: maven-dep-cache-{{ checksum "pom.xml" }}
       - run: mvn spotless:check test verify
       - run: mvn package -B
-      - run: .buildscript/e2e.sh
       - save_cache:
           key: maven-dep-cache-{{ checksum "pom.xml" }}
           paths:
@@ -67,6 +66,15 @@ jobs:
       - run: mvn cobertura:cobertura
       - run: bash <(curl -s https://codecov.io/bash)
 
+  e2e:
+    <<: *java-base-test
+    docker:
+      - image: circleci/openjdk:8-jdk-browsers
+    steps:
+      - checkout
+      - attach_workspace: { at: . }
+      - run: .buildscript/e2e.sh
+
 workflows:
   version: 2
   multi-test:
@@ -75,6 +83,12 @@ workflows:
       - test-jdk10
       - test-jdk9
       - test-jdk8
+  e2e:
+    jobs:
+      - test
+      - e2e:
+          requires:
+            - test
   coverage:
     jobs:
       - test
