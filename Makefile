@@ -1,6 +1,5 @@
 bootstrap:
-	brew cask install java8
-	brew install maven
+	.buildscript/bootstrap.sh
 
 dependencies:
 	mvn install
