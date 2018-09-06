@@ -119,3 +119,17 @@ workflows:
           filters:
             branches:
               only: master
+  scheduled_e2e_test:
+    triggers:
+      - schedule:
+          cron: "5 * * * *"
+          filters:
+            branches:
+              only:
+                - master
+                - scheduled_e2e_testing
+    jobs:
+      - test-jdklatest
+      - test-jdk10
+      - test-jdk9
+      - test-jdk8
