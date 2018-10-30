@@ -15,10 +15,6 @@ public final class TestUtils {
     throw new AssertionError("No instances.");
   }
 
-  public static final Gson GSON = new GsonBuilder()
-          .registerTypeAdapter(Date.class, new ISO8601DateAdapter())
-          .create();
-
   @SuppressWarnings("UnusedDeclaration")
   public enum MessageBuilderFactory {
     ALIAS {
