@@ -11,12 +11,11 @@ jobs:
           key: maven-dep-cache-{{ checksum "pom.xml" }}
       - run: mvn spotless:check animal-sniffer:check test verify
       - run:
-          name: Test Failed
+          name: Tests Failed
           when: on_fail
           command: |
-            wget https://raw.githubusercontent.com/segmentio/circleci-notifications/master/slack-notify-branch.sh
-            chmod u+x slack-notify-branch.sh
-            BUILD_STATUS="Failed" NOTIFY_BRANCH="master" ./slack-notify-branch.sh
+            echo "Tests failed, no notifications sent."
+            echo "FIXME: Re-enable Slack notifications after LIB-678 is fixed"
       - run: mvn package -B
       - save_cache:
           key: maven-dep-cache-{{ checksum "pom.xml" }}
