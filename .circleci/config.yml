@@ -9,9 +9,6 @@ jobs:
       - checkout
       - restore_cache:
           key: maven-dep-cache-{{ checksum "pom.xml" }}
-      - run: echo $JAVA_HOME
-      - run: java -version
-      - run: javac -version
       - run: mvn spotless:check animal-sniffer:check test verify
       - run:
           name: Tests Failed
