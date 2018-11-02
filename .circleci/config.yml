@@ -28,7 +28,7 @@ jobs:
   test-jdklatest:
     <<: *java-base-test
     docker:
-      - image: circleci/openjdk
+      - image: circleci/openjdk:latest
 
   test-jdk10:
     <<: *java-base-test
