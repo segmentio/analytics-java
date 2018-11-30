@@ -8,7 +8,7 @@ jobs:
     steps:
       - checkout
       - restore_cache:
-          key: maven-dep-cache-{{ checksum "pom.xml" }}-{{ checksum "javac_version" }}-{{ epoch }}
+          key: maven-dep-cache-{{ checksum "pom.xml" }}
       - run: mvn spotless:check animal-sniffer:check test verify
       - run:
           name: Tests Failed
@@ -18,7 +18,7 @@ jobs:
             echo "FIXME: Re-enable Slack notifications after LIB-678 is fixed"
       - run: mvn package -B
       - save_cache:
-          key: maven-dep-cache-{{ checksum "pom.xml" }}-{{ checksum "javac_version" }}-{{ epoch }}
+          key: maven-dep-cache-{{ checksum "pom.xml" }}
           paths:
             - ~/.m2
       - persist_to_workspace:
