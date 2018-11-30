@@ -163,8 +163,9 @@
           <configuration>
             <compilerId>javac-with-errorprone</compilerId>
             <forceJavacCompilerUse>true</forceJavacCompilerUse>
-            <source>${java.version}</source>
-            <target>${java.version}</target>
+            <configuration>
+              <release>11</release>
+            </configuration>
             <showWarnings>true</showWarnings>
           </configuration>
           <dependencies>
