@@ -24,7 +24,7 @@ Version 2.0.0 (April 4th, 2017)
 
   * [New](https://github.com/segmentio/analytics-java/pull/99): Make endpoint configurable.
   * [New](https://github.com/segmentio/analytics-java/pull/101): Allow setting a custom message ID.
-  * [New](https://github.com/segmentio/analytics-java/pull/101): Allow setting a custom timestamp.
+  * [New](https://github.com/segmentio/analytics-java/pull/58): Allow setting a custom timestamp.
 
 Version 2.0.0-RC7 (August 22nd, 2016)
 =====================================
