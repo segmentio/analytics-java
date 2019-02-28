@@ -98,12 +98,6 @@ workflows:
       - test-jdk10
       - test-jdk9
       - test-jdk8
-  e2e:
-    jobs:
-      - test
-      - e2e:
-          requires:
-            - test
   static_analysis:
     jobs:
       - test
@@ -136,7 +130,7 @@ workflows:
                 - master
                 - scheduled_e2e_testing
     jobs:
-      - test-jdklatest
-      - test-jdk10
-      - test-jdk9
-      - test-jdk8
+      - test
+      - e2e:
+          requires:
+            - test
