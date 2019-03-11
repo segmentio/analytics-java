@@ -65,22 +65,26 @@ public class Analytics {
 
   /** Enqueue the given message to be uploaded to Segment's servers. */
   public void enqueue(MessageBuilder builder) {
-    for (MessageTransformer messageTransformer : messageTransformers) {
-      boolean shouldContinue = messageTransformer.transform(builder);
-      if (!shouldContinue) {
-        log.print(Log.Level.VERBOSE, "Skipping message %s.", builder);
-        return;
-      }
-    }
-    Message message = builder.build();
-    for (MessageInterceptor messageInterceptor : messageInterceptors) {
-      message = messageInterceptor.intercept(message);
-      if (message == null) {
-        log.print(Log.Level.VERBOSE, "Skipping message %s.", builder);
-        return;
-      }
+    Message message = buildMessage(builder);
+    if(message == null){
+      return;
     }
     client.enqueue(message);
+  }
+
+  /**
+   * Inserts the message into queue if it is possible to do
+   * so immediately without violating capacity restrictions, returning
+   * {@code true} upon success and {@code false} if no space is currently
+   * available.
+   * @param builder
+   */
+  public boolean offer(MessageBuilder builder) {
+    Message message = buildMessage(builder);
+    if(message == null){
+      return false;
+    }
+    return client.offer(message);
   }
 
   /** Flush events in the message queue. */
@@ -91,6 +95,31 @@ public class Analytics {
   /** Stops this instance from processing further requests. */
   public void shutdown() {
     client.shutdown();
+  }
+
+  /**
+   * Helper method to build message
+   * @param builder
+   * @return Instance of Message if valid message can be build
+   * null if skipping this message
+   */
+  private Message buildMessage(MessageBuilder builder){
+    for (MessageTransformer messageTransformer : messageTransformers) {
+      boolean shouldContinue = messageTransformer.transform(builder);
+      if (!shouldContinue) {
+        log.print(Log.Level.VERBOSE, "Skipping message %s.", builder);
+        return null;
+      }
+    }
+    Message message = builder.build();
+    for (MessageInterceptor messageInterceptor : messageInterceptors) {
+      message = messageInterceptor.intercept(message);
+      if (message == null) {
+        log.print(Log.Level.VERBOSE, "Skipping message %s.", builder);
+        return null;
+      }
+    }
+    return message;
   }
 
   /** Fluent API for creating {@link Analytics} instances. */
@@ -111,6 +140,7 @@ public class Analytics {
     private int flushQueueSize;
     private long flushIntervalInMillis;
     private List<Callback> callbacks;
+    private int queueCapacity;
 
     Builder(String writeKey) {
       if (writeKey == null || writeKey.trim().length() == 0) {
@@ -190,6 +220,16 @@ public class Analytics {
       return this;
     }
 
+    /**
+     * Set queue capacity
+     */
+    public Builder queueCapacity(int capacity) {
+      if (capacity <= 0) {
+        throw new IllegalArgumentException("capacity should be positive.");
+      }
+      this.queueCapacity = capacity;
+      return this;
+    }
     /** Set the queueSize at which flushes should be triggered. */
     @Beta
     public Builder flushQueueSize(int flushQueueSize) {
@@ -275,6 +315,9 @@ public class Analytics {
       if (flushIntervalInMillis == 0) {
         flushIntervalInMillis = Platform.get().defaultFlushIntervalInMillis();
       }
+      if(queueCapacity == 0) {
+        queueCapacity = Integer.MAX_VALUE;
+      }
       if (flushQueueSize == 0) {
         flushQueueSize = Platform.get().defaultFlushQueueSize();
       }
@@ -321,6 +364,7 @@ public class Analytics {
       AnalyticsClient analyticsClient =
           AnalyticsClient.create(
               segmentService,
+              queueCapacity,
               flushQueueSize,
               flushIntervalInMillis,
               log,

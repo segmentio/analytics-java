@@ -88,4 +88,19 @@ public class AnalyticsTest {
 
     verify(client).flush();
   }
+
+  @Test
+  public void offerIsDispatched(MessageBuilderTest builder) {
+    MessageBuilder messageBuilder = builder.get().userId("dummy");
+    Message message = messageBuilder.build();
+    when(messageTransformer.transform(messageBuilder)).thenReturn(true);
+    when(messageInterceptor.intercept(any(Message.class))).thenReturn(message);
+
+    analytics.offer(messageBuilder);
+
+    verify(messageTransformer).transform(messageBuilder);
+    verify(messageInterceptor).intercept(any(Message.class));
+    verify(client).offer(message);
+  }
+
 }

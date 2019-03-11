@@ -317,4 +317,27 @@ public class AnalyticsBuilderTest {
     builder.plugin(plugin);
     verify(plugin).configure(builder);
   }
+
+  @Test
+  public void invalidQueueCapacity() {
+    try {
+      builder.queueCapacity(0);
+      fail("Should fail when queue capacity is 0");
+    } catch (IllegalArgumentException e) {
+      assertThat(e).hasMessage("capacity should be positive.");
+    }
+
+    try {
+      builder.queueCapacity(-1);
+      fail("Should fail when queue capacity is -1");
+    } catch (IllegalArgumentException e) {
+      assertThat(e).hasMessage("capacity should be positive.");
+    }
+  }
+
+  @Test
+  public void buildWithQueueCapacity() {
+    Analytics analytics = builder.queueCapacity(10).build();
+    assertThat(analytics).isNotNull();
+  }
 }
