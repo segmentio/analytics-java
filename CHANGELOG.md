@@ -1,4 +1,10 @@
 
+Version 2.1.2 (April 19, 2018)
+==============================
+
+  * [Fix](https://github.com/segmentio/analytics-java/pull/118): Fixing critical security issue in retrofit dependency by upgrading to latest version.
+
+
 Version 2.1.1 (April 19, 2018)
 ==============================
 
