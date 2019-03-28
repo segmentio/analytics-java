@@ -2,13 +2,11 @@ package com.segment.analytics;
 
 import static java.lang.Thread.MIN_PRIORITY;
 
-import com.jakewharton.retrofit.Ok3Client;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import okhttp3.OkHttpClient;
-import retrofit.client.Client;
 
 class Platform {
   static final String THREAD_NAME = "Analytics";
@@ -23,14 +21,14 @@ class Platform {
     return new Platform();
   }
 
-  Client defaultClient() {
+  OkHttpClient defaultClient() {
     OkHttpClient client =
         new OkHttpClient.Builder()
             .connectTimeout(15, TimeUnit.SECONDS)
             .readTimeout(15, TimeUnit.SECONDS)
             .writeTimeout(15, TimeUnit.SECONDS)
             .build();
-    return new Ok3Client(client);
+    return client;
   }
 
   ExecutorService defaultNetworkExecutor() {

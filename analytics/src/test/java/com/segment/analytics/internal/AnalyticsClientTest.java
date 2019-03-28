@@ -5,6 +5,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
@@ -31,6 +32,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import okhttp3.ResponseBody;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
 import org.junit.Before;
@@ -38,10 +40,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
-import retrofit.RetrofitError;
-import retrofit.client.Header;
-import retrofit.client.Response;
-import retrofit.converter.ConversionException;
+import retrofit2.HttpException;
+import retrofit2.Response;
 
 @RunWith(BurstJUnit4.class) //
 public class AnalyticsClientTest {
@@ -177,7 +177,8 @@ public class AnalyticsClientTest {
     Batch batch = batchFor(trackMessage);
 
     // Throw a network error 3 times.
-    RetrofitError retrofitError = RetrofitError.networkError(null, new IOException());
+    HttpException retrofitError = new HttpException(Response.error(501, mock(ResponseBody.class)));
+
     when(segmentService.upload(batch))
         .thenThrow(retrofitError)
         .thenThrow(retrofitError)
@@ -199,10 +200,8 @@ public class AnalyticsClientTest {
     Batch batch = batchFor(trackMessage);
 
     // Throw a HTTP error 3 times.
-    Response response =
-        new Response(
-            "https://api.segment.io", 500, "Server Error", Collections.<Header>emptyList(), null);
-    RetrofitError retrofitError = RetrofitError.httpError(null, response, null, null);
+    Response response = Response.error(501, mock(ResponseBody.class));
+    HttpException retrofitError = new HttpException(response);
     when(segmentService.upload(batch))
         .thenThrow(retrofitError)
         .thenThrow(retrofitError)
@@ -224,10 +223,8 @@ public class AnalyticsClientTest {
     Batch batch = batchFor(trackMessage);
 
     // Throw a HTTP error 3 times.
-    Response response =
-        new Response(
-            "https://api.segment.io", 429, "Rate Limited", Collections.<Header>emptyList(), null);
-    RetrofitError retrofitError = RetrofitError.httpError(null, response, null, null);
+    Response response = Response.error(429, mock(ResponseBody.class));
+    HttpException retrofitError = new HttpException(response);
     when(segmentService.upload(batch))
         .thenThrow(retrofitError)
         .thenThrow(retrofitError)
@@ -249,10 +246,8 @@ public class AnalyticsClientTest {
     Batch batch = batchFor(trackMessage);
 
     // Throw a HTTP error that should not be retried.
-    Response response =
-        new Response(
-            "https://api.segment.io", 404, "Not Found", Collections.<Header>emptyList(), null);
-    RetrofitError retrofitError = RetrofitError.httpError(null, response, null, null);
+    Response response = Response.error(404,  mock(ResponseBody.class));
+    HttpException retrofitError = new HttpException(response);
     doThrow(retrofitError).when(segmentService).upload(batch);
 
     BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch);
@@ -268,8 +263,8 @@ public class AnalyticsClientTest {
     AnalyticsClient client = newClient();
     TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
     Batch batch = batchFor(trackMessage);
-    RetrofitError retrofitError =
-        RetrofitError.conversionError(null, null, null, null, new ConversionException("fake"));
+    IllegalStateException retrofitError = new IllegalStateException();
+
     doThrow(retrofitError).when(segmentService).upload(batch);
 
     BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch);
@@ -285,7 +280,10 @@ public class AnalyticsClientTest {
     AnalyticsClient client = newClient();
     TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
     Batch batch = batchFor(trackMessage);
-    RetrofitError retrofitError = RetrofitError.networkError(null, new IOException());
+
+    Response response = Response.error(501, mock(ResponseBody.class));
+    HttpException retrofitError = new HttpException(response);
+
     when(segmentService.upload(batch)).thenThrow(retrofitError);
 
     BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch);

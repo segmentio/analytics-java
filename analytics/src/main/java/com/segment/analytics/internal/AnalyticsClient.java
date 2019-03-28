@@ -23,7 +23,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import retrofit.RetrofitError;
+import javax.print.attribute.standard.MediaSize.Other;
+import retrofit2.HttpException;
 
 public class AnalyticsClient {
   private static final Map<String, ?> CONTEXT;
@@ -191,52 +192,49 @@ public class AnalyticsClient {
           }
         }
         return false;
-      } catch (RetrofitError error) {
-        switch (error.getKind()) {
-          case NETWORK:
+      } catch (Exception error) {
+        if (error instanceof IOException) {
+          client.log.print(DEBUG, error, "Could not upload batch %s. Retrying.", batch.sequence());
+          // "Timeout";
+          return true;
+        } else if (error instanceof HttpException) {
+          HttpException httpError = (HttpException)error;
+          int status = httpError.code();
+          if (is5xx(status)) {
             client.log.print(
-                DEBUG, error, "Could not upload batch %s. Retrying.", batch.sequence());
+                    DEBUG,
+                    error,
+                    "Could not upload batch %s due to server error. Retrying.",
+                    batch.sequence());
             return true;
-          case HTTP:
-            // Retry 5xx and 429 responses.
-            int status = error.getResponse().getStatus();
-            if (is5xx(status)) {
-              client.log.print(
-                  DEBUG,
-                  error,
-                  "Could not upload batch %s due to server error. Retrying.",
-                  batch.sequence());
-              return true;
-            }
-            if (status == 429) {
-              client.log.print(
-                  DEBUG,
-                  error,
-                  "Could not upload batch %s due to rate limiting. Retrying.",
-                  batch.sequence());
-              return true;
-            }
+          }
+          if (status == 429) {
             client.log.print(
-                ERROR,
-                error,
-                "Could not upload batch %s due to HTTP error. Giving up.",
-                batch.sequence());
-            for (Message message : batch.batch()) {
-              for (Callback callback : client.callbacks) {
-                callback.failure(message, error);
-              }
+                    DEBUG,
+                    error,
+                    "Could not upload batch %s due to rate limiting. Retrying.",
+                    batch.sequence());
+            return true;
+          }
+          client.log.print(
+                  ERROR,
+                  error,
+                  "Could not upload batch %s due to HTTP error. Giving up.",
+                  batch.sequence());
+          for (Message message : batch.batch()) {
+            for (Callback callback : client.callbacks) {
+              callback.failure(message, error);
             }
-            return false; // Don't retry
-          default:
-            client.log.print(
-                ERROR, error, "Could not upload batch %s. Giving up.", batch.sequence());
-            for (Message message : batch.batch()) {
-              for (Callback callback : client.callbacks) {
-                callback.failure(message, error);
-              }
-            }
-            return false; // Don't retry
+          }
+          return false; // Don't retry
         }
+        client.log.print( ERROR, error, "Could not upload batch %s. Giving up.", batch.sequence());
+        for (Message message : batch.batch()) {
+          for (Callback callback : client.callbacks) {
+            callback.failure(message, error);
+          }
+        }
+        return false; // Don't retry
       }
     }
 

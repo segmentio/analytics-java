@@ -1,10 +1,13 @@
 package com.segment.analytics;
 
+import java.io.IOException;
 import javax.annotation.Nonnull;
 import okhttp3.Credentials;
-import retrofit.RequestInterceptor;
+import okhttp3.Interceptor;
+import okhttp3.Request;
+import okhttp3.Response;
 
-class AnalyticsRequestInterceptor implements RequestInterceptor {
+class AnalyticsRequestInterceptor implements Interceptor {
   private static final String AUTHORIZATION_HEADER = "Authorization";
   private static final String USER_AGENT_HEADER = "User-Agent";
 
@@ -17,8 +20,11 @@ class AnalyticsRequestInterceptor implements RequestInterceptor {
   }
 
   @Override
-  public void intercept(RequestFacade request) {
-    request.addHeader(AUTHORIZATION_HEADER, Credentials.basic(writeKey, ""));
-    request.addHeader(USER_AGENT_HEADER, userAgent);
+  public Response intercept(Chain chain) throws IOException {
+    Request request = chain.request().newBuilder()
+            .addHeader(AUTHORIZATION_HEADER, Credentials.basic(writeKey, ""))
+            .addHeader(USER_AGENT_HEADER, userAgent)
+            .build();
+    return chain.proceed(request);
   }
 }

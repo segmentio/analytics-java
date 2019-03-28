@@ -16,11 +16,10 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import retrofit.Endpoint;
-import retrofit.Endpoints;
-import retrofit.RestAdapter;
-import retrofit.client.Client;
-import retrofit.converter.GsonConverter;
+import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
  * The entry point into the Segment for Java library.
@@ -95,14 +94,13 @@ public class Analytics {
 
   /** Fluent API for creating {@link Analytics} instances. */
   public static class Builder {
-    private static final Endpoint DEFAULT_ENDPOINT =
-        Endpoints.newFixedEndpoint("https://api.segment.io");
+    private static final String DEFAULT_ENDPOINT = "https://api.segment.io";
     private static final String DEFAULT_USER_AGENT = "analytics-java/" + AnalyticsVersion.get();
 
     private final String writeKey;
-    private Client client;
+    private OkHttpClient client;
     private Log log;
-    private Endpoint endpoint;
+    private String endpoint;
     private String userAgent = DEFAULT_USER_AGENT;
     private List<MessageTransformer> messageTransformers;
     private List<MessageInterceptor> messageInterceptors;
@@ -120,7 +118,7 @@ public class Analytics {
     }
 
     /** Set a custom networking client. */
-    public Builder client(Client client) {
+    public Builder client(OkHttpClient client) {
       if (client == null) {
         throw new NullPointerException("Null client");
       }
@@ -145,7 +143,7 @@ public class Analytics {
       if (endpoint == null || endpoint.trim().length() == 0) {
         throw new NullPointerException("endpoint cannot be null or empty.");
       }
-      this.endpoint = Endpoints.newFixedEndpoint(endpoint);
+      this.endpoint = endpoint;
       return this;
     }
 
@@ -257,11 +255,6 @@ public class Analytics {
 
     /** Create a {@link Analytics} client. */
     public Analytics build() {
-      Gson gson =
-          new GsonBuilder() //
-              .registerTypeAdapterFactory(new AutoValueAdapterFactory()) //
-              .registerTypeAdapter(Date.class, new ISO8601DateAdapter()) //
-              .create();
 
       if (endpoint == null) {
         endpoint = DEFAULT_ENDPOINT;
@@ -300,20 +293,25 @@ public class Analytics {
         callbacks = Collections.unmodifiableList(callbacks);
       }
 
-      RestAdapter restAdapter =
-          new RestAdapter.Builder()
-              .setConverter(new GsonConverter(gson))
-              .setEndpoint(endpoint)
-              .setClient(client)
-              .setRequestInterceptor(new AnalyticsRequestInterceptor(writeKey, userAgent))
-              .setLogLevel(RestAdapter.LogLevel.FULL)
-              .setLog(
-                  new RestAdapter.Log() {
-                    @Override
-                    public void log(String message) {
-                      log.print(Log.Level.VERBOSE, "%s", message);
-                    }
-                  })
+      Gson gson =
+          new GsonBuilder()
+                  .registerTypeAdapterFactory(new AutoValueAdapterFactory())
+                  .registerTypeAdapter(Date.class, new ISO8601DateAdapter())
+                  .create();
+
+      OkHttpClient.Builder httpClient = new OkHttpClient.Builder();
+
+      HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor();
+      interceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+      httpClient.addInterceptor(interceptor);
+
+      httpClient.addInterceptor(new AnalyticsRequestInterceptor(writeKey, userAgent));
+
+      Retrofit restAdapter =
+          new Retrofit.Builder()
+              .addConverterFactory(GsonConverterFactory.create(gson))
+              .client(httpClient.build())
+              .baseUrl(endpoint)
               .build();
 
       SegmentService segmentService = restAdapter.create(SegmentService.class);
