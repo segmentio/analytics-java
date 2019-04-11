@@ -18,6 +18,8 @@ public class Main {
     // https://segment.com/segment-engineering/sources/test-java/debugger
     final Analytics analytics =
         Analytics.builder("xemyw6oe3n")
+//            .endpoint("https://eventbus.intuit.com")
+//            .path("v2/batch")
             .plugin(blockingFlush.plugin())
             .plugin(new LoggingPlugin())
             .client(createClient())
@@ -31,9 +33,12 @@ public class Main {
       for (int j = 0; j < 10; j++) {
         Map<String, Object> properties = new LinkedHashMap<>();
         properties.put("count", count.incrementAndGet());
+        Map<String, Object> context = new LinkedHashMap<>();
+        context.put("count", count.incrementAndGet());
         analytics.enqueue(
             TrackMessage.builder("Java Test")
                 .properties(properties)
+                 .context(context)
                 .anonymousId(anonymousId)
                 .userId(userId));
       }

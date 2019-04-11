@@ -49,6 +49,8 @@ public class AnalyticsClientTest {
   private static final Backo BACKO =
       Backo.builder().base(TimeUnit.NANOSECONDS, 1).factor(1).build();
 
+  private static final String path = "/vi/import";
+
   Log log = Log.NONE;
   ThreadFactory threadFactory;
   @Mock BlockingQueue<Message> messageQueue;
@@ -67,6 +69,7 @@ public class AnalyticsClientTest {
     return new AnalyticsClient(
         messageQueue,
         segmentService,
+        path,
         50,
         TimeUnit.HOURS.toMillis(1),
         log,
@@ -178,7 +181,7 @@ public class AnalyticsClientTest {
 
     // Throw a network error 3 times.
     RetrofitError retrofitError = RetrofitError.networkError(null, new IOException());
-    when(segmentService.upload(batch))
+    when(segmentService.upload(batch, path))
         .thenThrow(retrofitError)
         .thenThrow(retrofitError)
         .thenThrow(retrofitError)
@@ -188,7 +191,7 @@ public class AnalyticsClientTest {
     batchUploadTask.run();
 
     // Verify that we tried to upload 4 times, 3 failed and 1 succeeded.
-    verify(segmentService, times(4)).upload(batch);
+    verify(segmentService, times(4)).upload(batch, path);
     verify(callback).success(trackMessage);
   }
 
@@ -203,7 +206,7 @@ public class AnalyticsClientTest {
         new Response(
             "https://api.segment.io", 500, "Server Error", Collections.<Header>emptyList(), null);
     RetrofitError retrofitError = RetrofitError.httpError(null, response, null, null);
-    when(segmentService.upload(batch))
+    when(segmentService.upload(batch, path))
         .thenThrow(retrofitError)
         .thenThrow(retrofitError)
         .thenThrow(retrofitError)
@@ -213,7 +216,7 @@ public class AnalyticsClientTest {
     batchUploadTask.run();
 
     // Verify that we tried to upload 4 times, 3 failed and 1 succeeded.
-    verify(segmentService, times(4)).upload(batch);
+    verify(segmentService, times(4)).upload(batch, path);
     verify(callback).success(trackMessage);
   }
 
@@ -228,7 +231,7 @@ public class AnalyticsClientTest {
         new Response(
             "https://api.segment.io", 429, "Rate Limited", Collections.<Header>emptyList(), null);
     RetrofitError retrofitError = RetrofitError.httpError(null, response, null, null);
-    when(segmentService.upload(batch))
+    when(segmentService.upload(batch, path))
         .thenThrow(retrofitError)
         .thenThrow(retrofitError)
         .thenThrow(retrofitError)
@@ -238,7 +241,7 @@ public class AnalyticsClientTest {
     batchUploadTask.run();
 
     // Verify that we tried to upload 4 times, 3 failed and 1 succeeded.
-    verify(segmentService, times(4)).upload(batch);
+    verify(segmentService, times(4)).upload(batch, path);
     verify(callback).success(trackMessage);
   }
 
@@ -253,13 +256,13 @@ public class AnalyticsClientTest {
         new Response(
             "https://api.segment.io", 404, "Not Found", Collections.<Header>emptyList(), null);
     RetrofitError retrofitError = RetrofitError.httpError(null, response, null, null);
-    doThrow(retrofitError).when(segmentService).upload(batch);
+    doThrow(retrofitError).when(segmentService).upload(batch, path);
 
     BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch);
     batchUploadTask.run();
 
     // Verify we only tried to upload once.
-    verify(segmentService).upload(batch);
+    verify(segmentService).upload(batch, path);
     verify(callback).failure(trackMessage, retrofitError);
   }
 
@@ -270,13 +273,13 @@ public class AnalyticsClientTest {
     Batch batch = batchFor(trackMessage);
     RetrofitError retrofitError =
         RetrofitError.conversionError(null, null, null, null, new ConversionException("fake"));
-    doThrow(retrofitError).when(segmentService).upload(batch);
+    doThrow(retrofitError).when(segmentService).upload(batch, path);
 
     BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch);
     batchUploadTask.run();
 
     // Verify we only tried to upload once.
-    verify(segmentService).upload(batch);
+    verify(segmentService).upload(batch, path);
     verify(callback).failure(trackMessage, retrofitError);
   }
 
@@ -286,13 +289,13 @@ public class AnalyticsClientTest {
     TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
     Batch batch = batchFor(trackMessage);
     RetrofitError retrofitError = RetrofitError.networkError(null, new IOException());
-    when(segmentService.upload(batch)).thenThrow(retrofitError);
+    when(segmentService.upload(batch, path)).thenThrow(retrofitError);
 
     BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch);
     batchUploadTask.run();
 
     // 50 == MAX_ATTEMPTS in AnalyticsClient.java
-    verify(segmentService, times(50)).upload(batch);
+    verify(segmentService, times(50)).upload(batch, path);
     verify(callback)
         .failure(
             eq(trackMessage),

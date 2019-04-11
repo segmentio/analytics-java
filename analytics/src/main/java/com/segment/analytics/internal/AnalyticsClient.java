@@ -39,6 +39,7 @@ public class AnalyticsClient {
 
   private final BlockingQueue<Message> messageQueue;
   private final SegmentService service;
+  private final String path;
   private final int size;
   private final Log log;
   private final List<Callback> callbacks;
@@ -48,6 +49,7 @@ public class AnalyticsClient {
 
   public static AnalyticsClient create(
       SegmentService segmentService,
+      String path,
       int flushQueueSize,
       long flushIntervalInMillis,
       Log log,
@@ -57,6 +59,7 @@ public class AnalyticsClient {
     return new AnalyticsClient(
         new LinkedBlockingQueue<Message>(),
         segmentService,
+        path,
         flushQueueSize,
         flushIntervalInMillis,
         log,
@@ -68,6 +71,7 @@ public class AnalyticsClient {
   AnalyticsClient(
       BlockingQueue<Message> messageQueue,
       SegmentService service,
+      String path,
       int maxQueueSize,
       long flushIntervalInMillis,
       Log log,
@@ -76,6 +80,7 @@ public class AnalyticsClient {
       List<Callback> callbacks) {
     this.messageQueue = messageQueue;
     this.service = service;
+    this.path = path;
     this.size = maxQueueSize;
     this.log = log;
     this.callbacks = callbacks;
@@ -182,7 +187,7 @@ public class AnalyticsClient {
         client.log.print(VERBOSE, "Uploading batch %s.", batch.sequence());
 
         // Ignore return value, UploadResponse#onSuccess will never return false for 200 OK
-        client.service.upload(batch);
+        client.service.upload(batch, client.path);
 
         client.log.print(VERBOSE, "Uploaded batch %s.", batch.sequence());
         for (Message message : batch.batch()) {

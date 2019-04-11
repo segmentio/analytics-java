@@ -97,12 +97,14 @@ public class Analytics {
   public static class Builder {
     private static final Endpoint DEFAULT_ENDPOINT =
         Endpoints.newFixedEndpoint("https://api.segment.io");
+    private static final String DEFAULT_PATH = "v1/import";
     private static final String DEFAULT_USER_AGENT = "analytics-java/" + AnalyticsVersion.get();
 
     private final String writeKey;
     private Client client;
     private Log log;
     private Endpoint endpoint;
+    private String path = DEFAULT_PATH;
     private String userAgent = DEFAULT_USER_AGENT;
     private List<MessageTransformer> messageTransformers;
     private List<MessageInterceptor> messageInterceptors;
@@ -149,7 +151,20 @@ public class Analytics {
       return this;
     }
 
-    /** Sets a user agent for HTTP requests. */
+      /**
+       * Set a path for upload API call. Uses {@code /v1/import}
+       * by default.
+       */
+      public Builder path(String path) {
+          if (path == null || path.trim().length() == 0) {
+              throw new NullPointerException("endpoint cannot be null or empty.");
+          }
+          this.path = path;
+          return this;
+      }
+
+
+      /** Sets a user agent for HTTP requests. */
     public Builder userAgent(String userAgent) {
       if (userAgent == null || userAgent.trim().length() == 0) {
         throw new NullPointerException("userAgent cannot be null or empty.");
@@ -321,6 +336,7 @@ public class Analytics {
       AnalyticsClient analyticsClient =
           AnalyticsClient.create(
               segmentService,
+              path,
               flushQueueSize,
               flushIntervalInMillis,
               log,
