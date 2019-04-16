@@ -18,8 +18,6 @@ public class Main {
     // https://segment.com/segment-engineering/sources/test-java/debugger
     final Analytics analytics =
         Analytics.builder("xemyw6oe3n")
-//            .endpoint("https://eventbus.intuit.com")
-//            .path("v2/batch")
             .plugin(blockingFlush.plugin())
             .plugin(new LoggingPlugin())
             .client(createClient())
