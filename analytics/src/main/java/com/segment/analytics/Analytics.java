@@ -103,6 +103,7 @@ public class Analytics {
     private Client client;
     private Log log;
     private Endpoint endpoint;
+    private Endpoint apiHap;
     private String userAgent = DEFAULT_USER_AGENT;
     private List<MessageTransformer> messageTransformers;
     private List<MessageInterceptor> messageInterceptors;
@@ -138,14 +139,26 @@ public class Analytics {
     }
 
     /**
-     * Set an endpoint that this client should upload events to. Uses {@code https://api.segment.io}
-     * by default.
+     * Set an endpoint (host only) that this client should upload events to. Uses {@code
+     * https://api.segment.io} by default.
      */
     public Builder endpoint(String endpoint) {
       if (endpoint == null || endpoint.trim().length() == 0) {
         throw new NullPointerException("endpoint cannot be null or empty.");
       }
-      this.endpoint = Endpoints.newFixedEndpoint(endpoint);
+      this.endpoint = Endpoints.newFixedEndpoint(endpoint + "/v1");
+      return this;
+    }
+
+    /**
+     * Set an endpoint (host and prefix) that this client should upload events to. Uses {@code
+     * https://api.segment.io/v1} by default.
+     */
+    public Builder setHostAndPrefixEndpoint(String apiHap) {
+      if (apiHap == null || apiHap.trim().length() == 0) {
+        throw new NullPointerException("endpoint cannot be null or empty.");
+      }
+      this.apiHap = Endpoints.newFixedEndpoint(apiHap);
       return this;
     }
 
@@ -263,9 +276,14 @@ public class Analytics {
               .registerTypeAdapter(Date.class, new ISO8601DateAdapter()) //
               .create();
 
-      if (endpoint == null) {
+      if (endpoint == null && apiHap == null) {
         endpoint = DEFAULT_ENDPOINT;
       }
+
+      if (endpoint == null && apiHap != null) {
+        endpoint = apiHap;
+      }
+
       if (client == null) {
         client = Platform.get().defaultClient();
       }

@@ -6,6 +6,6 @@ import retrofit.http.POST;
 
 /** REST interface for the Segment API. */
 public interface SegmentService {
-  @POST("/v1/import")
+  @POST("/import")
   UploadResponse upload(@Body Batch batch);
 }

@@ -252,6 +252,39 @@ public class AnalyticsBuilderTest {
   }
 
   @Test
+  public void buildsWithValidHostAndPrefixEndpoint() {
+    Analytics analytics = builder.setHostAndPrefixEndpoint("https://example.com/v2").build();
+    assertThat(analytics).isNotNull();
+  }
+
+  @Test
+  public void nullHostAndPrefixEndpoint() {
+    try {
+      builder.setHostAndPrefixEndpoint(null);
+      fail("Should fail for null endpoint");
+    } catch (NullPointerException e) {
+      assertThat(e).hasMessage("endpoint cannot be null or empty.");
+    }
+  }
+
+  @Test
+  public void emptyHostAndPrefixEndpoint() {
+    try {
+      builder.setHostAndPrefixEndpoint("");
+      fail("Should fail for empty endpoint");
+    } catch (NullPointerException e) {
+      assertThat(e).hasMessage("endpoint cannot be null or empty.");
+    }
+
+    try {
+      builder.setHostAndPrefixEndpoint("  ");
+      fail("Should fail for empty endpoint");
+    } catch (NullPointerException e) {
+      assertThat(e).hasMessage("endpoint cannot be null or empty.");
+    }
+  }
+
+  @Test
   public void nullThreadFactory() {
     try {
       builder.threadFactory(null);
