@@ -96,14 +96,14 @@ public class Analytics {
   /** Fluent API for creating {@link Analytics} instances. */
   public static class Builder {
     private static final Endpoint DEFAULT_ENDPOINT =
-        Endpoints.newFixedEndpoint("https://api.segment.io");
+        Endpoints.newFixedEndpoint("https://api.segment.io/v1/import");
     private static final String DEFAULT_USER_AGENT = "analytics-java/" + AnalyticsVersion.get();
 
     private final String writeKey;
     private Client client;
     private Log log;
-    private Endpoint endpoint;
-    private Endpoint apiHap;
+    public Endpoint endpoint;
+    public Endpoint uploadURL;
     private String userAgent = DEFAULT_USER_AGENT;
     private List<MessageTransformer> messageTransformers;
     private List<MessageInterceptor> messageInterceptors;
@@ -146,7 +146,7 @@ public class Analytics {
       if (endpoint == null || endpoint.trim().length() == 0) {
         throw new NullPointerException("endpoint cannot be null or empty.");
       }
-      this.endpoint = Endpoints.newFixedEndpoint(endpoint + "/v1");
+      this.endpoint = Endpoints.newFixedEndpoint(endpoint + "/v1/import");
       return this;
     }
 
@@ -154,11 +154,11 @@ public class Analytics {
      * Set an endpoint (host and prefix) that this client should upload events to. Uses {@code
      * https://api.segment.io/v1} by default.
      */
-    public Builder setHostAndPrefixEndpoint(String apiHap) {
-      if (apiHap == null || apiHap.trim().length() == 0) {
+    public Builder setUploadURL(String uploadURL) {
+      if (uploadURL == null || uploadURL.trim().length() == 0) {
         throw new NullPointerException("endpoint cannot be null or empty.");
       }
-      this.apiHap = Endpoints.newFixedEndpoint(apiHap);
+      this.uploadURL = Endpoints.newFixedEndpoint(uploadURL);
       return this;
     }
 
@@ -276,12 +276,12 @@ public class Analytics {
               .registerTypeAdapter(Date.class, new ISO8601DateAdapter()) //
               .create();
 
-      if (endpoint == null && apiHap == null) {
+      if (endpoint == null && uploadURL == null) {
         endpoint = DEFAULT_ENDPOINT;
       }
 
-      if (endpoint == null && apiHap != null) {
-        endpoint = apiHap;
+      if (endpoint == null && uploadURL != null) {
+        endpoint = uploadURL;
       }
 
       if (client == null) {

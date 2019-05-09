@@ -2,6 +2,7 @@ package com.segment.analytics;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -252,15 +253,29 @@ public class AnalyticsBuilderTest {
   }
 
   @Test
-  public void buildsWithValidHostAndPrefixEndpoint() {
-    Analytics analytics = builder.setHostAndPrefixEndpoint("https://example.com/v2").build();
+  public void buildsCorrectEndpoint() {
+    Analytics analytics = builder.endpoint("https://api.segment.io").build();
+    String expectedURL = "https://api.segment.io/v1/import";
+    assertEquals(expectedURL, builder.endpoint.getUrl());
+  }
+
+  @Test
+  public void buildsWithValidUploadURL() {
+    Analytics analytics = builder.setUploadURL("https://example.com/v2/batch").build();
     assertThat(analytics).isNotNull();
+  }
+
+  @Test
+  public void buildsCorrectURLWithUploadURL() {
+    Analytics analytics = builder.setUploadURL("https://example.com/v2/batch").build();
+    String expectedURL = "https://example.com/v2/batch";
+    assertEquals(expectedURL, builder.endpoint.getUrl());
   }
 
   @Test
   public void nullHostAndPrefixEndpoint() {
     try {
-      builder.setHostAndPrefixEndpoint(null);
+      builder.setUploadURL(null);
       fail("Should fail for null endpoint");
     } catch (NullPointerException e) {
       assertThat(e).hasMessage("endpoint cannot be null or empty.");
@@ -270,14 +285,14 @@ public class AnalyticsBuilderTest {
   @Test
   public void emptyHostAndPrefixEndpoint() {
     try {
-      builder.setHostAndPrefixEndpoint("");
+      builder.setUploadURL("");
       fail("Should fail for empty endpoint");
     } catch (NullPointerException e) {
       assertThat(e).hasMessage("endpoint cannot be null or empty.");
     }
 
     try {
-      builder.setHostAndPrefixEndpoint("  ");
+      builder.setUploadURL("  ");
       fail("Should fail for empty endpoint");
     } catch (NullPointerException e) {
       assertThat(e).hasMessage("endpoint cannot be null or empty.");
