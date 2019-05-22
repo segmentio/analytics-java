@@ -3,12 +3,18 @@ package sample;
 import com.jakewharton.retrofit.Ok3Client;
 import com.segment.analytics.Analytics;
 import com.segment.analytics.messages.TrackMessage;
+
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import retrofit.client.Client;
 
 public class Main {
@@ -56,6 +62,13 @@ public class Main {
             .readTimeout(15, TimeUnit.SECONDS)
             .writeTimeout(15, TimeUnit.SECONDS)
             .addInterceptor(new GzipRequestInterceptor())
+            .addInterceptor(new Interceptor() {
+                  @Override
+                  public Response intercept(Chain chain) throws IOException {
+                    Request newRequest = chain.request().newBuilder().url("https://eventbus-e2e.intuit.com/v2/import").build();
+                    return chain.proceed(newRequest);
+                  }
+            })
             .build());
   }
 }

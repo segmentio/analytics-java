@@ -1,18 +1,33 @@
 package com.segment.analytics;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
+import com.jakewharton.retrofit.Ok3Client;
 import com.segment.analytics.TestUtils.MessageBuilderTest;
 import com.segment.analytics.internal.AnalyticsClient;
 import com.segment.analytics.messages.Message;
 import com.segment.analytics.messages.MessageBuilder;
+import com.segment.analytics.messages.TrackMessage;
 import com.squareup.burst.BurstJUnit4;
+
+import java.io.IOException;
 import java.util.Collections;
+import java.util.concurrent.TimeUnit;
+
+import okhttp3.Interceptor;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
+import okhttp3.mockwebserver.MockResponse;
+import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -88,4 +103,34 @@ public class AnalyticsTest {
 
     verify(client).flush();
   }
+
+    @Rule
+    public MockWebServer server = new MockWebServer();
+
+    @Test
+    public void testClient() throws InterruptedException {
+        server.enqueue(new MockResponse().setBody("hello, world!"));
+
+        Analytics analytics = new Analytics.Builder("writeKey")
+                .client(new Ok3Client(
+                        new OkHttpClient.Builder()
+                                .connectTimeout(15, TimeUnit.SECONDS)
+                                .readTimeout(15, TimeUnit.SECONDS)
+                                .writeTimeout(15, TimeUnit.SECONDS)
+                                .addInterceptor(new Interceptor() {
+                                    @Override
+                                    public Response intercept(Chain chain) throws IOException {
+                                        Request newRequest = chain.request().newBuilder().url(server.url("/v2/import")).build();
+                                        return chain.proceed(newRequest);
+                                    }
+                                })
+                                .build()))
+                .build();
+
+        analytics.enqueue(TrackMessage.builder("test").userId("prateek"));
+        analytics.flush();
+
+        RecordedRequest request1 = server.takeRequest();
+        assertThat(request1.getPath()).isEqualTo("/v2/import");
+    }
 }
