@@ -101,6 +101,11 @@
         <version>${okhttp.version}</version>
       </dependency>
       <dependency>
+       <groupId>com.squareup.okhttp3</groupId>
+       <artifactId>mockwebserver</artifactId>
+       <version>${okhttp.version}</version>
+      </dependency>
+      <dependency>
         <groupId>com.jakewharton.retrofit</groupId>
         <artifactId>retrofit1-okhttp3-client</artifactId>
         <version>${retrofit1-okhttp3-client.version}</version>

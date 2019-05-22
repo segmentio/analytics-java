@@ -56,6 +56,7 @@ public class Main {
             .readTimeout(15, TimeUnit.SECONDS)
             .writeTimeout(15, TimeUnit.SECONDS)
             .addInterceptor(new GzipRequestInterceptor())
+            .addInterceptor(new RewriteUrlInterceptor())
             .build());
   }
 }
