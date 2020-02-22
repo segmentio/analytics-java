@@ -4,12 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import com.segment.analytics.Callback;
@@ -24,6 +19,7 @@ import com.segment.backo.Backo;
 import com.squareup.burst.BurstJUnit4;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -49,8 +45,8 @@ public class AnalyticsClientTest {
   private static final Backo BACKO =
       Backo.builder().base(TimeUnit.NANOSECONDS, 1).factor(1).build();
 
-  Log log = Log.NONE;
   ThreadFactory threadFactory;
+  @Mock Log log;
   @Mock BlockingQueue<Message> messageQueue;
   @Mock SegmentService segmentService;
   @Mock ExecutorService networkExecutor;
@@ -76,13 +72,36 @@ public class AnalyticsClientTest {
   }
 
   @Test
-  public void enqueueAddsToQueue(MessageBuilderTest builder) throws InterruptedException {
+  public void enqueueAddsToQueue(MessageBuilderTest builder) {
     AnalyticsClient client = newClient();
 
     Message message = builder.get().userId("prateek").build();
     client.enqueue(message);
 
-    verify(messageQueue).put(message);
+    verify(messageQueue).offer(message);
+  }
+
+  @Test
+  public void enqueueDropsMessageWhenQueueFull(MessageBuilderTest builder) {
+    BlockingQueue messageQueue = new LinkedBlockingQueue<Message>(10);
+    AnalyticsClient analyticsClient = new AnalyticsClient(
+      messageQueue,
+      segmentService,
+      10,
+      TimeUnit.HOURS.toMillis(1),
+      log,
+      threadFactory,
+      networkExecutor,
+      Collections.singletonList(callback));
+
+    for (int i = 0; i < 15; i++) {
+      Message message = builder.get().userId("prateek").build();
+      analyticsClient.enqueue(message);
+    }
+
+    //TODO(wadejensen) assertion fails due to other interactions with mock Log.
+    verify(log, times(5))
+      .print(Log.Level.ERROR, "Failed to enqueue message as queue is already full.");
   }
 
   @Test
@@ -96,12 +115,12 @@ public class AnalyticsClientTest {
   }
 
   @Test
-  public void flushInsertsPoison() throws InterruptedException {
+  public void flushInsertsPoison() {
     AnalyticsClient client = newClient();
 
     client.flush();
 
-    verify(messageQueue).put(FlushMessage.POISON);
+    verify(messageQueue).offer(FlushMessage.POISON);
   }
 
   /** Wait until the queue is drained. */

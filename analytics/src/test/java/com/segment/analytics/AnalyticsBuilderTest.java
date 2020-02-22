@@ -149,6 +149,29 @@ public class AnalyticsBuilderTest {
   }
 
   @Test
+  public void invalidMaxQueueSize() {
+    try {
+      builder.maxQueueSize(5);
+        fail("Should fail for maxQueueSize < 10");
+    } catch (IllegalArgumentException e) {
+      assertThat(e).hasMessage("maxQueueSize must not be less than 10.");
+    }
+
+    try {
+      builder.maxQueueSize(-1);
+      fail("Should fail for non positive maxQueueSize");
+    } catch (IllegalArgumentException e) {
+      assertThat(e).hasMessage("maxQueueSize must not be less than 10.");
+    }
+  }
+
+  @Test
+  public void buildsWithValidMaxQueueSize() {
+    Analytics analytics = builder.maxQueueSize(1000).build();
+    assertThat(analytics).isNotNull();
+  }
+
+  @Test
   public void invalidFlushQueueSize() {
     try {
       builder.flushQueueSize(0);
@@ -168,6 +191,29 @@ public class AnalyticsBuilderTest {
   @Test
   public void buildsWithValidFlushQueueSize() {
     Analytics analytics = builder.flushQueueSize(1).build();
+    assertThat(analytics).isNotNull();
+  }
+
+  @Test
+  public void invalidFlushQueueSizeAndMaxQueueSizeCombination() {
+    try {
+      builder.maxQueueSize(1000).flushQueueSize(1001).build();
+      fail("Should fail for maxQueueSize less than flushQueueSize");
+    } catch (IllegalArgumentException e) {
+      assertThat(e).hasMessage("maxQueueSize must not be less than flushQueueSize.");
+    }
+
+    try {
+      builder.maxQueueSize(249).build();
+      fail("Should fail for maxQueueSize less than platform default flushQueueSize");
+    } catch (IllegalArgumentException e) {
+      assertThat(e).hasMessage("maxQueueSize must not be less than flushQueueSize.");
+    }
+  }
+
+  @Test
+  public void buildsWithValidFlushQueueSizeAndMaxQueueSizeCombination() {
+    Analytics analytics = builder.maxQueueSize(10000).flushQueueSize(500).build();
     assertThat(analytics).isNotNull();
   }
 

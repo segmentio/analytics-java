@@ -39,7 +39,7 @@ public class AnalyticsClient {
 
   private final BlockingQueue<Message> messageQueue;
   private final SegmentService service;
-  private final int size;
+  private final int flushQueueSize;
   private final Log log;
   private final List<Callback> callbacks;
   private final ExecutorService networkExecutor;
@@ -48,6 +48,7 @@ public class AnalyticsClient {
 
   public static AnalyticsClient create(
       SegmentService segmentService,
+      int maxQueueSize,
       int flushQueueSize,
       long flushIntervalInMillis,
       Log log,
@@ -55,7 +56,7 @@ public class AnalyticsClient {
       ExecutorService networkExecutor,
       List<Callback> callbacks) {
     return new AnalyticsClient(
-        new LinkedBlockingQueue<Message>(),
+        new LinkedBlockingQueue<Message>(maxQueueSize),
         segmentService,
         flushQueueSize,
         flushIntervalInMillis,
@@ -68,7 +69,7 @@ public class AnalyticsClient {
   AnalyticsClient(
       BlockingQueue<Message> messageQueue,
       SegmentService service,
-      int maxQueueSize,
+      int flushQueueSize,
       long flushIntervalInMillis,
       Log log,
       ThreadFactory threadFactory,
@@ -76,7 +77,7 @@ public class AnalyticsClient {
       List<Callback> callbacks) {
     this.messageQueue = messageQueue;
     this.service = service;
-    this.size = maxQueueSize;
+    this.flushQueueSize = flushQueueSize;
     this.log = log;
     this.callbacks = callbacks;
     this.looperExecutor = Executors.newSingleThreadExecutor(threadFactory);
@@ -98,10 +99,8 @@ public class AnalyticsClient {
   }
 
   public void enqueue(Message message) {
-    try {
-      messageQueue.put(message);
-    } catch (InterruptedException e) {
-      log.print(ERROR, e, "Interrupted while adding message %s.", message);
+    if (!messageQueue.offer(message)) {
+      log.print(ERROR, "Failed to enqueue message as queue is already full.");
     }
   }
 
@@ -136,7 +135,7 @@ public class AnalyticsClient {
             continue;
           }
 
-          if (messages.size() >= size || message == FlushMessage.POISON) {
+          if (messages.size() >= flushQueueSize || message == FlushMessage.POISON) {
             Batch batch = Batch.create(CONTEXT, messages);
             log.print(
                 VERBOSE,

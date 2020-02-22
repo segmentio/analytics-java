@@ -54,6 +54,10 @@ class Platform {
     };
   }
 
+  public int defaultMaxQueueSize() {
+    return 2147483647;
+  }
+
   public long defaultFlushIntervalInMillis() {
     return 10 * 1000; // 10s
   }
