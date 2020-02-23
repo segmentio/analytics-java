@@ -108,7 +108,7 @@ public class Analytics {
     private List<MessageInterceptor> messageInterceptors;
     private ExecutorService networkExecutor;
     private ThreadFactory threadFactory;
-    private int maxQueueSize;
+    private int queueSize;
     private int flushQueueSize;
     private long flushIntervalInMillis;
     private List<Callback> callbacks;
@@ -193,11 +193,11 @@ public class Analytics {
 
     /** Set the maximum number of messages to queue in memory before dropping messages. */
     @Beta
-    public Builder maxQueueSize(int maxQueueSize) {
-      if (maxQueueSize < 10) {
-        throw new IllegalArgumentException("maxQueueSize must not be less than 10.");
+    public Builder queueSize(int queueSize) {
+      if (queueSize < 1) {
+        throw new IllegalArgumentException("queueSize must not be less than 1.");
       }
-      this.maxQueueSize = maxQueueSize;
+      this.queueSize = queueSize;
       return this;
     }
 
@@ -289,10 +289,10 @@ public class Analytics {
       if (flushQueueSize == 0) {
         flushQueueSize = Platform.get().defaultFlushQueueSize();
       }
-      if (maxQueueSize == 0) {
-        maxQueueSize = Platform.get().defaultMaxQueueSize();
-      } else if (maxQueueSize < flushQueueSize) {
-        throw new IllegalArgumentException("maxQueueSize must not be less than flushQueueSize.");
+      if (queueSize == 0) {
+        queueSize = Platform.get().defaultQueueSize();
+      } else if (queueSize < flushQueueSize) {
+        throw new IllegalArgumentException("queueSize must not be less than flushQueueSize.");
       }
       if (messageTransformers == null) {
         messageTransformers = Collections.emptyList();
@@ -337,7 +337,7 @@ public class Analytics {
       AnalyticsClient analyticsClient =
           AnalyticsClient.create(
               segmentService,
-              maxQueueSize,
+              queueSize,
               flushQueueSize,
               flushIntervalInMillis,
               log,

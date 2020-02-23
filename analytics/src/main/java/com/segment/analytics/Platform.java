@@ -56,7 +56,7 @@ class Platform {
     };
   }
 
-  public int defaultMaxQueueSize() {
+  public int defaultQueueSize() {
     return 2147483647;
   }
 

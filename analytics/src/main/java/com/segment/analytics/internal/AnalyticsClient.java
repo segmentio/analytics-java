@@ -48,7 +48,7 @@ public class AnalyticsClient {
 
   public static AnalyticsClient create(
       SegmentService segmentService,
-      int maxQueueSize,
+      int queueSize,
       int flushQueueSize,
       long flushIntervalInMillis,
       Log log,
@@ -56,7 +56,7 @@ public class AnalyticsClient {
       ExecutorService networkExecutor,
       List<Callback> callbacks) {
     return new AnalyticsClient(
-        new LinkedBlockingQueue<Message>(maxQueueSize),
+        new LinkedBlockingQueue<Message>(queueSize),
         segmentService,
         flushQueueSize,
         flushIntervalInMillis,
