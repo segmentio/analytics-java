@@ -222,7 +222,13 @@ public class Analytics {
       return this;
     }
 
-    /** Set the {@link ExecutorService} on which all HTTP requests will be made. */
+    /**
+     * Set the {@link ExecutorService} on which all HTTP requests will be made.
+     * Note that if the provided {@link ExecutorService} does not synchronously
+     * block on {@link ExecutorService#submit} when all threads are occupied,
+     * eg. by using a {@link java.util.concurrent.SynchronousQueue} then
+     * setting {@code queueSize} will have no effect.
+     */
     public Builder networkExecutor(ExecutorService networkExecutor) {
       if (networkExecutor == null) {
         throw new NullPointerException("Null networkExecutor");
