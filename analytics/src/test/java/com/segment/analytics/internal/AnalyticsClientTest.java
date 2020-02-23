@@ -19,7 +19,6 @@ import com.segment.backo.Backo;
 import com.squareup.burst.BurstJUnit4;
 import java.io.IOException;
 import java.util.Collections;
-import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
@@ -27,6 +26,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeMatcher;
 import org.junit.Before;
@@ -34,6 +34,8 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 import retrofit.RetrofitError;
 import retrofit.client.Header;
 import retrofit.client.Response;
@@ -81,28 +83,40 @@ public class AnalyticsClientTest {
     verify(messageQueue).offer(message);
   }
 
-//  @Test
-//  public void enqueueDropsMessageWhenQueueFull(MessageBuilderTest builder) {
-//    BlockingQueue messageQueue = new LinkedBlockingQueue<Message>(10);
-//    AnalyticsClient analyticsClient = new AnalyticsClient(
-//      messageQueue,
-//      segmentService,
-//      10,
-//      TimeUnit.HOURS.toMillis(1),
-//      log,
-//      threadFactory,
-//      networkExecutor,
-//      Collections.singletonList(callback));
-//
-//    for (int i = 0; i < 15; i++) {
-//      Message message = builder.get().userId("prateek").build();
-//      analyticsClient.enqueue(message);
-//    }
-//
-//    //TODO(wadejensen) assertion fails due to other interactions with mock Log.
-//    verify(log, times(5))
-//      .print(Log.Level.ERROR, "Failed to enqueue message as queue is already full.");
-//  }
+  @Test
+  public void enqueueDropsMessageWhenQueueFull(MessageBuilderTest builder) {
+    BlockingQueue messageQueue = new LinkedBlockingQueue<Message>(10);
+    // simulate indefinite blocking on submission to network executor
+    doAnswer(new Answer() {
+      @Override
+      public Object answer(InvocationOnMock invocation) throws Throwable {
+        Thread.sleep(3600 * 1000);
+        return null;
+      }
+    }).when(networkExecutor).submit(any(Runnable.class));
+
+    AnalyticsClient analyticsClient = new AnalyticsClient(
+      messageQueue,
+      segmentService,
+      10,
+      TimeUnit.HOURS.toMillis(1),
+      log,
+      threadFactory,
+      networkExecutor,
+      Collections.singletonList(callback));
+
+    for (int i = 0; i < 25; i++) {
+      Message message = builder.get().userId("prateek").build();
+      analyticsClient.enqueue(message);
+    }
+
+    // 10 messages are removed by looperExecutor,
+    // 10 messages are retained,
+    // 5 are dropped.
+    assertThat(messageQueue).hasSize(10);
+    verify(log, times(5))
+      .print(Log.Level.ERROR, "Failed to enqueue message as queue is already full.");
+  }
 
   @Test
   public void shutdown() {
