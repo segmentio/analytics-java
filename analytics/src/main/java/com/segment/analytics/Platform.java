@@ -7,6 +7,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.SynchronousQueue;
 import okhttp3.OkHttpClient;
 import retrofit.client.Client;
 
@@ -34,6 +36,8 @@ class Platform {
   }
 
   ExecutorService defaultNetworkExecutor() {
+    //    return new ThreadPoolExecutor(1, 1, 0L, TimeUnit.MILLISECONDS, new SynchronousQueue()),
+    //      defaultThreadFactory());
     return Executors.newSingleThreadExecutor(defaultThreadFactory());
   }
 
