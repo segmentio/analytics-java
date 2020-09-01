@@ -101,7 +101,7 @@ public class AnalyticsClient {
     try {
       messageQueue.put(message);
     } catch (InterruptedException e) {
-      log.print(ERROR, e, "Interrupted while adding message %s.", message);
+      log.print(ERROR, e, "Interrupted while adding message %i.", message);
     }
   }
 
@@ -140,7 +140,7 @@ public class AnalyticsClient {
             Batch batch = Batch.create(CONTEXT, messages);
             log.print(
                 VERBOSE,
-                "Batching %s message(s) into batch %s.",
+                "Batching %i message(s) into batch %i.",
                 messages.size(),
                 batch.sequence());
             networkExecutor.submit(BatchUploadTask.create(AnalyticsClient.this, batch));
@@ -179,12 +179,12 @@ public class AnalyticsClient {
     /** Returns {@code true} to indicate a batch should be retried. {@code false} otherwise. */
     boolean upload() {
       try {
-        client.log.print(VERBOSE, "Uploading batch %s.", batch.sequence());
+        client.log.print(VERBOSE, "Uploading batch %i.", batch.sequence());
 
         // Ignore return value, UploadResponse#onSuccess will never return false for 200 OK
         client.service.upload(batch);
 
-        client.log.print(VERBOSE, "Uploaded batch %s.", batch.sequence());
+        client.log.print(VERBOSE, "Uploaded batch %i.", batch.sequence());
         for (Message message : batch.batch()) {
           for (Callback callback : client.callbacks) {
             callback.success(message);
@@ -195,7 +195,7 @@ public class AnalyticsClient {
         switch (error.getKind()) {
           case NETWORK:
             client.log.print(
-                DEBUG, error, "Could not upload batch %s. Retrying.", batch.sequence());
+                DEBUG, error, "Could not upload batch %i. Retrying.", batch.sequence());
             return true;
           case HTTP:
             // Retry 5xx and 429 responses.
@@ -204,7 +204,7 @@ public class AnalyticsClient {
               client.log.print(
                   DEBUG,
                   error,
-                  "Could not upload batch %s due to server error. Retrying.",
+                  "Could not upload batch %i due to server error. Retrying.",
                   batch.sequence());
               return true;
             }
@@ -212,14 +212,14 @@ public class AnalyticsClient {
               client.log.print(
                   DEBUG,
                   error,
-                  "Could not upload batch %s due to rate limiting. Retrying.",
+                  "Could not upload batch %i due to rate limiting. Retrying.",
                   batch.sequence());
               return true;
             }
             client.log.print(
                 ERROR,
                 error,
-                "Could not upload batch %s due to HTTP error. Giving up.",
+                "Could not upload batch %i due to HTTP error. Giving up.",
                 batch.sequence());
             for (Message message : batch.batch()) {
               for (Callback callback : client.callbacks) {
@@ -229,7 +229,7 @@ public class AnalyticsClient {
             return false; // Don't retry
           default:
             client.log.print(
-                ERROR, error, "Could not upload batch %s. Giving up.", batch.sequence());
+                ERROR, error, "Could not upload batch %i. Giving up.", batch.sequence());
             for (Message message : batch.batch()) {
               for (Callback callback : client.callbacks) {
                 callback.failure(message, error);
@@ -249,12 +249,12 @@ public class AnalyticsClient {
           backo.sleep(attempt);
         } catch (InterruptedException e) {
           client.log.print(
-              DEBUG, "Thread interrupted while backing off for batch %s.", batch.sequence());
+              DEBUG, "Thread interrupted while backing off for batch %i.", batch.sequence());
           return;
         }
       }
 
-      client.log.print(ERROR, "Could not upload batch %s. Retries exhausted.", batch.sequence());
+      client.log.print(ERROR, "Could not upload batch %i. Retries exhausted.", batch.sequence());
       IOException exception = new IOException(MAX_ATTEMPTS + " retries exhausted");
       for (Message message : batch.batch()) {
         for (Callback callback : client.callbacks) {
