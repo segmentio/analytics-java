@@ -23,6 +23,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import retrofit.RetrofitError;
 
 public class AnalyticsClient {
@@ -45,35 +46,38 @@ public class AnalyticsClient {
   private final ExecutorService networkExecutor;
   private final ExecutorService looperExecutor;
   private final ScheduledExecutorService flushScheduler;
+  private final AtomicBoolean isShutDown;
 
   public static AnalyticsClient create(
-      SegmentService segmentService,
-      int flushQueueSize,
-      long flushIntervalInMillis,
-      Log log,
-      ThreadFactory threadFactory,
-      ExecutorService networkExecutor,
-      List<Callback> callbacks) {
+          SegmentService segmentService,
+          int flushQueueSize,
+          long flushIntervalInMillis,
+          Log log,
+          ThreadFactory threadFactory,
+          ExecutorService networkExecutor,
+          List<Callback> callbacks) {
     return new AnalyticsClient(
-        new LinkedBlockingQueue<Message>(),
-        segmentService,
-        flushQueueSize,
-        flushIntervalInMillis,
-        log,
-        threadFactory,
-        networkExecutor,
-        callbacks);
+            new LinkedBlockingQueue<Message>(),
+            segmentService,
+            flushQueueSize,
+            flushIntervalInMillis,
+            log,
+            threadFactory,
+            networkExecutor,
+            callbacks,
+            new AtomicBoolean(false));
   }
 
   AnalyticsClient(
-      BlockingQueue<Message> messageQueue,
-      SegmentService service,
-      int maxQueueSize,
-      long flushIntervalInMillis,
-      Log log,
-      ThreadFactory threadFactory,
-      ExecutorService networkExecutor,
-      List<Callback> callbacks) {
+          BlockingQueue<Message> messageQueue,
+          SegmentService service,
+          int maxQueueSize,
+          long flushIntervalInMillis,
+          Log log,
+          ThreadFactory threadFactory,
+          ExecutorService networkExecutor,
+          List<Callback> callbacks,
+          AtomicBoolean isShutDown) {
     this.messageQueue = messageQueue;
     this.service = service;
     this.size = maxQueueSize;
@@ -81,39 +85,72 @@ public class AnalyticsClient {
     this.callbacks = callbacks;
     this.looperExecutor = Executors.newSingleThreadExecutor(threadFactory);
     this.networkExecutor = networkExecutor;
+    this.isShutDown = isShutDown;
 
     looperExecutor.submit(new Looper());
 
     flushScheduler = Executors.newScheduledThreadPool(1, threadFactory);
     flushScheduler.scheduleAtFixedRate(
-        new Runnable() {
-          @Override
-          public void run() {
-            flush();
-          }
-        },
-        flushIntervalInMillis,
-        flushIntervalInMillis,
-        TimeUnit.MILLISECONDS);
+            new Runnable() {
+              @Override
+              public void run() {
+                flush();
+              }
+            },
+            flushIntervalInMillis,
+            flushIntervalInMillis,
+            TimeUnit.MILLISECONDS);
   }
 
   public void enqueue(Message message) {
+    if (message != StopMessage.STOP && isShutDown.get()) {
+      log.print(ERROR, "Attempt to enqueue a message when shutdown has been called %s.", message);
+      return;
+    }
+
     try {
       messageQueue.put(message);
     } catch (InterruptedException e) {
       log.print(ERROR, e, "Interrupted while adding message %s.", message);
+      Thread.currentThread().interrupt();
     }
   }
 
   public void flush() {
-    enqueue(FlushMessage.POISON);
+    if (!isShutDown.get()) {
+      enqueue(FlushMessage.POISON);
+    }
   }
 
   public void shutdown() {
-    messageQueue.clear();
-    looperExecutor.shutdownNow();
-    flushScheduler.shutdownNow();
-    networkExecutor.shutdown(); // Let in-flight requests complete.
+    if (isShutDown.compareAndSet(false, true)) {
+      final long start = System.currentTimeMillis();
+
+      // first let's tell the system to stop
+      enqueue(StopMessage.STOP);
+
+      // we can shutdown the flush scheduler without worrying
+      flushScheduler.shutdownNow();
+
+      shutdownAndWait(looperExecutor, "looper");
+      shutdownAndWait(networkExecutor, "network");
+
+      log.print(VERBOSE, "Analytics client shut down in %s ms", (System.currentTimeMillis() - start));
+    }
+  }
+
+  public void shutdownAndWait(ExecutorService executor, String name) {
+    try {
+      executor.shutdown();
+      final boolean executorTerminated = executor.awaitTermination(1, TimeUnit.SECONDS);
+
+      log.print(VERBOSE, "%s executor %s.",
+              name,
+              executorTerminated ? "terminated normally" : "timed out");
+    } catch (InterruptedException e) {
+      log.print(ERROR, e, "Interrupted while stopping %s executor.", name);
+      Thread.currentThread().interrupt();
+    }
   }
 
   /**
@@ -121,45 +158,56 @@ public class AnalyticsClient {
    * messages, it triggers a flush.
    */
   class Looper implements Runnable {
+    private boolean stop;
+
+    public Looper() {
+      this.stop = false;
+    }
+
     @Override
     public void run() {
       List<Message> messages = new ArrayList<>();
       try {
-        //noinspection InfiniteLoopStatement
-        while (true) {
+        while (!stop) {
           Message message = messageQueue.take();
 
-          if (message != FlushMessage.POISON) {
+          if (message == StopMessage.STOP) {
+            log.print(VERBOSE, "Stopping the Looper");
+            stop = true;
+          } else if (message == FlushMessage.POISON) {
+            if (!messages.isEmpty()) {
+              log.print(VERBOSE, "Flushing messages.");
+            }
+          } else {
             messages.add(message);
-          } else if (messages.size() < 1) {
-            log.print(VERBOSE, "No messages to flush.");
-            continue;
           }
 
-          if (messages.size() >= size || message == FlushMessage.POISON) {
+          if (!messages.isEmpty() && (messages.size() >= size || message == FlushMessage.POISON || message == StopMessage.STOP)) {
             Batch batch = Batch.create(CONTEXT, messages);
             log.print(
-                VERBOSE,
-                "Batching %s message(s) into batch %s.",
-                messages.size(),
-                batch.sequence());
+                    VERBOSE,
+                    "Batching %s message(s) into batch %s.",
+                    messages.size(),
+                    batch.sequence());
             networkExecutor.submit(BatchUploadTask.create(AnalyticsClient.this, batch));
             messages = new ArrayList<>();
           }
         }
       } catch (InterruptedException e) {
         log.print(DEBUG, "Looper interrupted while polling for messages.");
+        Thread.currentThread().interrupt();
       }
+      log.print(VERBOSE, "Looper stopped");
     }
   }
 
   static class BatchUploadTask implements Runnable {
     private static final Backo BACKO =
-        Backo.builder() //
-            .base(TimeUnit.SECONDS, 15) //
-            .cap(TimeUnit.HOURS, 1) //
-            .jitter(1) //
-            .build();
+            Backo.builder() //
+                    .base(TimeUnit.SECONDS, 15) //
+                    .cap(TimeUnit.HOURS, 1) //
+                    .jitter(1) //
+                    .build();
     private static final int MAX_ATTEMPTS = 50; // Max 50 hours ~ 2 days
 
     private final AnalyticsClient client;
@@ -195,32 +243,32 @@ public class AnalyticsClient {
         switch (error.getKind()) {
           case NETWORK:
             client.log.print(
-                DEBUG, error, "Could not upload batch %s. Retrying.", batch.sequence());
+                    DEBUG, error, "Could not upload batch %s. Retrying.", batch.sequence());
             return true;
           case HTTP:
             // Retry 5xx and 429 responses.
             int status = error.getResponse().getStatus();
             if (is5xx(status)) {
               client.log.print(
-                  DEBUG,
-                  error,
-                  "Could not upload batch %s due to server error. Retrying.",
-                  batch.sequence());
+                      DEBUG,
+                      error,
+                      "Could not upload batch %s due to server error. Retrying.",
+                      batch.sequence());
               return true;
             }
             if (status == 429) {
               client.log.print(
-                  DEBUG,
-                  error,
-                  "Could not upload batch %s due to rate limiting. Retrying.",
-                  batch.sequence());
+                      DEBUG,
+                      error,
+                      "Could not upload batch %s due to rate limiting. Retrying.",
+                      batch.sequence());
               return true;
             }
             client.log.print(
-                ERROR,
-                error,
-                "Could not upload batch %s due to HTTP error. Giving up.",
-                batch.sequence());
+                    ERROR,
+                    error,
+                    "Could not upload batch %s due to HTTP error. Giving up.",
+                    batch.sequence());
             for (Message message : batch.batch()) {
               for (Callback callback : client.callbacks) {
                 callback.failure(message, error);
@@ -229,7 +277,7 @@ public class AnalyticsClient {
             return false; // Don't retry
           default:
             client.log.print(
-                ERROR, error, "Could not upload batch %s. Giving up.", batch.sequence());
+                    ERROR, error, "Could not upload batch %s. Giving up.", batch.sequence());
             for (Message message : batch.batch()) {
               for (Callback callback : client.callbacks) {
                 callback.failure(message, error);
@@ -249,7 +297,7 @@ public class AnalyticsClient {
           backo.sleep(attempt);
         } catch (InterruptedException e) {
           client.log.print(
-              DEBUG, "Thread interrupted while backing off for batch %s.", batch.sequence());
+                  DEBUG, "Thread interrupted while backing off for batch %s.", batch.sequence());
           return;
         }
       }
