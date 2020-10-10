@@ -1,5 +1,8 @@
 version: 2
 
+orbs:
+  snyk: snyk/snyk@0.0.12
+
 jobs:
   java-base-test: &java-base-test
     working_directory: ~/analytics-java
@@ -109,10 +112,10 @@ workflows:
       - coverage:
           requires:
             - test
-      - snyk:
-          context: snyk
-          requires:
-            - test
+      # - snyk:
+      #     context: snyk
+      #     requires:
+      #       - test
   test_and_publish:
     jobs:
       - test:
