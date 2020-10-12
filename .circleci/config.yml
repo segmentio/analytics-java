@@ -42,7 +42,7 @@ jobs:
   test-jdk14:
     <<: *java-base-test
     docker:
-      - image: circleci/openjdk:11-ea-14-jdk-browsers
+      - image: circleci/openjdk:14.0.2-jdk-buster-browsers
 
   test-jdk13:
     <<: *java-base-test
