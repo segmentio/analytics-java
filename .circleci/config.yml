@@ -37,22 +37,22 @@ jobs:
   test-jdk15:
     <<: *java-base-test
     docker:
-      - image: circleci/openjdk:11-ea-15-jdk-browsers
+      - image: circleci/openjdk:15-jdk-buster-browsers
 
   test-jdk14:
     <<: *java-base-test
     docker:
-      - image: circleci/openjdk:14.0.2-jdk-buster-browsers
+      - image: circleci/openjdk:14-jdk-buster-browsers
 
   test-jdk13:
     <<: *java-base-test
     docker:
-      - image: circleci/openjdk:11-ea-13-jdk-browsers
+      - image: circleci/openjdk:13-jdk-buster-browsers
 
   test-jdk12:
     <<: *java-base-test
     docker:
-      - image: circleci/openjdk:11-ea-12-jdk-browsers
+      - image: circleci/openjdk:12-jdk
 
   test-jdk11:
     <<: *java-base-test
