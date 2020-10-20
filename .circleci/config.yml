@@ -31,20 +31,10 @@ jobs:
     docker:
       - image: circleci/openjdk
 
-  test-jdk10:
+  test-jdk11:
     <<: *java-base-test
     docker:
-      - image: circleci/openjdk:10-jdk-browsers
-
-  test-jdk9:
-    <<: *java-base-test
-    docker:
-      - image: circleci/openjdk:9-jdk-browsers
-
-  test-jdk8:
-    <<: *java-base-test
-    docker:
-      - image: circleci/openjdk:8-jdk-browsers
+      - image: circleci/openjdk:11-jdk-browsers
 
   test:
     <<: *java-base-test
@@ -100,9 +90,7 @@ workflows:
   multi-test:
     jobs:
       - test-jdklatest
-      - test-jdk10
-      - test-jdk9
-      - test-jdk8
+      - test-jdk11
   static_analysis:
     jobs:
       - test
