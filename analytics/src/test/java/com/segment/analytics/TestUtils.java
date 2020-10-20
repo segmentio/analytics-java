@@ -1,6 +1,12 @@
 package com.segment.analytics;
 
-import com.segment.analytics.messages.*;
+import com.segment.analytics.messages.AliasMessage;
+import com.segment.analytics.messages.GroupMessage;
+import com.segment.analytics.messages.IdentifyMessage;
+import com.segment.analytics.messages.Message;
+import com.segment.analytics.messages.MessageBuilder;
+import com.segment.analytics.messages.ScreenMessage;
+import com.segment.analytics.messages.TrackMessage;
 
 public final class TestUtils {
   private TestUtils() {
