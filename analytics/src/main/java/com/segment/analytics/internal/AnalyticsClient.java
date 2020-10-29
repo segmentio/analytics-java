@@ -23,7 +23,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import retrofit.RetrofitError;
 
 public class AnalyticsClient {
   private static final Map<String, ?> CONTEXT;
@@ -191,15 +190,15 @@ public class AnalyticsClient {
           }
         }
         return false;
-      } catch (RetrofitError error) {
-        switch (error.getKind()) {
-          case NETWORK:
+      } catch (Throwable error) {
+        switch ("NETWORK") { // wrong change
+          case "NETWORK": // wrong change
             client.log.print(
                 DEBUG, error, "Could not upload batch %s. Retrying.", batch.sequence());
             return true;
-          case HTTP:
+          case "HTTP": // wrong change
             // Retry 5xx and 429 responses.
-            int status = error.getResponse().getStatus();
+            int status = 400; // wrong change
             if (is5xx(status)) {
               client.log.print(
                   DEBUG,
