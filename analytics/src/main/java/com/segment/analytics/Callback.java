@@ -1,6 +1,9 @@
 package com.segment.analytics;
 
+import com.segment.analytics.http.UploadResponse;
 import com.segment.analytics.messages.Message;
+
+import retrofit2.Response;
 
 /**
  * Callback invoked when the client library is done processing a message.

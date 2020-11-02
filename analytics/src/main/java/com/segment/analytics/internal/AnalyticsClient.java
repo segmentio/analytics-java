@@ -7,9 +7,14 @@ import static com.segment.analytics.Log.Level.VERBOSE;
 import com.segment.analytics.Callback;
 import com.segment.analytics.Log;
 import com.segment.analytics.http.SegmentService;
+import com.segment.analytics.http.UploadResponse;
 import com.segment.analytics.messages.Batch;
 import com.segment.analytics.messages.Message;
 import com.segment.backo.Backo;
+
+import retrofit2.Call;
+import retrofit2.Response;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -175,67 +180,60 @@ public class AnalyticsClient {
       this.backo = backo;
     }
 
+    private void notifyCallbacksWithException(Batch batch, Exception exception) {
+      for (Message message : batch.batch()) {
+        for (Callback callback : client.callbacks) {
+          callback.failure(message, exception);
+        }
+      }
+    }
+
     /** Returns {@code true} to indicate a batch should be retried. {@code false} otherwise. */
     boolean upload() {
+      client.log.print(VERBOSE, "Uploading batch %s.", batch.sequence());
+
       try {
-        client.log.print(VERBOSE, "Uploading batch %s.", batch.sequence());
+        Call<UploadResponse> call = client.service.upload(batch);
+        Response<UploadResponse> response = call.execute();
 
-        // Ignore return value, UploadResponse#onSuccess will never return false for 200 OK
-        client.service.upload(batch);
+        if (response.isSuccessful()) {
+          client.log.print(VERBOSE, "Uploaded batch %s.", batch.sequence());
 
-        client.log.print(VERBOSE, "Uploaded batch %s.", batch.sequence());
-        for (Message message : batch.batch()) {
-          for (Callback callback : client.callbacks) {
-            callback.success(message);
+          for (Message message : batch.batch()) {
+            for (Callback callback : client.callbacks) {
+              callback.success(message);
+            }
           }
+
+          return false;
         }
+
+        int status = response.code();
+        if (is5xx(status)) {
+          client.log.print(DEBUG, "Could not upload batch %s due to server error. Retrying.",
+              batch.sequence());
+          return true;
+        } else if (status == 429) {
+          client.log.print(DEBUG, "Could not upload batch %s due to rate limiting. Retrying.",
+              batch.sequence());
+          return true;
+        }
+
+        client.log.print(DEBUG, "Could not upload batch %s. Giving up.", batch.sequence());
+
+        notifyCallbacksWithException(batch, new IOException("HTTP Error"));
+
         return false;
-      } catch (Throwable error) {
-        switch ("NETWORK") { // wrong change
-          case "NETWORK": // wrong change
-            client.log.print(
-                DEBUG, error, "Could not upload batch %s. Retrying.", batch.sequence());
-            return true;
-          case "HTTP": // wrong change
-            // Retry 5xx and 429 responses.
-            int status = 400; // wrong change
-            if (is5xx(status)) {
-              client.log.print(
-                  DEBUG,
-                  error,
-                  "Could not upload batch %s due to server error. Retrying.",
-                  batch.sequence());
-              return true;
-            }
-            if (status == 429) {
-              client.log.print(
-                  DEBUG,
-                  error,
-                  "Could not upload batch %s due to rate limiting. Retrying.",
-                  batch.sequence());
-              return true;
-            }
-            client.log.print(
-                ERROR,
-                error,
-                "Could not upload batch %s due to HTTP error. Giving up.",
-                batch.sequence());
-            for (Message message : batch.batch()) {
-              for (Callback callback : client.callbacks) {
-                callback.failure(message, error);
-              }
-            }
-            return false; // Don't retry
-          default:
-            client.log.print(
-                ERROR, error, "Could not upload batch %s. Giving up.", batch.sequence());
-            for (Message message : batch.batch()) {
-              for (Callback callback : client.callbacks) {
-                callback.failure(message, error);
-              }
-            }
-            return false; // Don't retry
-        }
+      } catch(IOException error) {
+        client.log.print(DEBUG, error, "Could not upload batch %s. Retrying.", batch.sequence());
+
+        return true;
+      } catch (Exception exception) {
+        client.log.print(DEBUG, "Could not upload batch %s. Giving up.", batch.sequence());
+
+        notifyCallbacksWithException(batch, exception);
+
+        return false;
       }
     }
 
@@ -254,12 +252,7 @@ public class AnalyticsClient {
       }
 
       client.log.print(ERROR, "Could not upload batch %s. Retries exhausted.", batch.sequence());
-      IOException exception = new IOException(MAX_ATTEMPTS + " retries exhausted");
-      for (Message message : batch.batch()) {
-        for (Callback callback : client.callbacks) {
-          callback.failure(message, exception);
-        }
-      }
+      notifyCallbacksWithException(batch, new IOException(MAX_ATTEMPTS + " retries exhausted"));
     }
 
     private static boolean is5xx(int status) {

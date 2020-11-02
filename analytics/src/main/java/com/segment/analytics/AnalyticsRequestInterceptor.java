@@ -23,12 +23,11 @@ class AnalyticsRequestInterceptor implements Interceptor {
   @Override
   public okhttp3.Response intercept(Chain chain) throws IOException {
     Request request = chain.request();
-    Headers headers = request.headers().newBuilder()
-      .add(AUTHORIZATION_HEADER, Credentials.basic(writeKey, ""))
-      .add(USER_AGENT_HEADER, userAgent)
+    Request newRequest = request.newBuilder()
+      .addHeader(AUTHORIZATION_HEADER, Credentials.basic(writeKey, ""))
+      .addHeader(USER_AGENT_HEADER, userAgent)
       .build();
 
-    request = request.newBuilder().headers(headers).build();
-    return chain.proceed(request);
+    return chain.proceed(newRequest);
   }
 }

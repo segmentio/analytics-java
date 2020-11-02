@@ -27,6 +27,10 @@
       <artifactId>converter-gson</artifactId>
     </dependency>
     <dependency>
+      <groupId>com.squareup.retrofit2</groupId>
+      <artifactId>retrofit-mock</artifactId>
+    </dependency>
+    <dependency>
       <groupId>com.google.code.findbugs</groupId>
       <artifactId>findbugs</artifactId>
       <scope>provided</scope>
