@@ -9,10 +9,6 @@ import com.segment.analytics.internal.AnalyticsClient;
 import com.segment.analytics.internal.AnalyticsVersion;
 import com.segment.analytics.messages.Message;
 import com.segment.analytics.messages.MessageBuilder;
-
-import okhttp3.HttpUrl;
-import okhttp3.OkHttpClient;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -20,6 +16,8 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
@@ -268,7 +266,11 @@ public class Analytics {
       }
       if (client == null) {
         client = Platform.get().defaultClient();
-        client = client.newBuilder().addInterceptor(new AnalyticsRequestInterceptor(writeKey, userAgent)).build();
+        client =
+            client
+                .newBuilder()
+                .addInterceptor(new AnalyticsRequestInterceptor(writeKey, userAgent))
+                .build();
       }
       if (log == null) {
         log = Log.NONE;

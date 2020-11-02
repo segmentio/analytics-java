@@ -4,8 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
@@ -17,14 +15,13 @@ import com.segment.analytics.Callback;
 import com.segment.analytics.Log;
 import com.segment.analytics.TestUtils.MessageBuilderTest;
 import com.segment.analytics.http.SegmentService;
+import com.segment.analytics.http.UploadResponse;
 import com.segment.analytics.internal.AnalyticsClient.BatchUploadTask;
 import com.segment.analytics.messages.Batch;
 import com.segment.analytics.messages.Message;
 import com.segment.analytics.messages.TrackMessage;
-import com.segment.analytics.http.UploadResponse;
 import com.segment.backo.Backo;
 import com.squareup.burst.BurstJUnit4;
-
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Queue;
@@ -34,9 +31,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-
+import okhttp3.ResponseBody;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -44,8 +40,6 @@ import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-
-import okhttp3.ResponseBody;
 import retrofit2.Call;
 import retrofit2.Response;
 import retrofit2.mock.Calls;
@@ -189,10 +183,10 @@ public class AnalyticsClientTest {
 
     // Throw a network error 3 times.
     when(segmentService.upload(batch))
-      .thenReturn(Calls.response(failureResponse))
-      .thenReturn(Calls.response(failureResponse))
-      .thenReturn(Calls.response(failureResponse))
-      .thenReturn(Calls.response(successResponse));
+        .thenReturn(Calls.response(failureResponse))
+        .thenReturn(Calls.response(failureResponse))
+        .thenReturn(Calls.response(failureResponse))
+        .thenReturn(Calls.response(successResponse));
 
     BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch);
     batchUploadTask.run();
@@ -211,12 +205,13 @@ public class AnalyticsClientTest {
     // Throw a HTTP error 3 times.
 
     Response<UploadResponse> successResponse = Response.success(200, response);
-    Response<UploadResponse> failResponse = Response.error(500, ResponseBody.create(null, "Server Error"));
+    Response<UploadResponse> failResponse =
+        Response.error(500, ResponseBody.create(null, "Server Error"));
     when(segmentService.upload(batch))
-      .thenReturn(Calls.response(failResponse))
-      .thenReturn(Calls.response(failResponse))
-      .thenReturn(Calls.response(failResponse))
-      .thenReturn(Calls.response(successResponse));
+        .thenReturn(Calls.response(failResponse))
+        .thenReturn(Calls.response(failResponse))
+        .thenReturn(Calls.response(failResponse))
+        .thenReturn(Calls.response(successResponse));
 
     BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch);
     batchUploadTask.run();
@@ -234,12 +229,13 @@ public class AnalyticsClientTest {
 
     // Throw a HTTP error 3 times.
     Response<UploadResponse> successResponse = Response.success(200, response);
-    Response<UploadResponse> failResponse = Response.error(429, ResponseBody.create(null, "Rate Limited"));
+    Response<UploadResponse> failResponse =
+        Response.error(429, ResponseBody.create(null, "Rate Limited"));
     when(segmentService.upload(batch))
-      .thenReturn(Calls.response(failResponse))
-      .thenReturn(Calls.response(failResponse))
-      .thenReturn(Calls.response(failResponse))
-      .thenReturn(Calls.response(successResponse));
+        .thenReturn(Calls.response(failResponse))
+        .thenReturn(Calls.response(failResponse))
+        .thenReturn(Calls.response(failResponse))
+        .thenReturn(Calls.response(successResponse));
 
     BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch);
     batchUploadTask.run();
@@ -256,9 +252,9 @@ public class AnalyticsClientTest {
     Batch batch = batchFor(trackMessage);
 
     // Throw a HTTP error that should not be retried.
-    Response<UploadResponse> failResponse = Response.error(404, ResponseBody.create(null, "Not Found"));
-    when(segmentService.upload(batch))
-      .thenReturn(Calls.response(failResponse));
+    Response<UploadResponse> failResponse =
+        Response.error(404, ResponseBody.create(null, "Not Found"));
+    when(segmentService.upload(batch)).thenReturn(Calls.response(failResponse));
 
     BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch);
     batchUploadTask.run();
@@ -275,8 +271,7 @@ public class AnalyticsClientTest {
     Batch batch = batchFor(trackMessage);
 
     Call<UploadResponse> networkFailure = Calls.failure(new RuntimeException());
-    when(segmentService.upload(batch))
-      .thenReturn(networkFailure);
+    when(segmentService.upload(batch)).thenReturn(networkFailure);
 
     BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch);
     batchUploadTask.run();
@@ -293,12 +288,14 @@ public class AnalyticsClientTest {
     Batch batch = batchFor(trackMessage);
 
     when(segmentService.upload(batch))
-      .thenAnswer(new Answer<Call<UploadResponse>>(){
-          public Call<UploadResponse> answer(InvocationOnMock invocation) {
-            Response<UploadResponse> failResponse = Response.error(429, ResponseBody.create(null, "Not Found"));
-            return Calls.response(failResponse);
-        }
-      });
+        .thenAnswer(
+            new Answer<Call<UploadResponse>>() {
+              public Call<UploadResponse> answer(InvocationOnMock invocation) {
+                Response<UploadResponse> failResponse =
+                    Response.error(429, ResponseBody.create(null, "Not Found"));
+                return Calls.response(failResponse);
+              }
+            });
 
     BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch);
     batchUploadTask.run();
@@ -306,16 +303,14 @@ public class AnalyticsClientTest {
     // 50 == MAX_ATTEMPTS in AnalyticsClient.java
     verify(segmentService, times(50)).upload(batch);
     verify(callback)
-      .failure(
-        eq(trackMessage),
-        argThat(
-            new ArgumentMatcher<IOException>(){
-              @Override
-              public boolean matches(IOException exception) {
-                return exception.getMessage().equals("50 retries exhausted");
-              }
-            }
-          )
-        );
+        .failure(
+            eq(trackMessage),
+            argThat(
+                new ArgumentMatcher<IOException>() {
+                  @Override
+                  public boolean matches(IOException exception) {
+                    return exception.getMessage().equals("50 retries exhausted");
+                  }
+                }));
   }
 }

@@ -11,10 +11,6 @@ import com.segment.analytics.http.UploadResponse;
 import com.segment.analytics.messages.Batch;
 import com.segment.analytics.messages.Message;
 import com.segment.backo.Backo;
-
-import retrofit2.Call;
-import retrofit2.Response;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,6 +24,8 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import retrofit2.Call;
+import retrofit2.Response;
 
 public class AnalyticsClient {
   private static final Map<String, ?> CONTEXT;
@@ -210,12 +208,12 @@ public class AnalyticsClient {
 
         int status = response.code();
         if (is5xx(status)) {
-          client.log.print(DEBUG, "Could not upload batch %s due to server error. Retrying.",
-              batch.sequence());
+          client.log.print(
+              DEBUG, "Could not upload batch %s due to server error. Retrying.", batch.sequence());
           return true;
         } else if (status == 429) {
-          client.log.print(DEBUG, "Could not upload batch %s due to rate limiting. Retrying.",
-              batch.sequence());
+          client.log.print(
+              DEBUG, "Could not upload batch %s due to rate limiting. Retrying.", batch.sequence());
           return true;
         }
 
@@ -224,7 +222,7 @@ public class AnalyticsClient {
         notifyCallbacksWithException(batch, new IOException("HTTP Error"));
 
         return false;
-      } catch(IOException error) {
+      } catch (IOException error) {
         client.log.print(DEBUG, error, "Could not upload batch %s. Retrying.", batch.sequence());
 
         return true;
@@ -241,6 +239,7 @@ public class AnalyticsClient {
     public void run() {
       for (int attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
         boolean retry = upload();
+        client.log.print(VERBOSE, String.format("Retrying %d", attempt));
         if (!retry) return;
         try {
           backo.sleep(attempt);
