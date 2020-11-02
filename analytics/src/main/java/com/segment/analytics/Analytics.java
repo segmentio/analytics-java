@@ -299,19 +299,23 @@ public class Analytics {
         callbacks = Collections.unmodifiableList(callbacks);
       }
 
-      HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor(new HttpLoggingInterceptor.Logger(){
-        @Override
-        public void log(String message) {
-          log.print(Log.Level.VERBOSE, "%s", message);
-        }
-      });
+      HttpLoggingInterceptor interceptor =
+          new HttpLoggingInterceptor(
+              new HttpLoggingInterceptor.Logger() {
+                @Override
+                public void log(String message) {
+                  log.print(Log.Level.VERBOSE, "%s", message);
+                }
+              });
 
       interceptor.setLevel(HttpLoggingInterceptor.Level.BASIC);
 
-      client = client.newBuilder()
-          .addInterceptor(new AnalyticsRequestInterceptor(writeKey, userAgent))
-          .addInterceptor(interceptor)
-          .build();
+      client =
+          client
+              .newBuilder()
+              .addInterceptor(new AnalyticsRequestInterceptor(writeKey, userAgent))
+              .addInterceptor(interceptor)
+              .build();
 
       Retrofit restAdapter =
           new Retrofit.Builder()
