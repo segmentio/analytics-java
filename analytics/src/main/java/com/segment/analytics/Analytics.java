@@ -18,6 +18,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
@@ -266,11 +267,6 @@ public class Analytics {
       }
       if (client == null) {
         client = Platform.get().defaultClient();
-        client =
-            client
-                .newBuilder()
-                .addInterceptor(new AnalyticsRequestInterceptor(writeKey, userAgent))
-                .build();
       }
       if (log == null) {
         log = Log.NONE;
@@ -303,12 +299,25 @@ public class Analytics {
         callbacks = Collections.unmodifiableList(callbacks);
       }
 
+      HttpLoggingInterceptor interceptor = new HttpLoggingInterceptor(new HttpLoggingInterceptor.Logger(){
+        @Override
+        public void log(String message) {
+          log.print(Log.Level.VERBOSE, "%s", message);
+        }
+      });
+
+      interceptor.setLevel(HttpLoggingInterceptor.Level.BASIC);
+
+      client = client.newBuilder()
+          .addInterceptor(new AnalyticsRequestInterceptor(writeKey, userAgent))
+          .addInterceptor(interceptor)
+          .build();
+
       Retrofit restAdapter =
           new Retrofit.Builder()
               .addConverterFactory(GsonConverterFactory.create(gson))
               .baseUrl(endpoint)
               .client(client)
-              // .setLogLevel(RestAdapter.LogLevel.FULL)
               .build();
 
       SegmentService segmentService = restAdapter.create(SegmentService.class);

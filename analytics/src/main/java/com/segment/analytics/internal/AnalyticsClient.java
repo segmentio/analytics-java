@@ -239,7 +239,6 @@ public class AnalyticsClient {
     public void run() {
       for (int attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
         boolean retry = upload();
-        client.log.print(VERBOSE, String.format("Retrying %d", attempt));
         if (!retry) return;
         try {
           backo.sleep(attempt);
