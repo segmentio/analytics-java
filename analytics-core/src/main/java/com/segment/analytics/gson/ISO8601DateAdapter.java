@@ -23,6 +23,6 @@ public class ISO8601DateAdapter implements JsonSerializer<Date>, JsonDeserialize
   @Override
   public Date deserialize(JsonElement json, Type typeOfT, JsonDeserializationContext context)
       throws JsonParseException {
-    return Iso8601Utils.parse(json.toString());
+    return Iso8601Utils.parse(json.getAsString());
   }
 }
