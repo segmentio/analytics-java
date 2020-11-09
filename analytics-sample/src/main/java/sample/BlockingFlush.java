@@ -16,7 +16,7 @@ import java.util.concurrent.Phaser;
  * <pre><code>
  * BlockingFlush blockingFlush = BlockingFlush.create();
  * Analytics analytics = Analytics.builder(writeKey)
- *      .plugin(blockingFlush)
+ *      .plugin(blockingFlush.plugin())
  *      .build();
  *
  * // Do some work.
