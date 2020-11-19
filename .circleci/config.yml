@@ -37,8 +37,8 @@ jobs:
       - image: circleci/openjdk:11-jdk-browsers
 
   test-jdk8:
-    <<: *java-base-test	
-    docker:	
+    <<: *java-base-test
+    docker:
       - image: circleci/openjdk:8-jdk-browsers
 
   test:
