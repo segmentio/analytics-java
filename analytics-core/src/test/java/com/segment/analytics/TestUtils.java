@@ -1,8 +1,5 @@
 package com.segment.analytics;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.segment.analytics.gson.ISO8601DateAdapter;
 import com.segment.analytics.messages.*;
 import java.util.Calendar;
 import java.util.Date;

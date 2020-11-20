@@ -1,5 +1,4 @@
 version: 2
-
 jobs:
   java-base-test: &java-base-test
     working_directory: ~/analytics-java
@@ -36,9 +35,9 @@ jobs:
     docker:
       - image: circleci/openjdk:11-jdk-browsers
 
-  test-jdk8:	
-    <<: *java-base-test	
-    docker:	
+  test-jdk8:
+    <<: *java-base-test
+    docker:
       - image: circleci/openjdk:8-jdk-browsers
 
   test:
@@ -96,6 +95,7 @@ workflows:
     jobs:
       - test-jdklatest
       - test-jdk11
+      - test-jdk8
   static_analysis:
     jobs:
       - test
