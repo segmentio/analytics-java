@@ -1,5 +1,4 @@
 version: 2
-
 jobs:
   java-base-test: &java-base-test
     working_directory: ~/analytics-java
