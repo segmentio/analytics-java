@@ -4,12 +4,14 @@ import static com.segment.analytics.Log.Level.DEBUG;
 import static com.segment.analytics.Log.Level.ERROR;
 import static com.segment.analytics.Log.Level.VERBOSE;
 
+import com.google.gson.Gson;
 import com.segment.analytics.Callback;
 import com.segment.analytics.Log;
 import com.segment.analytics.http.SegmentService;
 import com.segment.analytics.http.UploadResponse;
 import com.segment.analytics.messages.Batch;
 import com.segment.analytics.messages.Message;
+import com.segment.analytics.messages.TrackMessage;
 import com.segment.backo.Backo;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,11 +26,14 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.lang.instrument.Instrumentation;
+
 import retrofit2.Call;
 import retrofit2.Response;
 
 public class AnalyticsClient {
   private static final Map<String, ?> CONTEXT;
+  private static final int MESSAGE_QUEUE_MAX_BYTE_SIZE = 1024 * 32;
 
   static {
     Map<String, String> library = new LinkedHashMap<>();
@@ -38,6 +43,7 @@ public class AnalyticsClient {
     context.put("library", Collections.unmodifiableMap(library));
     CONTEXT = Collections.unmodifiableMap(context);
   }
+
 
   private final BlockingQueue<Message> messageQueue;
   private final SegmentService service;
@@ -101,10 +107,29 @@ public class AnalyticsClient {
 
   public void enqueue(Message message) {
     try {
+      if (isBackPressured()) {
+        log.print(VERBOSE, "Maximum storage size have been hit. Dropping messages");
+        return;
+      }
+
       messageQueue.put(message);
     } catch (InterruptedException e) {
       log.print(ERROR, e, "Interrupted while adding message %s.", message);
     }
+  }
+
+  public int messageSizeInBytes(TrackMessage message) {
+    Gson gson = new Gson();
+    String stringifiedMessage = gson.toJson(message);
+    return stringifiedMessage.length();
+  }
+
+  private Boolean isBackPressured() {
+    int messageQueueSize = messageQueue.stream()
+      .map(message -> messageSizeInBytes((TrackMessage) message))
+      .reduce(0, (messageASize, messageBSize) -> messageASize + messageBSize);
+
+    return messageQueueSize >= MESSAGE_QUEUE_MAX_BYTE_SIZE;
   }
 
   public void flush() {
