@@ -20,7 +20,6 @@ import javax.annotation.Nullable;
 @AutoValue
 @AutoGson //
 public abstract class GroupMessage implements Message {
-
   /**
    * Start building an {@link GroupMessage} instance.
    *
