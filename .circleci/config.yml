@@ -80,7 +80,7 @@ jobs:
       - checkout
       - attach_workspace: { at: . }
       - run: .buildscript/e2e.sh
-
+      
   snyk:
     <<: *java-base-test
     docker:
