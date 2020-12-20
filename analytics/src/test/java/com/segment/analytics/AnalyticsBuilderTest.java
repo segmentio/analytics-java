@@ -2,6 +2,7 @@ package com.segment.analytics;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -249,6 +250,53 @@ public class AnalyticsBuilderTest {
   public void buildsWithValidEndpoint() {
     Analytics analytics = builder.endpoint("https://api.segment.io").build();
     assertThat(analytics).isNotNull();
+  }
+
+  @Test
+  public void buildsCorrectEndpoint() {
+    builder.endpoint("https://api.segment.io");
+    String expectedURL = "https://api.segment.io/v1/import/";
+    assertEquals(expectedURL, builder.endpoint.toString());
+  }
+
+  @Test
+  public void buildsWithValidUploadURL() {
+    Analytics analytics = builder.setUploadURL("https://example.com/v2/batch/").build();
+    assertThat(analytics).isNotNull();
+  }
+
+  @Test
+  public void buildsCorrectURLWithUploadURL() {
+    builder.setUploadURL("https://example.com/v2/batch/").build();
+    String expectedURL = "https://example.com/v2/batch/";
+    assertEquals(expectedURL, builder.uploadURL.toString());
+  }
+
+  @Test
+  public void nullHostAndPrefixEndpoint() {
+    try {
+      builder.setUploadURL(null);
+      fail("Should fail for null endpoint");
+    } catch (NullPointerException e) {
+      assertThat(e).hasMessage("endpoint cannot be null or empty.");
+    }
+  }
+
+  @Test
+  public void emptyHostAndPrefixEndpoint() {
+    try {
+      builder.setUploadURL("");
+      fail("Should fail for empty endpoint");
+    } catch (NullPointerException e) {
+      assertThat(e).hasMessage("endpoint cannot be null or empty.");
+    }
+
+    try {
+      builder.setUploadURL("  ");
+      fail("Should fail for empty endpoint");
+    } catch (NullPointerException e) {
+      assertThat(e).hasMessage("endpoint cannot be null or empty.");
+    }
   }
 
   @Test
