@@ -101,7 +101,8 @@ public class Analytics {
     private final String writeKey;
     private OkHttpClient client;
     private Log log;
-    private HttpUrl endpoint;
+    public HttpUrl endpoint;
+    public HttpUrl uploadURL;
     private String userAgent = DEFAULT_USER_AGENT;
     private List<MessageTransformer> messageTransformers;
     private List<MessageInterceptor> messageInterceptors;
@@ -137,14 +138,26 @@ public class Analytics {
     }
 
     /**
-     * Set an endpoint that this client should upload events to. Uses {@code https://api.segment.io}
-     * by default.
+     * Set an endpoint (host only) that this client should upload events to. Uses {@code
+     * https://api.segment.io} by default.
      */
     public Builder endpoint(String endpoint) {
       if (endpoint == null || endpoint.trim().length() == 0) {
         throw new NullPointerException("endpoint cannot be null or empty.");
       }
-      this.endpoint = HttpUrl.parse(endpoint);
+      this.endpoint = HttpUrl.parse(endpoint + "/v1/import/");
+      return this;
+    }
+
+    /**
+     * Set an endpoint (host and prefix) that this client should upload events to. Uses {@code
+     * https://api.segment.io/v1} by default.
+     */
+    public Builder setUploadURL(String uploadURL) {
+      if (uploadURL == null || uploadURL.trim().length() == 0) {
+        throw new NullPointerException("endpoint cannot be null or empty.");
+      }
+      this.uploadURL = HttpUrl.parse(uploadURL);
       return this;
     }
 
@@ -262,9 +275,14 @@ public class Analytics {
               .registerTypeAdapter(Date.class, new ISO8601DateAdapter()) //
               .create();
 
-      if (endpoint == null) {
+      if (endpoint == null && uploadURL == null) {
         endpoint = DEFAULT_ENDPOINT;
       }
+
+      if (endpoint == null && uploadURL != null) {
+        endpoint = uploadURL;
+      }
+
       if (client == null) {
         client = Platform.get().defaultClient();
       }
