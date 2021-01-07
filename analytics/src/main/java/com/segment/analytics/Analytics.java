@@ -16,11 +16,11 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import retrofit.Endpoint;
-import retrofit.Endpoints;
-import retrofit.RestAdapter;
-import retrofit.client.Client;
-import retrofit.converter.GsonConverter;
+import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
+import okhttp3.logging.HttpLoggingInterceptor;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 /**
  * The entry point into the Segment for Java library.
@@ -66,22 +66,22 @@ public class Analytics {
   /** Enqueue the given message to be uploaded to Segment's servers. */
   public void enqueue(MessageBuilder builder) {
     Message message = buildMessage(builder);
-    if(message == null){
+    if (message == null) {
       return;
     }
     client.enqueue(message);
   }
 
   /**
-   * Inserts the message into queue if it is possible to do
-   * so immediately without violating capacity restrictions, returning
-   * {@code true} upon success and {@code false} if no space is currently
-   * available.
+   * Inserts the message into queue if it is possible to do so immediately without violating
+   * capacity restrictions, returning {@code true} upon success and {@code false} if no space is
+   * currently available.
+   *
    * @param builder
    */
   public boolean offer(MessageBuilder builder) {
     Message message = buildMessage(builder);
-    if(message == null){
+    if (message == null) {
       return false;
     }
     return client.offer(message);
@@ -99,11 +99,11 @@ public class Analytics {
 
   /**
    * Helper method to build message
+   *
    * @param builder
-   * @return Instance of Message if valid message can be build
-   * null if skipping this message
+   * @return Instance of Message if valid message can be build null if skipping this message
    */
-  private Message buildMessage(MessageBuilder builder){
+  private Message buildMessage(MessageBuilder builder) {
     for (MessageTransformer messageTransformer : messageTransformers) {
       boolean shouldContinue = messageTransformer.transform(builder);
       if (!shouldContinue) {
@@ -124,14 +124,14 @@ public class Analytics {
 
   /** Fluent API for creating {@link Analytics} instances. */
   public static class Builder {
-    private static final Endpoint DEFAULT_ENDPOINT =
-        Endpoints.newFixedEndpoint("https://api.segment.io");
+    private static final HttpUrl DEFAULT_ENDPOINT = HttpUrl.parse("https://api.segment.io");
     private static final String DEFAULT_USER_AGENT = "analytics-java/" + AnalyticsVersion.get();
 
     private final String writeKey;
-    private Client client;
+    private OkHttpClient client;
     private Log log;
-    private Endpoint endpoint;
+    public HttpUrl endpoint;
+    public HttpUrl uploadURL;
     private String userAgent = DEFAULT_USER_AGENT;
     private List<MessageTransformer> messageTransformers;
     private List<MessageInterceptor> messageInterceptors;
@@ -150,7 +150,7 @@ public class Analytics {
     }
 
     /** Set a custom networking client. */
-    public Builder client(Client client) {
+    public Builder client(OkHttpClient client) {
       if (client == null) {
         throw new NullPointerException("Null client");
       }
@@ -168,14 +168,26 @@ public class Analytics {
     }
 
     /**
-     * Set an endpoint that this client should upload events to. Uses {@code https://api.segment.io}
-     * by default.
+     * Set an endpoint (host only) that this client should upload events to. Uses {@code
+     * https://api.segment.io} by default.
      */
     public Builder endpoint(String endpoint) {
       if (endpoint == null || endpoint.trim().length() == 0) {
         throw new NullPointerException("endpoint cannot be null or empty.");
       }
-      this.endpoint = Endpoints.newFixedEndpoint(endpoint);
+      this.endpoint = HttpUrl.parse(endpoint + "/v1/import/");
+      return this;
+    }
+
+    /**
+     * Set an endpoint (host and prefix) that this client should upload events to. Uses {@code
+     * https://api.segment.io/v1} by default.
+     */
+    public Builder setUploadURL(String uploadURL) {
+      if (uploadURL == null || uploadURL.trim().length() == 0) {
+        throw new NullPointerException("endpoint cannot be null or empty.");
+      }
+      this.uploadURL = HttpUrl.parse(uploadURL);
       return this;
     }
 
@@ -220,9 +232,7 @@ public class Analytics {
       return this;
     }
 
-    /**
-     * Set queue capacity
-     */
+    /** Set queue capacity */
     public Builder queueCapacity(int capacity) {
       if (capacity <= 0) {
         throw new IllegalArgumentException("capacity should be positive.");
@@ -303,9 +313,14 @@ public class Analytics {
               .registerTypeAdapter(Date.class, new ISO8601DateAdapter()) //
               .create();
 
-      if (endpoint == null) {
+      if (endpoint == null && uploadURL == null) {
         endpoint = DEFAULT_ENDPOINT;
       }
+
+      if (endpoint == null && uploadURL != null) {
+        endpoint = uploadURL;
+      }
+
       if (client == null) {
         client = Platform.get().defaultClient();
       }
@@ -315,7 +330,7 @@ public class Analytics {
       if (flushIntervalInMillis == 0) {
         flushIntervalInMillis = Platform.get().defaultFlushIntervalInMillis();
       }
-      if(queueCapacity == 0) {
+      if (queueCapacity == 0) {
         queueCapacity = Integer.MAX_VALUE;
       }
       if (flushQueueSize == 0) {
@@ -343,20 +358,29 @@ public class Analytics {
         callbacks = Collections.unmodifiableList(callbacks);
       }
 
-      RestAdapter restAdapter =
-          new RestAdapter.Builder()
-              .setConverter(new GsonConverter(gson))
-              .setEndpoint(endpoint)
-              .setClient(client)
-              .setRequestInterceptor(new AnalyticsRequestInterceptor(writeKey, userAgent))
-              .setLogLevel(RestAdapter.LogLevel.FULL)
-              .setLog(
-                  new RestAdapter.Log() {
-                    @Override
-                    public void log(String message) {
-                      log.print(Log.Level.VERBOSE, "%s", message);
-                    }
-                  })
+      HttpLoggingInterceptor interceptor =
+          new HttpLoggingInterceptor(
+              new HttpLoggingInterceptor.Logger() {
+                @Override
+                public void log(String message) {
+                  log.print(Log.Level.VERBOSE, "%s", message);
+                }
+              });
+
+      interceptor.setLevel(HttpLoggingInterceptor.Level.BASIC);
+
+      client =
+          client
+              .newBuilder()
+              .addInterceptor(new AnalyticsRequestInterceptor(writeKey, userAgent))
+              .addInterceptor(interceptor)
+              .build();
+
+      Retrofit restAdapter =
+          new Retrofit.Builder()
+              .addConverterFactory(GsonConverterFactory.create(gson))
+              .baseUrl(endpoint)
+              .client(client)
               .build();
 
       SegmentService segmentService = restAdapter.create(SegmentService.class);

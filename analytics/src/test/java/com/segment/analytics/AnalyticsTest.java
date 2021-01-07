@@ -102,5 +102,4 @@ public class AnalyticsTest {
     verify(messageInterceptor).intercept(any(Message.class));
     verify(client).offer(message);
   }
-
 }
