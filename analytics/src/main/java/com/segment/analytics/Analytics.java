@@ -109,6 +109,7 @@ public class Analytics {
     private ExecutorService networkExecutor;
     private ThreadFactory threadFactory;
     private int flushQueueSize;
+    private int maximumFlushAttempts;
     private long flushIntervalInMillis;
     private List<Callback> callbacks;
 
@@ -220,6 +221,15 @@ public class Analytics {
         throw new IllegalArgumentException("flushInterval must not be less than 1 second.");
       }
       this.flushIntervalInMillis = flushIntervalInMillis;
+      return this;
+    }
+
+    /** Set the interval at which the queue should be flushed. */
+    public Builder retries(int maximumRetries) {
+      if (maximumFlushAttempts < 0) {
+        throw new IllegalArgumentException("retries must be greater than 0");
+      }
+      this.maximumFlushAttempts = maximumRetries;
       return this;
     }
 
@@ -349,6 +359,7 @@ public class Analytics {
               segmentService,
               flushQueueSize,
               flushIntervalInMillis,
+              maximumFlushAttempts,
               log,
               threadFactory,
               networkExecutor,

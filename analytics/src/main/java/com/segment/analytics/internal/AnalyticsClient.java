@@ -48,6 +48,7 @@ public class AnalyticsClient {
   private final BlockingQueue<Message> messageQueue;
   private final SegmentService service;
   private final int size;
+  private final int maximumRetries;
   private final Log log;
   private final List<Callback> callbacks;
   private final ExecutorService networkExecutor;
@@ -58,6 +59,7 @@ public class AnalyticsClient {
       SegmentService segmentService,
       int flushQueueSize,
       long flushIntervalInMillis,
+      int maximumRetries,
       Log log,
       ThreadFactory threadFactory,
       ExecutorService networkExecutor,
@@ -67,6 +69,7 @@ public class AnalyticsClient {
         segmentService,
         flushQueueSize,
         flushIntervalInMillis,
+        maximumRetries,
         log,
         threadFactory,
         networkExecutor,
@@ -78,6 +81,7 @@ public class AnalyticsClient {
       SegmentService service,
       int maxQueueSize,
       long flushIntervalInMillis,
+      int maximumRetries,
       Log log,
       ThreadFactory threadFactory,
       ExecutorService networkExecutor,
@@ -85,6 +89,7 @@ public class AnalyticsClient {
     this.messageQueue = messageQueue;
     this.service = service;
     this.size = maxQueueSize;
+    this.maximumRetries = maximumRetries;
     this.log = log;
     this.callbacks = callbacks;
     this.looperExecutor = Executors.newSingleThreadExecutor(threadFactory);
@@ -170,7 +175,7 @@ public class AnalyticsClient {
                 "Batching %s message(s) into batch %s.",
                 messages.size(),
                 batch.sequence());
-            networkExecutor.submit(BatchUploadTask.create(AnalyticsClient.this, batch));
+            networkExecutor.submit(BatchUploadTask.create(AnalyticsClient.this, batch, maximumRetries));
             messages = new ArrayList<>();
           }
         }
@@ -192,15 +197,17 @@ public class AnalyticsClient {
     private final AnalyticsClient client;
     private final Backo backo;
     final Batch batch;
+    private final int maximumFlushAttempts;
 
-    static BatchUploadTask create(AnalyticsClient client, Batch batch) {
-      return new BatchUploadTask(client, BACKO, batch);
+    static BatchUploadTask create(AnalyticsClient client, Batch batch, int maximumFlushAttempts) {
+      return new BatchUploadTask(client, BACKO, batch, maximumFlushAttempts);
     }
 
-    BatchUploadTask(AnalyticsClient client, Backo backo, Batch batch) {
+    BatchUploadTask(AnalyticsClient client, Backo backo, Batch batch, int maximumRetries) {
       this.client = client;
       this.batch = batch;
       this.backo = backo;
+      this.maximumFlushAttempts = maximumRetries;
     }
 
     private void notifyCallbacksWithException(Batch batch, Exception exception) {
@@ -262,7 +269,7 @@ public class AnalyticsClient {
 
     @Override
     public void run() {
-      for (int attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      for (int attempt = 0; attempt < maximumFlushAttempts; attempt++) {
         boolean retry = upload();
         if (!retry) return;
         try {
@@ -275,7 +282,7 @@ public class AnalyticsClient {
       }
 
       client.log.print(ERROR, "Could not upload batch %s. Retries exhausted.", batch.sequence());
-      notifyCallbacksWithException(batch, new IOException(MAX_ATTEMPTS + " retries exhausted"));
+      notifyCallbacksWithException(batch, new IOException(maximumFlushAttempts + " retries exhausted"));
     }
 
     private static boolean is5xx(int status) {

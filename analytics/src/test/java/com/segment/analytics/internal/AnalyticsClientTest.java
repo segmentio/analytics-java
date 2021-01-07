@@ -52,6 +52,8 @@ public class AnalyticsClientTest {
 	// Backo instance for testing which trims down the wait times.
 	private static final Backo BACKO = Backo.builder().base(TimeUnit.NANOSECONDS, 1).factor(1).build();
 
+	private int DEFAULT_RETRIES = 10;
+
 	Log log = Log.NONE;
 	ThreadFactory threadFactory;
 	@Mock
@@ -74,7 +76,7 @@ public class AnalyticsClientTest {
 	// Defers loading the client until tests can initialize all required
 	// dependencies.
 	AnalyticsClient newClient() {
-		return new AnalyticsClient(messageQueue, segmentService, 50, TimeUnit.HOURS.toMillis(1), log, threadFactory,
+		return new AnalyticsClient(messageQueue, segmentService, 50, TimeUnit.HOURS.toMillis(1), DEFAULT_RETRIES, log, threadFactory,
 				networkExecutor, Collections.singletonList(callback));
 	}
 
@@ -228,7 +230,7 @@ public class AnalyticsClientTest {
 				.thenReturn(Calls.response(failureResponse)).thenReturn(Calls.response(failureResponse))
 				.thenReturn(Calls.response(successResponse));
 
-		BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch);
+		BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch, DEFAULT_RETRIES);
 		batchUploadTask.run();
 
 		// Verify that we tried to upload 4 times, 3 failed and 1 succeeded.
@@ -250,7 +252,7 @@ public class AnalyticsClientTest {
 				.thenReturn(Calls.response(failResponse)).thenReturn(Calls.response(failResponse))
 				.thenReturn(Calls.response(successResponse));
 
-		BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch);
+		BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch, DEFAULT_RETRIES);
 		batchUploadTask.run();
 
 		// Verify that we tried to upload 4 times, 3 failed and 1 succeeded.
@@ -271,7 +273,7 @@ public class AnalyticsClientTest {
 				.thenReturn(Calls.response(failResponse)).thenReturn(Calls.response(failResponse))
 				.thenReturn(Calls.response(successResponse));
 
-		BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch);
+		BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch, DEFAULT_RETRIES);
 		batchUploadTask.run();
 
 		// Verify that we tried to upload 4 times, 3 failed and 1 succeeded.
@@ -289,7 +291,7 @@ public class AnalyticsClientTest {
 		Response<UploadResponse> failResponse = Response.error(404, ResponseBody.create(null, "Not Found"));
 		when(segmentService.upload(batch)).thenReturn(Calls.response(failResponse));
 
-		BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch);
+		BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch, DEFAULT_RETRIES);
 		batchUploadTask.run();
 
 		// Verify we only tried to upload once.
@@ -306,7 +308,7 @@ public class AnalyticsClientTest {
 		Call<UploadResponse> networkFailure = Calls.failure(new RuntimeException());
 		when(segmentService.upload(batch)).thenReturn(networkFailure);
 
-		BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch);
+		BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch, DEFAULT_RETRIES);
 		batchUploadTask.run();
 
 		// Verify we only tried to upload once.
@@ -327,15 +329,16 @@ public class AnalyticsClientTest {
 			}
 		});
 
-		BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch);
+		BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch, 10);
 		batchUploadTask.run();
 
-		// 50 == MAX_ATTEMPTS in AnalyticsClient.java
-		verify(segmentService, times(50)).upload(batch);
+		// 10 == maximumFlushAttempts
+		// tries only 10 even though default is 50 in AnalyticsClient.java
+		verify(segmentService, times(10)).upload(batch);
 		verify(callback).failure(eq(trackMessage), argThat(new ArgumentMatcher<IOException>() {
 			@Override
 			public boolean matches(IOException exception) {
-				return exception.getMessage().equals("50 retries exhausted");
+				return exception.getMessage().equals("10 retries exhausted");
 			}
 		}));
 	}
