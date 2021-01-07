@@ -26,8 +26,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.lang.instrument.Instrumentation;
-
 import retrofit2.Call;
 import retrofit2.Response;
 
@@ -43,7 +41,6 @@ public class AnalyticsClient {
     context.put("library", Collections.unmodifiableMap(library));
     CONTEXT = Collections.unmodifiableMap(context);
   }
-
 
   private final BlockingQueue<Message> messageQueue;
   private final SegmentService service;
@@ -130,9 +127,11 @@ public class AnalyticsClient {
   }
 
   private Boolean isBackPressured() {
-    int messageQueueSize = messageQueue.stream()
-      .map(message -> messageSizeInBytes((TrackMessage) message))
-      .reduce(0, (messageASize, messageBSize) -> messageASize + messageBSize);
+    int messageQueueSize =
+        messageQueue
+            .stream()
+            .map(message -> messageSizeInBytes((TrackMessage) message))
+            .reduce(0, (messageASize, messageBSize) -> messageASize + messageBSize);
 
     return messageQueueSize >= MESSAGE_QUEUE_MAX_BYTE_SIZE;
   }
@@ -175,7 +174,8 @@ public class AnalyticsClient {
                 "Batching %s message(s) into batch %s.",
                 messages.size(),
                 batch.sequence());
-            networkExecutor.submit(BatchUploadTask.create(AnalyticsClient.this, batch, maximumRetries));
+            networkExecutor.submit(
+                BatchUploadTask.create(AnalyticsClient.this, batch, maximumRetries));
             messages = new ArrayList<>();
           }
         }
@@ -269,7 +269,8 @@ public class AnalyticsClient {
 
     @Override
     public void run() {
-      for (int attempt = 0; attempt < maximumFlushAttempts; attempt++) {
+      int attempt = 0;
+      for (; attempt <= maximumFlushAttempts; attempt++) {
         boolean retry = upload();
         if (!retry) return;
         try {
@@ -282,7 +283,8 @@ public class AnalyticsClient {
       }
 
       client.log.print(ERROR, "Could not upload batch %s. Retries exhausted.", batch.sequence());
-      notifyCallbacksWithException(batch, new IOException(maximumFlushAttempts + " retries exhausted"));
+      notifyCallbacksWithException(
+          batch, new IOException(Integer.toString(attempt) + " retries exhausted"));
     }
 
     private static boolean is5xx(int status) {

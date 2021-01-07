@@ -224,10 +224,10 @@ public class Analytics {
       return this;
     }
 
-    /** Set the interval at which the queue should be flushed. */
+    /** Set how many retries should happen before getting exhausted */
     public Builder retries(int maximumRetries) {
-      if (maximumFlushAttempts < 0) {
-        throw new IllegalArgumentException("retries must be greater than 0");
+      if (maximumRetries < 1) {
+        throw new IllegalArgumentException("retries must be at least 1");
       }
       this.maximumFlushAttempts = maximumRetries;
       return this;
@@ -285,7 +285,7 @@ public class Analytics {
               .registerTypeAdapter(Date.class, new ISO8601DateAdapter()) //
               .create();
 
-      if(endpoint == null) {
+      if (endpoint == null) {
         endpoint = DEFAULT_ENDPOINT;
 
         if (uploadURL != null) {
