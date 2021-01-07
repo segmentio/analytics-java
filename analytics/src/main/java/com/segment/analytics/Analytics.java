@@ -285,12 +285,12 @@ public class Analytics {
               .registerTypeAdapter(Date.class, new ISO8601DateAdapter()) //
               .create();
 
-      if (endpoint == null && uploadURL == null) {
+      if(endpoint == null) {
         endpoint = DEFAULT_ENDPOINT;
-      }
 
-      if (endpoint == null && uploadURL != null) {
-        endpoint = uploadURL;
+        if (uploadURL != null) {
+          endpoint = uploadURL;
+        }
       }
 
       if (client == null) {
