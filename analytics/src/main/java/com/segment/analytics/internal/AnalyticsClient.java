@@ -209,7 +209,10 @@ public class AnalyticsClient {
             messages.add(message);
           }
 
-          if (!messages.isEmpty() && (messages.size() >= size || message == FlushMessage.POISON || message == StopMessage.STOP)) {
+          Boolean isBlockingSignal = message == FlushMessage.POISON || message == StopMessage.STOP
+          Boolean isOverflow = messages.size() >= size
+
+          if (!messages.isEmpty() && (isOverflow || isBlockingSignal)) {
             Batch batch = Batch.create(CONTEXT, messages);
             log.print(
                     VERBOSE,
