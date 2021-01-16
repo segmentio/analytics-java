@@ -26,11 +26,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.lang.instrument.Instrumentation;
-
+import java.util.concurrent.atomic.AtomicBoolean;
 import retrofit2.Call;
 import retrofit2.Response;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AnalyticsClient {
   private static final Map<String, ?> CONTEXT;
@@ -45,7 +43,6 @@ public class AnalyticsClient {
     CONTEXT = Collections.unmodifiableMap(context);
   }
 
-
   private final BlockingQueue<Message> messageQueue;
   private final SegmentService service;
   private final int size;
@@ -57,35 +54,35 @@ public class AnalyticsClient {
   private final AtomicBoolean isShutDown;
 
   public static AnalyticsClient create(
-          SegmentService segmentService,
-          int flushQueueSize,
-          long flushIntervalInMillis,
-          Log log,
-          ThreadFactory threadFactory,
-          ExecutorService networkExecutor,
-          List<Callback> callbacks) {
+      SegmentService segmentService,
+      int flushQueueSize,
+      long flushIntervalInMillis,
+      Log log,
+      ThreadFactory threadFactory,
+      ExecutorService networkExecutor,
+      List<Callback> callbacks) {
     return new AnalyticsClient(
-            new LinkedBlockingQueue<Message>(),
-            segmentService,
-            flushQueueSize,
-            flushIntervalInMillis,
-            log,
-            threadFactory,
-            networkExecutor,
-            callbacks,
-            new AtomicBoolean(false));
+        new LinkedBlockingQueue<Message>(),
+        segmentService,
+        flushQueueSize,
+        flushIntervalInMillis,
+        log,
+        threadFactory,
+        networkExecutor,
+        callbacks,
+        new AtomicBoolean(false));
   }
 
   AnalyticsClient(
-          BlockingQueue<Message> messageQueue,
-          SegmentService service,
-          int maxQueueSize,
-          long flushIntervalInMillis,
-          Log log,
-          ThreadFactory threadFactory,
-          ExecutorService networkExecutor,
-          List<Callback> callbacks,
-          AtomicBoolean isShutDown) {
+      BlockingQueue<Message> messageQueue,
+      SegmentService service,
+      int maxQueueSize,
+      long flushIntervalInMillis,
+      Log log,
+      ThreadFactory threadFactory,
+      ExecutorService networkExecutor,
+      List<Callback> callbacks,
+      AtomicBoolean isShutDown) {
     this.messageQueue = messageQueue;
     this.service = service;
     this.size = maxQueueSize;
@@ -99,15 +96,15 @@ public class AnalyticsClient {
 
     flushScheduler = Executors.newScheduledThreadPool(1, threadFactory);
     flushScheduler.scheduleAtFixedRate(
-            new Runnable() {
-              @Override
-              public void run() {
-                flush();
-              }
-            },
-            flushIntervalInMillis,
-            flushIntervalInMillis,
-            TimeUnit.MILLISECONDS);
+        new Runnable() {
+          @Override
+          public void run() {
+            flush();
+          }
+        },
+        flushIntervalInMillis,
+        flushIntervalInMillis,
+        TimeUnit.MILLISECONDS);
   }
 
   public void enqueue(Message message) {
@@ -136,9 +133,11 @@ public class AnalyticsClient {
   }
 
   private Boolean isBackPressured() {
-    int messageQueueSize = messageQueue.stream()
-      .map(message -> messageSizeInBytes((TrackMessage) message))
-      .reduce(0, (messageASize, messageBSize) -> messageASize + messageBSize);
+    int messageQueueSize =
+        messageQueue
+            .stream()
+            .map(message -> messageSizeInBytes((TrackMessage) message))
+            .reduce(0, (messageASize, messageBSize) -> messageASize + messageBSize);
 
     return messageQueueSize >= MESSAGE_QUEUE_MAX_BYTE_SIZE;
   }
@@ -162,7 +161,8 @@ public class AnalyticsClient {
       shutdownAndWait(looperExecutor, "looper");
       shutdownAndWait(networkExecutor, "network");
 
-      log.print(VERBOSE, "Analytics client shut down in %s ms", (System.currentTimeMillis() - start));
+      log.print(
+          VERBOSE, "Analytics client shut down in %s ms", (System.currentTimeMillis() - start));
     }
   }
 
@@ -171,9 +171,11 @@ public class AnalyticsClient {
       executor.shutdown();
       final boolean executorTerminated = executor.awaitTermination(1, TimeUnit.SECONDS);
 
-      log.print(VERBOSE, "%s executor %s.",
-              name,
-              executorTerminated ? "terminated normally" : "timed out");
+      log.print(
+          VERBOSE,
+          "%s executor %s.",
+          name,
+          executorTerminated ? "terminated normally" : "timed out");
     } catch (InterruptedException e) {
       log.print(ERROR, e, "Interrupted while stopping %s executor.", name);
       Thread.currentThread().interrupt();
@@ -209,16 +211,16 @@ public class AnalyticsClient {
             messages.add(message);
           }
 
-          Boolean isBlockingSignal = message == FlushMessage.POISON || message == StopMessage.STOP
-          Boolean isOverflow = messages.size() >= size
+          Boolean isBlockingSignal = message == FlushMessage.POISON || message == StopMessage.STOP;
+          Boolean isOverflow = messages.size() >= size;
 
           if (!messages.isEmpty() && (isOverflow || isBlockingSignal)) {
             Batch batch = Batch.create(CONTEXT, messages);
             log.print(
-                    VERBOSE,
-                    "Batching %s message(s) into batch %s.",
-                    messages.size(),
-                    batch.sequence());
+                VERBOSE,
+                "Batching %s message(s) into batch %s.",
+                messages.size(),
+                batch.sequence());
             networkExecutor.submit(BatchUploadTask.create(AnalyticsClient.this, batch));
             messages = new ArrayList<>();
           }
@@ -233,11 +235,11 @@ public class AnalyticsClient {
 
   static class BatchUploadTask implements Runnable {
     private static final Backo BACKO =
-            Backo.builder() //
-                    .base(TimeUnit.SECONDS, 15) //
-                    .cap(TimeUnit.HOURS, 1) //
-                    .jitter(1) //
-                    .build();
+        Backo.builder() //
+            .base(TimeUnit.SECONDS, 15) //
+            .cap(TimeUnit.HOURS, 1) //
+            .jitter(1) //
+            .build();
     private static final int MAX_ATTEMPTS = 50; // Max 50 hours ~ 2 days
 
     private final AnalyticsClient client;
@@ -320,7 +322,7 @@ public class AnalyticsClient {
           backo.sleep(attempt);
         } catch (InterruptedException e) {
           client.log.print(
-                  DEBUG, "Thread interrupted while backing off for batch %s.", batch.sequence());
+              DEBUG, "Thread interrupted while backing off for batch %s.", batch.sequence());
           return;
         }
       }
