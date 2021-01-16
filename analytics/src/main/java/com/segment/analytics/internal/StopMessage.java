@@ -1,11 +1,10 @@
 package com.segment.analytics.internal;
 
 import com.segment.analytics.messages.Message;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Date;
 import java.util.Map;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 class StopMessage implements Message {
   static final StopMessage STOP = new StopMessage();
@@ -56,6 +55,6 @@ class StopMessage implements Message {
 
   @Override
   public String toString() {
-    return "FlushMessage{}";
+    return "StopMessage{}";
   }
 }
