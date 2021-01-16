@@ -170,7 +170,7 @@ public class AnalyticsClientTest {
     assertThat(captureBatch(networkExecutor).batch()).hasSize(50);
   }
 
-  private static String createDataSize(int msgSize) {
+  private static String generateMassDataOfSize(int msgSize) {
     char[] chars = new char[msgSize];
     Arrays.fill(chars, 'a');
 
@@ -182,7 +182,7 @@ public class AnalyticsClientTest {
     AnalyticsClient client = newClient();
     Map<String, String> properties = new HashMap<String, String>();
 
-    properties.put("dummy-property", createDataSize(1024 * 33));
+    properties.put("dummy-property", generateMassDataOfSize(1024 * 33));
 
     TrackMessage bigMessage =
         TrackMessage.builder("Big Event").userId("bar").properties(properties).build();
@@ -197,19 +197,17 @@ public class AnalyticsClientTest {
     AnalyticsClient client = newClient();
     Map<String, String> properties = new HashMap<String, String>();
 
-    properties.put("dummy-property", createDataSize(1024 * 33));
+    properties.put("dummy-property", generateMassDataOfSize(1024 * 33));
 
     TrackMessage bigMessage =
         TrackMessage.builder("Big Event").userId("bar").properties(properties).build();
     client.enqueue(bigMessage);
 
-    // assertThat(client.messageSizeInBytes(bigMessage)).isEqualTo(30);
-
     Message tinyMessage = TrackMessage.builder("Tinny Event").userId("bar").build();
     client.enqueue(tinyMessage);
     wait(messageQueue);
 
-    verify(messageQueue, times(2)).put(any(Message.class));
+    verify(messageQueue, times(1)).put(any(Message.class));
   }
 
   @Test
