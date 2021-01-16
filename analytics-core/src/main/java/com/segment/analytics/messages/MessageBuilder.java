@@ -172,7 +172,7 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
    *
    * @see <a href="https://segment.com/docs/spec/common/#integrations">Integrations</a>
    */
-  public V integrationOptions(String key, Map<String, ? super Object> options) {
+  public V integrationOptions(String key, Map<String, ?> options) {
     if (isNullOrEmpty(key)) {
       throw new IllegalArgumentException("Key cannot be null or empty.");
     }

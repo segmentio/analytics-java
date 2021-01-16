@@ -1,22 +1,36 @@
 package com.segment.analytics;
 
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
+import static org.junit.Assert.assertThat;
 
-import com.segment.analytics.messages.*;
+import java.io.IOException;
+import okhttp3.Connection;
+import okhttp3.Interceptor.Chain;
+import okhttp3.Request;
+import okhttp3.Response;
+import org.hamcrest.core.Is;
 import org.junit.Test;
-import retrofit.RequestInterceptor.RequestFacade;
+import org.mockito.Mock;
 
 public class AnalyticsRequestInterceptorTest {
+  @Mock private Connection mockConnection;
+
   @Test
-  public void interceptor() {
-    RequestFacade requestFacade = mock(RequestFacade.class);
+  public void testInterceptor() throws IOException {
     AnalyticsRequestInterceptor interceptor =
         new AnalyticsRequestInterceptor("writeKey", "userAgent");
 
-    interceptor.intercept(requestFacade);
+    final Request request = new Request.Builder().url("https://api.segment.io").get().build();
 
-    verify(requestFacade).addHeader("Authorization", "Basic d3JpdGVLZXk6");
-    verify(requestFacade).addHeader("User-Agent", "userAgent");
+    Chain chain =
+        new ChainAdapter(request, mockConnection) {
+          @Override
+          public Response proceed(Request request) throws IOException {
+            assertThat(request.header("Authorization"), Is.is("Basic d3JpdGVLZXk6"));
+            assertThat(request.header("User-Agent"), Is.is("userAgent"));
+            return null;
+          }
+        };
+
+    interceptor.intercept(chain);
   }
 }
