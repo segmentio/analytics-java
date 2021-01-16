@@ -1,6 +1,5 @@
 package sample;
 
-import com.jakewharton.retrofit.Ok3Client;
 import com.segment.analytics.Analytics;
 import com.segment.analytics.messages.TrackMessage;
 import java.util.LinkedHashMap;
@@ -9,7 +8,6 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import okhttp3.OkHttpClient;
-import retrofit.client.Client;
 
 public class Main {
   public static void main(String... args) throws Exception {
@@ -49,13 +47,12 @@ public class Main {
    * customize the client to your needs. For instance, this client is configured to automatically
    * gzip outgoing requests.
    */
-  private static Client createClient() {
-    return new Ok3Client(
-        new OkHttpClient.Builder()
-            .connectTimeout(15, TimeUnit.SECONDS)
-            .readTimeout(15, TimeUnit.SECONDS)
-            .writeTimeout(15, TimeUnit.SECONDS)
-            .addInterceptor(new GzipRequestInterceptor())
-            .build());
+  private static OkHttpClient createClient() {
+    return new OkHttpClient.Builder()
+        .connectTimeout(15, TimeUnit.SECONDS)
+        .readTimeout(15, TimeUnit.SECONDS)
+        .writeTimeout(15, TimeUnit.SECONDS)
+        .addInterceptor(new GzipRequestInterceptor())
+        .build();
   }
 }
