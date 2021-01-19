@@ -11,7 +11,6 @@ import com.segment.analytics.http.SegmentService;
 import com.segment.analytics.http.UploadResponse;
 import com.segment.analytics.messages.Batch;
 import com.segment.analytics.messages.Message;
-import com.segment.analytics.messages.TrackMessage;
 import com.segment.backo.Backo;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -107,6 +106,22 @@ public class AnalyticsClient {
         TimeUnit.MILLISECONDS);
   }
 
+  public int messageSizeInBytes(Message message) {
+    Gson gson = new Gson();
+    String stringifiedMessage = gson.toJson(message);
+    return stringifiedMessage.length();
+  }
+
+  private Boolean isBackPressured(List<Message> messages) {
+    int messageQueueSize = 0;
+
+    for (Message message : messages) {
+      messageQueueSize += messageSizeInBytes(message);
+    }
+
+    return messageQueueSize >= MESSAGE_QUEUE_MAX_BYTE_SIZE;
+  }
+
   public void enqueue(Message message) {
     if (message != StopMessage.STOP && isShutDown.get()) {
       log.print(ERROR, "Attempt to enqueue a message when shutdown has been called %s.", message);
@@ -114,32 +129,11 @@ public class AnalyticsClient {
     }
 
     try {
-      if (isBackPressured()) {
-        log.print(VERBOSE, "Maximum storage size have been hit. Dropping messages");
-        return;
-      }
-
       messageQueue.put(message);
     } catch (InterruptedException e) {
       log.print(ERROR, e, "Interrupted while adding message %s.", message);
       Thread.currentThread().interrupt();
     }
-  }
-
-  public int messageSizeInBytes(TrackMessage message) {
-    Gson gson = new Gson();
-    String stringifiedMessage = gson.toJson(message);
-    return stringifiedMessage.length();
-  }
-
-  private Boolean isBackPressured() {
-    int messageQueueSize =
-        messageQueue
-            .stream()
-            .map(message -> messageSizeInBytes((TrackMessage) message))
-            .reduce(0, (messageASize, messageBSize) -> messageASize + messageBSize);
-
-    return messageQueueSize >= MESSAGE_QUEUE_MAX_BYTE_SIZE;
   }
 
   public void flush() {
@@ -213,6 +207,11 @@ public class AnalyticsClient {
 
           Boolean isBlockingSignal = message == FlushMessage.POISON || message == StopMessage.STOP;
           Boolean isOverflow = messages.size() >= size;
+
+          if (isBackPressured(messages)) {
+            log.print(VERBOSE, "Maximum storage size has been hit. Flushing");
+            isOverflow = true;
+          }
 
           if (!messages.isEmpty() && (isOverflow || isBlockingSignal)) {
             Batch batch = Batch.create(CONTEXT, messages);

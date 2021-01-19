@@ -60,6 +60,7 @@ public class AnalyticsClientTest {
       Backo.builder().base(TimeUnit.NANOSECONDS, 1).factor(1).build();
 
   Log log = Log.NONE;
+
   ThreadFactory threadFactory;
   BlockingQueue<Message> messageQueue;
   @Mock SegmentService segmentService;
@@ -178,7 +179,7 @@ public class AnalyticsClientTest {
   }
 
   @Test
-  public void calculatesMessageByteSize() {
+  public void shouldBeAbleToCalculateMessageSize() {
     AnalyticsClient client = newClient();
     Map<String, String> properties = new HashMap<String, String>();
 
@@ -203,11 +204,9 @@ public class AnalyticsClientTest {
         TrackMessage.builder("Big Event").userId("bar").properties(properties).build();
     client.enqueue(bigMessage);
 
-    Message tinyMessage = TrackMessage.builder("Tinny Event").userId("bar").build();
-    client.enqueue(tinyMessage);
     wait(messageQueue);
 
-    verify(messageQueue, times(1)).put(any(Message.class));
+    assertThat(captureBatch(networkExecutor).batch()).hasSize(1);
   }
 
   @Test
