@@ -11,7 +11,6 @@ import com.segment.analytics.http.SegmentService;
 import com.segment.analytics.http.UploadResponse;
 import com.segment.analytics.messages.Batch;
 import com.segment.analytics.messages.Message;
-import com.segment.analytics.messages.TrackMessage;
 import com.segment.backo.Backo;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -26,6 +25,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import retrofit2.Call;
 import retrofit2.Response;
 
@@ -51,6 +51,7 @@ public class AnalyticsClient {
   private final ExecutorService networkExecutor;
   private final ExecutorService looperExecutor;
   private final ScheduledExecutorService flushScheduler;
+  private final AtomicBoolean isShutDown;
 
   public static AnalyticsClient create(
       SegmentService segmentService,
@@ -70,7 +71,8 @@ public class AnalyticsClient {
         log,
         threadFactory,
         networkExecutor,
-        callbacks);
+        callbacks,
+        new AtomicBoolean(false));
   }
 
   AnalyticsClient(
@@ -82,7 +84,8 @@ public class AnalyticsClient {
       Log log,
       ThreadFactory threadFactory,
       ExecutorService networkExecutor,
-      List<Callback> callbacks) {
+      List<Callback> callbacks,
+      AtomicBoolean isShutDown) {
     this.messageQueue = messageQueue;
     this.service = service;
     this.size = maxQueueSize;
@@ -91,6 +94,7 @@ public class AnalyticsClient {
     this.callbacks = callbacks;
     this.looperExecutor = Executors.newSingleThreadExecutor(threadFactory);
     this.networkExecutor = networkExecutor;
+    this.isShutDown = isShutDown;
 
     looperExecutor.submit(new Looper());
 
@@ -107,44 +111,74 @@ public class AnalyticsClient {
         TimeUnit.MILLISECONDS);
   }
 
-  public void enqueue(Message message) {
-    try {
-      if (isBackPressured()) {
-        log.print(VERBOSE, "Maximum storage size have been hit. Dropping messages");
-        return;
-      }
-
-      messageQueue.put(message);
-    } catch (InterruptedException e) {
-      log.print(ERROR, e, "Interrupted while adding message %s.", message);
-    }
-  }
-
-  public int messageSizeInBytes(TrackMessage message) {
+  public int messageSizeInBytes(Message message) {
     Gson gson = new Gson();
     String stringifiedMessage = gson.toJson(message);
     return stringifiedMessage.length();
   }
 
-  private Boolean isBackPressured() {
-    int messageQueueSize =
-        messageQueue
-            .stream()
-            .map(message -> messageSizeInBytes((TrackMessage) message))
-            .reduce(0, (messageASize, messageBSize) -> messageASize + messageBSize);
+  private Boolean isBackPressured(List<Message> messages) {
+    int messageQueueSize = 0;
+
+    for (Message message : messages) {
+      messageQueueSize += messageSizeInBytes(message);
+    }
 
     return messageQueueSize >= MESSAGE_QUEUE_MAX_BYTE_SIZE;
   }
 
+  public void enqueue(Message message) {
+    if (message != StopMessage.STOP && isShutDown.get()) {
+      log.print(ERROR, "Attempt to enqueue a message when shutdown has been called %s.", message);
+      return;
+    }
+
+    try {
+      messageQueue.put(message);
+    } catch (InterruptedException e) {
+      log.print(ERROR, e, "Interrupted while adding message %s.", message);
+      Thread.currentThread().interrupt();
+    }
+  }
+
   public void flush() {
-    enqueue(FlushMessage.POISON);
+    if (!isShutDown.get()) {
+      enqueue(FlushMessage.POISON);
+    }
   }
 
   public void shutdown() {
-    messageQueue.clear();
-    looperExecutor.shutdownNow();
-    flushScheduler.shutdownNow();
-    networkExecutor.shutdown(); // Let in-flight requests complete.
+    if (isShutDown.compareAndSet(false, true)) {
+      final long start = System.currentTimeMillis();
+
+      // first let's tell the system to stop
+      enqueue(StopMessage.STOP);
+
+      // we can shutdown the flush scheduler without worrying
+      flushScheduler.shutdownNow();
+
+      shutdownAndWait(looperExecutor, "looper");
+      shutdownAndWait(networkExecutor, "network");
+
+      log.print(
+          VERBOSE, "Analytics client shut down in %s ms", (System.currentTimeMillis() - start));
+    }
+  }
+
+  public void shutdownAndWait(ExecutorService executor, String name) {
+    try {
+      executor.shutdown();
+      final boolean executorTerminated = executor.awaitTermination(1, TimeUnit.SECONDS);
+
+      log.print(
+          VERBOSE,
+          "%s executor %s.",
+          name,
+          executorTerminated ? "terminated normally" : "timed out");
+    } catch (InterruptedException e) {
+      log.print(ERROR, e, "Interrupted while stopping %s executor.", name);
+      Thread.currentThread().interrupt();
+    }
   }
 
   /**
@@ -152,22 +186,39 @@ public class AnalyticsClient {
    * messages, it triggers a flush.
    */
   class Looper implements Runnable {
+    private boolean stop;
+
+    public Looper() {
+      this.stop = false;
+    }
+
     @Override
     public void run() {
       List<Message> messages = new ArrayList<>();
       try {
-        //noinspection InfiniteLoopStatement
-        while (true) {
+        while (!stop) {
           Message message = messageQueue.take();
 
-          if (message != FlushMessage.POISON) {
+          if (message == StopMessage.STOP) {
+            log.print(VERBOSE, "Stopping the Looper");
+            stop = true;
+          } else if (message == FlushMessage.POISON) {
+            if (!messages.isEmpty()) {
+              log.print(VERBOSE, "Flushing messages.");
+            }
+          } else {
             messages.add(message);
-          } else if (messages.size() < 1) {
-            log.print(VERBOSE, "No messages to flush.");
-            continue;
           }
 
-          if (messages.size() >= size || message == FlushMessage.POISON) {
+          Boolean isBlockingSignal = message == FlushMessage.POISON || message == StopMessage.STOP;
+          Boolean isOverflow = messages.size() >= size;
+
+          if (isBackPressured(messages)) {
+            log.print(VERBOSE, "Maximum storage size has been hit. Flushing");
+            isOverflow = true;
+          }
+
+          if (!messages.isEmpty() && (isOverflow || isBlockingSignal)) {
             Batch batch = Batch.create(CONTEXT, messages);
             log.print(
                 VERBOSE,
@@ -181,7 +232,9 @@ public class AnalyticsClient {
         }
       } catch (InterruptedException e) {
         log.print(DEBUG, "Looper interrupted while polling for messages.");
+        Thread.currentThread().interrupt();
       }
+      log.print(VERBOSE, "Looper stopped");
     }
   }
 

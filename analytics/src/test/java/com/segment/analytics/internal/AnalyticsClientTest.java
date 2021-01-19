@@ -1,13 +1,18 @@
 package com.segment.analytics.internal;
 
+import static com.segment.analytics.internal.FlushMessage.POISON;
+import static com.segment.analytics.internal.StopMessage.STOP;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
@@ -34,6 +39,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import okhttp3.ResponseBody;
 import org.junit.Before;
 import org.junit.Test;
@@ -63,9 +69,14 @@ public class AnalyticsClientTest {
   @Mock Callback callback;
   @Mock UploadResponse response;
 
+  AtomicBoolean isShutDown;
+
   @Before
   public void setUp() {
     initMocks(this);
+
+    isShutDown = new AtomicBoolean(false);
+    messageQueue = spy(new LinkedBlockingQueue<Message>());
     threadFactory = Executors.defaultThreadFactory();
   }
 
@@ -81,7 +92,8 @@ public class AnalyticsClientTest {
         log,
         threadFactory,
         networkExecutor,
-        Collections.singletonList(callback));
+        Collections.singletonList(callback),
+        isShutDown);
   }
 
   @Test
@@ -95,13 +107,14 @@ public class AnalyticsClientTest {
   }
 
   @Test
-  public void shutdown() {
+  public void shutdown() throws InterruptedException {
+    messageQueue = new LinkedBlockingQueue<>();
     AnalyticsClient client = newClient();
 
     client.shutdown();
 
-    verify(messageQueue).clear();
     verify(networkExecutor).shutdown();
+    verify(networkExecutor).awaitTermination(1, TimeUnit.SECONDS);
   }
 
   @Test
@@ -160,7 +173,7 @@ public class AnalyticsClientTest {
     assertThat(captureBatch(networkExecutor).batch()).hasSize(50);
   }
 
-  private static String createDataSize(int msgSize) {
+  private static String generateMassDataOfSize(int msgSize) {
     char[] chars = new char[msgSize];
     Arrays.fill(chars, 'a');
 
@@ -168,11 +181,11 @@ public class AnalyticsClientTest {
   }
 
   @Test
-  public void calculatesMessageByteSize() {
+  public void shouldBeAbleToCalculateMessageSize() {
     AnalyticsClient client = newClient();
     Map<String, String> properties = new HashMap<String, String>();
 
-    properties.put("dummy-property", createDataSize(1024 * 33));
+    properties.put("dummy-property", generateMassDataOfSize(1024 * 33));
 
     TrackMessage bigMessage =
         TrackMessage.builder("Big Event").userId("bar").properties(properties).build();
@@ -187,19 +200,15 @@ public class AnalyticsClientTest {
     AnalyticsClient client = newClient();
     Map<String, String> properties = new HashMap<String, String>();
 
-    properties.put("dummy-property", createDataSize(1024 * 33));
+    properties.put("dummy-property", generateMassDataOfSize(1024 * 33));
 
     TrackMessage bigMessage =
         TrackMessage.builder("Big Event").userId("bar").properties(properties).build();
     client.enqueue(bigMessage);
 
-    // assertThat(client.messageSizeInBytes(bigMessage)).isEqualTo(30);
-
-    Message tinyMessage = TrackMessage.builder("Tinny Event").userId("bar").build();
-    client.enqueue(tinyMessage);
     wait(messageQueue);
 
-    verify(messageQueue, times(2)).put(any(Message.class));
+    assertThat(captureBatch(networkExecutor).batch()).hasSize(1);
   }
 
   @Test
@@ -349,7 +358,7 @@ public class AnalyticsClientTest {
     BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch, 10);
     batchUploadTask.run();
 
-    // 10 == maximumFlushAttempts
+    // DEFAULT_RETRIES == maximumFlushAttempts
     // tries 11(one normal run + 10 retries) even though default is 50 in AnalyticsClient.java
     verify(segmentService, times(11)).upload(batch);
     verify(callback)
@@ -362,6 +371,92 @@ public class AnalyticsClientTest {
                     return exception.getMessage().equals("11 retries exhausted");
                   }
                 }));
+  }
+
+  @Test
+  public void flushWhenNotShutDown() throws InterruptedException {
+    AnalyticsClient client = newClient();
+
+    client.flush();
+    verify(messageQueue).put(POISON);
+  }
+
+  @Test
+  public void flushWhenShutDown() throws InterruptedException {
+    AnalyticsClient client = newClient();
+    isShutDown.set(true);
+
+    client.flush();
+
+    verify(messageQueue, times(0)).put(any(Message.class));
+  }
+
+  @Test
+  public void enqueueWithRegularMessageWhenNotShutdown(MessageBuilderTest builder)
+      throws InterruptedException {
+    AnalyticsClient client = newClient();
+
+    final Message message = builder.get().userId("foo").build();
+    client.enqueue(message);
+
+    verify(messageQueue).put(message);
+  }
+
+  @Test
+  public void enqueueWithRegularMessageWhenShutdown(MessageBuilderTest builder)
+      throws InterruptedException {
+    AnalyticsClient client = newClient();
+    isShutDown.set(true);
+
+    client.enqueue(builder.get().userId("foo").build());
+
+    verify(messageQueue, times(0)).put(any(Message.class));
+  }
+
+  @Test
+  public void enqueueWithStopMessageWhenShutdown() throws InterruptedException {
+    AnalyticsClient client = newClient();
+    isShutDown.set(true);
+
+    client.enqueue(STOP);
+
+    verify(messageQueue).put(STOP);
+  }
+
+  @Test
+  public void shutdownWhenAlreadyShutDown() throws InterruptedException {
+    AnalyticsClient client = newClient();
+    isShutDown.set(true);
+
+    client.shutdown();
+
+    verify(messageQueue, times(0)).put(any(Message.class));
+    verifyZeroInteractions(networkExecutor, callback, segmentService);
+  }
+
+  @Test
+  public void shutdownWithNoMessageInTheQueue() throws InterruptedException {
+    AnalyticsClient client = newClient();
+    client.shutdown();
+
+    verify(messageQueue).put(STOP);
+    verify(networkExecutor).shutdown();
+    verify(networkExecutor).awaitTermination(1, TimeUnit.SECONDS);
+    verifyNoMoreInteractions(networkExecutor);
+  }
+
+  @Test
+  public void shutdownWithMessagesInTheQueue(MessageBuilderTest builder)
+      throws InterruptedException {
+    AnalyticsClient client = newClient();
+
+    client.enqueue(builder.get().userId("foo").build());
+    client.shutdown();
+
+    verify(messageQueue).put(STOP);
+    verify(networkExecutor).shutdown();
+    verify(networkExecutor).awaitTermination(1, TimeUnit.SECONDS);
+    verify(networkExecutor).submit(any(AnalyticsClient.BatchUploadTask.class));
   }
 
   @Test
