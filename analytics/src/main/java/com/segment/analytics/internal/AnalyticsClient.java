@@ -250,17 +250,17 @@ public class AnalyticsClient {
     private final AnalyticsClient client;
     private final Backo backo;
     final Batch batch;
-    private final int maximumFlushAttempts;
+    private final int maxRetries;
 
-    static BatchUploadTask create(AnalyticsClient client, Batch batch, int maximumFlushAttempts) {
-      return new BatchUploadTask(client, BACKO, batch, maximumFlushAttempts);
+    static BatchUploadTask create(AnalyticsClient client, Batch batch, int maxRetries) {
+      return new BatchUploadTask(client, BACKO, batch, maxRetries);
     }
 
-    BatchUploadTask(AnalyticsClient client, Backo backo, Batch batch, int maximumRetries) {
+    BatchUploadTask(AnalyticsClient client, Backo backo, Batch batch, int maxRetries) {
       this.client = client;
       this.batch = batch;
       this.backo = backo;
-      this.maximumFlushAttempts = maximumRetries;
+      this.maxRetries = maxRetries;
     }
 
     private void notifyCallbacksWithException(Batch batch, Exception exception) {
@@ -323,7 +323,7 @@ public class AnalyticsClient {
     @Override
     public void run() {
       int attempt = 0;
-      for (; attempt <= maximumFlushAttempts; attempt++) {
+      for (; attempt <= maxRetries; attempt++) {
         boolean retry = upload();
         if (!retry) return;
         try {

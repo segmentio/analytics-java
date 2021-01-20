@@ -358,7 +358,7 @@ public class AnalyticsClientTest {
     BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch, 10);
     batchUploadTask.run();
 
-    // DEFAULT_RETRIES == maximumFlushAttempts
+    // DEFAULT_RETRIES == maxRetries
     // tries 11(one normal run + 10 retries) even though default is 50 in AnalyticsClient.java
     verify(segmentService, times(11)).upload(batch);
     verify(callback)
