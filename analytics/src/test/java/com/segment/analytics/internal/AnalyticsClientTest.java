@@ -209,7 +209,6 @@ public class AnalyticsClientTest {
     wait(messageQueue);
 
     assertThat(captureBatch(networkExecutor).batch()).hasSize(1);
-
   }
 
   @Test
