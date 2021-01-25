@@ -96,6 +96,23 @@ public class AnalyticsBuilderTest {
   }
 
   @Test
+  public void negativeRetryCount() {
+    try {
+      builder.retries(0);
+      fail("Should fail for retries less than 1");
+    } catch (IllegalArgumentException e) {
+      assertThat(e).hasMessage("retries must be at least 1");
+    }
+
+    try {
+      builder.retries(-1);
+      fail("Should fail for retries less than 1");
+    } catch (IllegalArgumentException e) {
+      assertThat(e).hasMessage("retries must be at least 1");
+    }
+  }
+
+  @Test
   public void nullTransformer() {
     try {
       builder.messageTransformer(null);

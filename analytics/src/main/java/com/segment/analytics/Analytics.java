@@ -138,6 +138,7 @@ public class Analytics {
     private ExecutorService networkExecutor;
     private ThreadFactory threadFactory;
     private int flushQueueSize;
+    private int maximumFlushAttempts;
     private long flushIntervalInMillis;
     private List<Callback> callbacks;
     private int queueCapacity;
@@ -261,6 +262,15 @@ public class Analytics {
       return this;
     }
 
+    /** Set how many retries should happen before getting exhausted */
+    public Builder retries(int maximumRetries) {
+      if (maximumRetries < 1) {
+        throw new IllegalArgumentException("retries must be at least 1");
+      }
+      this.maximumFlushAttempts = maximumRetries;
+      return this;
+    }
+
     /** Set the {@link ExecutorService} on which all HTTP requests will be made. */
     public Builder networkExecutor(ExecutorService networkExecutor) {
       if (networkExecutor == null) {
@@ -313,12 +323,12 @@ public class Analytics {
               .registerTypeAdapter(Date.class, new ISO8601DateAdapter()) //
               .create();
 
-      if (endpoint == null && uploadURL == null) {
+      if (endpoint == null) {
         endpoint = DEFAULT_ENDPOINT;
-      }
 
-      if (endpoint == null && uploadURL != null) {
-        endpoint = uploadURL;
+        if (uploadURL != null) {
+          endpoint = uploadURL;
+        }
       }
 
       if (client == null) {
@@ -391,6 +401,7 @@ public class Analytics {
               queueCapacity,
               flushQueueSize,
               flushIntervalInMillis,
+              maximumFlushAttempts,
               log,
               threadFactory,
               networkExecutor,
