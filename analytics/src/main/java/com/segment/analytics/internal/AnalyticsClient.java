@@ -55,6 +55,7 @@ public class AnalyticsClient {
 
   public static AnalyticsClient create(
       SegmentService segmentService,
+      int queueCapacity,
       int flushQueueSize,
       long flushIntervalInMillis,
       int maximumRetries,
@@ -63,7 +64,7 @@ public class AnalyticsClient {
       ExecutorService networkExecutor,
       List<Callback> callbacks) {
     return new AnalyticsClient(
-        new LinkedBlockingQueue<Message>(),
+        new LinkedBlockingQueue<Message>(queueCapacity),
         segmentService,
         flushQueueSize,
         flushIntervalInMillis,
@@ -125,6 +126,10 @@ public class AnalyticsClient {
     }
 
     return messageQueueSize >= MESSAGE_QUEUE_MAX_BYTE_SIZE;
+  }
+
+  public boolean offer(Message message) {
+    return messageQueue.offer(message);
   }
 
   public void enqueue(Message message) {
