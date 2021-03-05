@@ -124,7 +124,8 @@ public class Analytics {
 
   /** Fluent API for creating {@link Analytics} instances. */
   public static class Builder {
-    private static final HttpUrl DEFAULT_ENDPOINT = HttpUrl.parse("https://api.segment.io");
+    private static final String DEFAULT_ENDPOINT = "https://api.segment.io";
+    private static final String DEFAULT_PATH = "/v1/import/";
     private static final String DEFAULT_USER_AGENT = "analytics-java/" + AnalyticsVersion.get();
 
     private final String writeKey;
@@ -176,7 +177,7 @@ public class Analytics {
       if (endpoint == null || endpoint.trim().length() == 0) {
         throw new NullPointerException("endpoint cannot be null or empty.");
       }
-      this.endpoint = HttpUrl.parse(endpoint + "/v1/import/");
+      this.endpoint = HttpUrl.parse(endpoint + DEFAULT_PATH);
       return this;
     }
 
@@ -324,16 +325,17 @@ public class Analytics {
               .create();
 
       if (endpoint == null) {
-        endpoint = DEFAULT_ENDPOINT;
+        endpoint = HttpUrl.parse(DEFAULT_ENDPOINT + DEFAULT_PATH);
+      }
 
-        if (uploadURL != null) {
-          endpoint = uploadURL;
-        }
+      if (endpoint == null && uploadURL != null) {
+        endpoint = uploadURL;
       }
 
       if (client == null) {
         client = Platform.get().defaultClient();
       }
+
       if (log == null) {
         log = Log.NONE;
       }
