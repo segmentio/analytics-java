@@ -1,4 +1,4 @@
-analytics-java [![CircleCI](https://circleci.com/gh/segmentio/analytics-java.svg?style=svg&circle-token=14e898d7ee1eb35ff07d2f6e0f7153a547c179fb)](https://circleci.com/gh/segmentio/analytics-java)
+analytics-java [![CircleCI](https://circleci.com/gh/segmentio/analytics-java.svg?style=svg&circle-token=14e898d7ee1eb35ff07d2f6e0f7153a547c179fb)](https://circleci.com/gh/segmentio/analytics-java) [![codecov](https://codecov.io/gh/segmentio/analytics-java/branch/master/graph/badge.svg?token=804hPfMd0C)](https://codecov.io/gh/segmentio/analytics-java)
 ==============
 
 analytics-java is a Java client for [Segment](https://segment.com)
