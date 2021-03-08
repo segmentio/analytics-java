@@ -83,6 +83,9 @@ $RECYCLE.BIN/
 
 *.iml
 
+# Vim
+*.orig
+
 ## Directory-based project format:
 .idea/
 # if you remove the above rule, at least ignore the following:
