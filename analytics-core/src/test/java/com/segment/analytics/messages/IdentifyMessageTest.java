@@ -50,6 +50,13 @@ public class IdentifyMessageTest {
     } catch (IllegalArgumentException e) {
       assertThat(e).hasMessage(exceptionMessage);
     }
+
+    IdentifyMessage message = IdentifyMessage.builder().userId("theUserId").build();
+    assertThat(message.userId()).isEqualTo("theUserId");
+
+    message = IdentifyMessage.builder().anonymousId("theAnonymousId").traits(ImmutableMap.of("foo", "bar")).build();
+    assertThat(message.anonymousId()).isEqualTo("theAnonymousId");
+    assertThat(message.traits()).isEqualTo(ImmutableMap.of("foo", "bar"));
   }
 
   @Test
