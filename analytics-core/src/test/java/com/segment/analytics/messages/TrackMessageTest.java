@@ -38,7 +38,7 @@ public class TrackMessageTest {
     assertThat(copy.event()).isEqualTo("event");
     assertThat(copy.properties()).isEqualTo(ImmutableMap.of("foo", "bar"));
   }
-  
+
   @Test
   public void userIdOrAnonymousIdIsRequired() {
     final String exceptionMessage = "Either anonymousId or userId must be provided.";
