@@ -128,9 +128,6 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
    * @see <a href="https://segment.com/docs/spec/identify/#anonymous-id">Anonymous ID</a>
    */
   public V anonymousId(String anonymousId) {
-    if (isNullOrEmpty(anonymousId)) {
-      throw new IllegalArgumentException("anonymousId cannot be null or empty.");
-    }
     this.anonymousId = anonymousId;
     return self();
   }
@@ -142,9 +139,6 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
    * @see <a href="https://segment.com/docs/spec/identify/#user-id">User ID</a>
    */
   public V userId(String userId) {
-    if (isNullOrEmpty(userId)) {
-      throw new IllegalArgumentException("userId cannot be null or empty.");
-    }
     this.userId = userId;
     return self();
   }
