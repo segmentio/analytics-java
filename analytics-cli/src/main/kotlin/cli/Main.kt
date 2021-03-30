@@ -13,7 +13,7 @@ val usage = """
 Analytics Java CLI
 
 Usage:
-  analytics --writeKey=<writeKey> --type=<type> --userId=<userId> [--event=<event>] [--properties=<properties>] [--name=<name>] [--traits=<traits>] [--groupId=<groupId>] [--previousId=<previousId>] [--anonymousId=<anonymousId>] [--integrations=<integrations>] [--traits=<traits>] [--context=<context>]
+  analytics --writeKey=<writeKey> --type=<type> --userId=<userId> [--event=<event>] [--properties=<properties>] [--name=<name>] [--traits=<traits>] [--groupId=<groupId>] [--previousId=<previousId>] [--anonymousId=<anonymousId>] [--integrations=<integrations>] [--context=<context>]
 
 
   analytics -h | --help
