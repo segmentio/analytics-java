@@ -124,7 +124,7 @@ public class MessageBuilderTest {
     try {
       builder.get().build();
       fail();
-    } catch (IllegalStateException e) {
+    } catch (IllegalArgumentException e) {
       assertThat(e).hasMessage("Either anonymousId or userId must be provided.");
     }
   }
