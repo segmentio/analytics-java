@@ -128,9 +128,6 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
    * @see <a href="https://segment.com/docs/spec/identify/#anonymous-id">Anonymous ID</a>
    */
   public V anonymousId(String anonymousId) {
-    if (isNullOrEmpty(anonymousId)) {
-      throw new IllegalArgumentException("anonymousId cannot be null or empty.");
-    }
     this.anonymousId = anonymousId;
     return self();
   }
@@ -142,9 +139,6 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
    * @see <a href="https://segment.com/docs/spec/identify/#user-id">User ID</a>
    */
   public V userId(String userId) {
-    if (isNullOrEmpty(userId)) {
-      throw new IllegalArgumentException("userId cannot be null or empty.");
-    }
     this.userId = userId;
     return self();
   }
@@ -200,8 +194,8 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
    * @throws IllegalStateException if both anonymousId and userId are not provided.
    */
   public T build() {
-    if (anonymousId == null && userId == null) {
-      throw new IllegalStateException("Either anonymousId or userId must be provided.");
+    if (isNullOrEmpty(anonymousId) && isNullOrEmpty(userId)) {
+      throw new IllegalArgumentException("Either anonymousId or userId must be provided.");
     }
 
     Date timestamp = this.timestamp;

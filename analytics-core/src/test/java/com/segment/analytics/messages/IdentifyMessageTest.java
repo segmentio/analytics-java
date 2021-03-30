@@ -1,6 +1,7 @@
 package com.segment.analytics.messages;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.fail;
 
 import com.google.common.collect.ImmutableMap;
 import org.junit.Test;
@@ -23,6 +24,43 @@ public class IdentifyMessageTest {
     } catch (IllegalStateException e) {
       assertThat(e).hasMessage("Either userId or traits must be provided.");
     }
+  }
+
+  @Test
+  public void userIdOrAnonymousIdIsRequired() {
+    final String exceptionMessage = "Either anonymousId or userId must be provided.";
+
+    try {
+      IdentifyMessage.builder().build();
+      fail();
+    } catch (IllegalArgumentException e) {
+      assertThat(e).hasMessage(exceptionMessage);
+    }
+
+    try {
+      IdentifyMessage.builder().userId(null).anonymousId((String) null).build();
+      fail();
+    } catch (IllegalArgumentException e) {
+      assertThat(e).hasMessage(exceptionMessage);
+    }
+
+    try {
+      IdentifyMessage.builder().userId("").anonymousId("").build();
+      fail();
+    } catch (IllegalArgumentException e) {
+      assertThat(e).hasMessage(exceptionMessage);
+    }
+
+    IdentifyMessage message = IdentifyMessage.builder().userId("theUserId").build();
+    assertThat(message.userId()).isEqualTo("theUserId");
+
+    message =
+        IdentifyMessage.builder()
+            .anonymousId("theAnonymousId")
+            .traits(ImmutableMap.of("foo", "bar"))
+            .build();
+    assertThat(message.anonymousId()).isEqualTo("theAnonymousId");
+    assertThat(message.traits()).isEqualTo(ImmutableMap.of("foo", "bar"));
   }
 
   @Test
