@@ -295,7 +295,7 @@ public class AnalyticsBuilderTest {
       builder.setUploadURL(null);
       fail("Should fail for null endpoint");
     } catch (NullPointerException e) {
-      assertThat(e).hasMessage("endpoint cannot be null or empty.");
+      assertThat(e).hasMessage("Upload URL cannot be null or empty.");
     }
   }
 
@@ -305,14 +305,14 @@ public class AnalyticsBuilderTest {
       builder.setUploadURL("");
       fail("Should fail for empty endpoint");
     } catch (NullPointerException e) {
-      assertThat(e).hasMessage("endpoint cannot be null or empty.");
+      assertThat(e).hasMessage("Upload URL cannot be null or empty.");
     }
 
     try {
       builder.setUploadURL("  ");
       fail("Should fail for empty endpoint");
     } catch (NullPointerException e) {
-      assertThat(e).hasMessage("endpoint cannot be null or empty.");
+      assertThat(e).hasMessage("Upload URL cannot be null or empty.");
     }
   }
 

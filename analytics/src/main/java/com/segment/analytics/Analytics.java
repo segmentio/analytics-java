@@ -187,7 +187,7 @@ public class Analytics {
      */
     public Builder setUploadURL(String uploadURL) {
       if (uploadURL == null || uploadURL.trim().length() == 0) {
-        throw new NullPointerException("endpoint cannot be null or empty.");
+        throw new NullPointerException("Upload URL cannot be null or empty.");
       }
       this.uploadURL = HttpUrl.parse(uploadURL);
       return this;
