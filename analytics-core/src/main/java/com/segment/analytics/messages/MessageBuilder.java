@@ -194,7 +194,7 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
    * @throws IllegalStateException if both anonymousId and userId are not provided.
    */
   public T build() {
-    if (isNullOrEmpty(anonymousId) && isNullOrEmpty(null)) {
+    if (isNullOrEmpty(anonymousId) && isNullOrEmpty(userId)) {
       throw new IllegalArgumentException("Either anonymousId or userId must be provided.");
     }
 
