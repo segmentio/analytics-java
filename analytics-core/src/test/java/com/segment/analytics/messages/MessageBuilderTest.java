@@ -90,26 +90,6 @@ public class MessageBuilderTest {
   }
 
   @Test
-  public void nullStringAnonymousIdThrowsException(TestUtils.MessageBuilderFactory builder) {
-    try {
-      builder.get().anonymousId((String) null);
-      fail();
-    } catch (IllegalArgumentException e) {
-      assertThat(e).hasMessage("anonymousId cannot be null or empty.");
-    }
-  }
-
-  @Test
-  public void emptyStringAnonymousIdThrowsException(TestUtils.MessageBuilderFactory builder) {
-    try {
-      builder.get().anonymousId("");
-      fail();
-    } catch (IllegalArgumentException e) {
-      assertThat(e).hasMessage("anonymousId cannot be null or empty.");
-    }
-  }
-
-  @Test
   public void nullUUIDAnonymousIdThrowsException(TestUtils.MessageBuilderFactory builder) {
     try {
       builder.get().anonymousId((UUID) null);
@@ -136,16 +116,6 @@ public class MessageBuilderTest {
       fail();
     } catch (NullPointerException e) {
       assertThat(e).hasMessage("Null timestamp");
-    }
-  }
-
-  @Test
-  public void invalidUserIdThrows(TestUtils.MessageBuilderFactory builder) {
-    try {
-      builder.get().userId(null);
-      fail();
-    } catch (IllegalArgumentException e) {
-      assertThat(e).hasMessage("userId cannot be null or empty.");
     }
   }
 
