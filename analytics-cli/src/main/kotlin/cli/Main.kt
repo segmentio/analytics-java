@@ -41,7 +41,14 @@ fun main(rawArgs: Array<String>) {
                 messageBuilder.properties(parseJson(properties as String))
             }
         }
-        "page", "screen" -> {
+        "page" -> {
+            messageBuilder = PageMessage.builder(args["--name"] as String)
+            val properties = args["--properties"]
+            if (properties != null) {
+                messageBuilder.properties(parseJson(properties as String))
+            }
+        }
+        "screen" -> {
             messageBuilder = ScreenMessage.builder(args["--name"] as String)
             val properties = args["--properties"]
             if (properties != null) {
@@ -73,6 +80,27 @@ fun main(rawArgs: Array<String>) {
     val userId = args["--userId"]
     if (userId != null) {
         messageBuilder.userId(userId as String)
+    }
+
+    val anonymousId = args["--anonymousId"]
+    if (anonymousId != null) {
+        messageBuilder.anonymousId(anonymousId as String)
+    }
+
+    val integrations = args["--integrations"]
+    if (integrations != null) {
+        val integrationsMap = parseJson(integrations as String)
+        for ((name, options) in integrationsMap) {
+            messageBuilder.integrationOptions(name, options as Map<String, *>)
+        }
+    }
+
+    val context = args["--context"]
+    if (context != null) {
+        val contextMap = parseJson(context as String)
+        for ((name, options) in contextMap) {
+            messageBuilder.context(contextMap)
+        }
     }
 
     val writeKey = args["--writeKey"] as String
