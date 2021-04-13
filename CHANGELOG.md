@@ -1,4 +1,21 @@
 
+Version 3.0.0 (April 13, 2021)
+==============================
+
+**Breaking Changes:**
+- SegmentService now has no url path. If you're using it directly we recommend using setUploadURL
+
+**Pull Requests Merged:**
+  * [New](https://github.com/segmentio/analytics-java/pull/192) Allow processing of already buffered messages on shutdown
+  * [New](https://github.com/segmentio/analytics-java/pull/190) Configurable message queue size
+  * [New](https://github.com/segmentio/analytics-java/pull/189) Configurable retry count
+  * [New](https://github.com/segmentio/analytics-java/pull/183) Add functionality to set custom endpoint with host and prefix
+  * [New](https://github.com/segmentio/analytics-java/pull/178) Limit by bytes
+
+  * [Fix](https://github.com/segmentio/analytics-java/pull/223) cli wasnt setting event fields
+  * [Fix](https://github.com/segmentio/analytics-java/pull/222) e2e fix - traits was defined twice in command line opts
+  * [Fix](https://github.com/segmentio/analytics-java/pull/221) Require either userId or anonymousId \(aligns with other Segment SDK conventions\)
+
 Version 2.1.1 (April 19, 2018)
 ==============================
 
