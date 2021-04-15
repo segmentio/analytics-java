@@ -6,7 +6,7 @@
   <parent>
     <artifactId>analytics-parent</artifactId>
     <groupId>com.segment.analytics.java</groupId>
-    <version>2.1.2-SNAPSHOT</version>
+    <version>3.0.0</version>
   </parent>
 
   <artifactId>analytics-cli</artifactId>
