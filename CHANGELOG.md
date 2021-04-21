@@ -1,5 +1,5 @@
 
-Version 3.0.0 (April 13, 2021)
+Version 3.0.0 (April 21, 2021)
 ==============================
 
 **Breaking Changes:**
