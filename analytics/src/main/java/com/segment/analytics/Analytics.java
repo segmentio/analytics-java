@@ -344,7 +344,6 @@ public class Analytics {
         endpoint = uploadURL;
       }
 
-
       if (client == null) {
         client = Platform.get().defaultClient();
       }
