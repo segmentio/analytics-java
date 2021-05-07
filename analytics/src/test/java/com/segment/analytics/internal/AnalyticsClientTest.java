@@ -60,6 +60,7 @@ public class AnalyticsClientTest {
       Backo.builder().base(TimeUnit.NANOSECONDS, 1).factor(1).build();
 
   private int DEFAULT_RETRIES = 10;
+  private int MAX_BYTE_SIZE = 1024 * 50; // 50kb
 
   Log log = Log.NONE;
   ThreadFactory threadFactory;
@@ -89,6 +90,7 @@ public class AnalyticsClientTest {
         50,
         TimeUnit.HOURS.toMillis(1),
         DEFAULT_RETRIES,
+        MAX_BYTE_SIZE,
         log,
         threadFactory,
         networkExecutor,
@@ -185,7 +187,7 @@ public class AnalyticsClientTest {
     AnalyticsClient client = newClient();
     Map<String, String> properties = new HashMap<String, String>();
 
-    properties.put("dummy-property", generateMassDataOfSize(1024 * 33));
+    properties.put("property1", generateMassDataOfSize(1024 * 33));
 
     TrackMessage bigMessage =
         TrackMessage.builder("Big Event").userId("bar").properties(properties).build();
@@ -196,11 +198,27 @@ public class AnalyticsClientTest {
   }
 
   @Test
-  public void dontEnqueueWhenReachesMaxSize() throws InterruptedException {
+  public void dontFlushUntilReachesMaxSize() throws InterruptedException {
     AnalyticsClient client = newClient();
     Map<String, String> properties = new HashMap<String, String>();
 
-    properties.put("dummy-property", generateMassDataOfSize(1024 * 33));
+    properties.put("property2", generateMassDataOfSize(MAX_BYTE_SIZE - 10));
+
+    TrackMessage bigMessage =
+        TrackMessage.builder("Big Event").userId("bar").properties(properties).build();
+    client.enqueue(bigMessage);
+
+    wait(messageQueue);
+
+    verify(networkExecutor, never()).submit(any(Runnable.class));
+  }
+
+  @Test
+  public void flushWhenReachesMaxSize() throws InterruptedException {
+    AnalyticsClient client = newClient();
+    Map<String, String> properties = new HashMap<String, String>();
+
+    properties.put("property3", generateMassDataOfSize(MAX_BYTE_SIZE + 10));
 
     TrackMessage bigMessage =
         TrackMessage.builder("Big Event").userId("bar").properties(properties).build();

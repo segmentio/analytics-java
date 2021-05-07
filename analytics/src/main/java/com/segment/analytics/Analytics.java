@@ -127,6 +127,7 @@ public class Analytics {
     private static final String DEFAULT_ENDPOINT = "https://api.segment.io";
     private static final String DEFAULT_PATH = "/v1/import/";
     private static final String DEFAULT_USER_AGENT = "analytics-java/" + AnalyticsVersion.get();
+    private static final int MESSAGE_QUEUE_MAX_BYTE_SIZE = 1024 * 500;
 
     private final String writeKey;
     private OkHttpClient client;
@@ -140,6 +141,7 @@ public class Analytics {
     private ThreadFactory threadFactory;
     private int flushQueueSize;
     private int maximumFlushAttempts;
+    private int maximumQueueSizeInBytes;
     private long flushIntervalInMillis;
     private List<Callback> callbacks;
     private int queueCapacity;
@@ -252,6 +254,16 @@ public class Analytics {
       return this;
     }
 
+    /** Set the queueSize at which flushes should be triggered. */
+    @Beta
+    public Builder maximumQueueSizeInBytes(int bytes) {
+      if (bytes < 1) {
+        throw new IllegalArgumentException("maximumQueueSizeInBytes must not be less than 1.");
+      }
+      this.maximumQueueSizeInBytes = bytes;
+      return this;
+    }
+
     /** Set the interval at which the queue should be flushed. */
     @Beta
     public Builder flushInterval(long flushInterval, TimeUnit unit) {
@@ -348,6 +360,9 @@ public class Analytics {
       if (flushQueueSize == 0) {
         flushQueueSize = Platform.get().defaultFlushQueueSize();
       }
+      if (maximumQueueSizeInBytes == 0) {
+        maximumQueueSizeInBytes = MESSAGE_QUEUE_MAX_BYTE_SIZE;
+      }
       if (messageTransformers == null) {
         messageTransformers = Collections.emptyList();
       } else {
@@ -404,10 +419,12 @@ public class Analytics {
               flushQueueSize,
               flushIntervalInMillis,
               maximumFlushAttempts,
+              maximumQueueSizeInBytes,
               log,
               threadFactory,
               networkExecutor,
               callbacks);
+
       return new Analytics(analyticsClient, messageTransformers, messageInterceptors, log);
     }
   }

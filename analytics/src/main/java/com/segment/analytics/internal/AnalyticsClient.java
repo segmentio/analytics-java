@@ -31,7 +31,6 @@ import retrofit2.Response;
 
 public class AnalyticsClient {
   private static final Map<String, ?> CONTEXT;
-  private static final int MESSAGE_QUEUE_MAX_BYTE_SIZE = 1024 * 32;
 
   static {
     Map<String, String> library = new LinkedHashMap<>();
@@ -46,6 +45,7 @@ public class AnalyticsClient {
   private final SegmentService service;
   private final int size;
   private final int maximumRetries;
+  private final int maximumQueueByteSize;
   private final Log log;
   private final List<Callback> callbacks;
   private final ExecutorService networkExecutor;
@@ -59,6 +59,7 @@ public class AnalyticsClient {
       int flushQueueSize,
       long flushIntervalInMillis,
       int maximumRetries,
+      int maximumQueueSizeInBytes,
       Log log,
       ThreadFactory threadFactory,
       ExecutorService networkExecutor,
@@ -69,6 +70,7 @@ public class AnalyticsClient {
         flushQueueSize,
         flushIntervalInMillis,
         maximumRetries,
+        maximumQueueSizeInBytes,
         log,
         threadFactory,
         networkExecutor,
@@ -82,6 +84,7 @@ public class AnalyticsClient {
       int maxQueueSize,
       long flushIntervalInMillis,
       int maximumRetries,
+      int maximumQueueSizeInBytes,
       Log log,
       ThreadFactory threadFactory,
       ExecutorService networkExecutor,
@@ -91,6 +94,7 @@ public class AnalyticsClient {
     this.service = service;
     this.size = maxQueueSize;
     this.maximumRetries = maximumRetries;
+    this.maximumQueueByteSize = maximumQueueSizeInBytes;
     this.log = log;
     this.callbacks = callbacks;
     this.looperExecutor = Executors.newSingleThreadExecutor(threadFactory);
@@ -125,7 +129,7 @@ public class AnalyticsClient {
       messageQueueSize += messageSizeInBytes(message);
     }
 
-    return messageQueueSize >= MESSAGE_QUEUE_MAX_BYTE_SIZE;
+    return messageQueueSize >= this.maximumQueueByteSize;
   }
 
   public boolean offer(Message message) {
@@ -250,7 +254,6 @@ public class AnalyticsClient {
             .cap(TimeUnit.HOURS, 1) //
             .jitter(1) //
             .build();
-    private static final int MAX_ATTEMPTS = 50; // Max 50 hours ~ 2 days
 
     private final AnalyticsClient client;
     private final Backo backo;
