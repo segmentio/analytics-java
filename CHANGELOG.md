@@ -1,3 +1,8 @@
+Version 3.1.0 (May 10, 2021)
+==============================
+**Pull Requests Merged:**
+  * [New](https://github.com/segmentio/analytics-java/pull/235) defaults queue max size to be over 500kb 
+
 
 Version 3.0.0 (April 21, 2021)
 ==============================
