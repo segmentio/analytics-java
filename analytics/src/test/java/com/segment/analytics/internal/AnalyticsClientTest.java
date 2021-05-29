@@ -145,6 +145,13 @@ public class AnalyticsClientTest {
     return task.batch;
   }
 
+  private static String generateMassDataOfSize(int msgSize) {
+    char[] chars = new char[msgSize];
+    Arrays.fill(chars, 'a');
+
+    return new String(chars);
+  }
+
   @Test
   public void flushSubmitsToExecutor() {
     messageQueue = new LinkedBlockingQueue<>();
@@ -175,13 +182,6 @@ public class AnalyticsClientTest {
     assertThat(captureBatch(networkExecutor).batch()).hasSize(50);
   }
 
-  private static String generateMassDataOfSize(int msgSize) {
-    char[] chars = new char[msgSize];
-    Arrays.fill(chars, 'a');
-
-    return new String(chars);
-  }
-
   @Test
   public void shouldBeAbleToCalculateMessageSize() {
     AnalyticsClient client = newClient();
@@ -202,7 +202,7 @@ public class AnalyticsClientTest {
     AnalyticsClient client = newClient();
     Map<String, String> properties = new HashMap<String, String>();
 
-    properties.put("property2", generateMassDataOfSize(MAX_BYTE_SIZE - 10));
+    properties.put("property2", generateMassDataOfSize(MAX_BYTE_SIZE - 500));
 
     TrackMessage bigMessage =
         TrackMessage.builder("Big Event").userId("bar").properties(properties).build();
@@ -220,13 +220,14 @@ public class AnalyticsClientTest {
 
     properties.put("property3", generateMassDataOfSize(MAX_BYTE_SIZE + 10));
 
-    TrackMessage bigMessage =
-        TrackMessage.builder("Big Event").userId("bar").properties(properties).build();
-    client.enqueue(bigMessage);
+    for (int i = 0; i < 10; i++) {
+      TrackMessage bigMessage = TrackMessage.builder("Big Event").userId("bar").properties(properties).build();
+      client.enqueue(bigMessage);
+    }
 
     wait(messageQueue);
 
-    assertThat(captureBatch(networkExecutor).batch()).hasSize(1);
+    verify(networkExecutor, times(10)).submit(any(Runnable.class));
   }
 
   @Test
