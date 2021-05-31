@@ -46,6 +46,7 @@ public class AnalyticsClient {
   private final int size;
   private final int maximumRetries;
   private final int maximumQueueByteSize;
+  private int currentQueueSizeInBytes;
   private final Log log;
   private final List<Callback> callbacks;
   private final ExecutorService networkExecutor;
@@ -101,6 +102,8 @@ public class AnalyticsClient {
     this.networkExecutor = networkExecutor;
     this.isShutDown = isShutDown;
 
+    this.currentQueueSizeInBytes = 0;
+
     looperExecutor.submit(new Looper());
 
     flushScheduler = Executors.newScheduledThreadPool(1, threadFactory);
@@ -122,14 +125,8 @@ public class AnalyticsClient {
     return stringifiedMessage.length();
   }
 
-  private Boolean isBackPressured(List<Message> messages) {
-    int messageQueueSize = 0;
-
-    for (Message message : messages) {
-      messageQueueSize += messageSizeInBytes(message);
-    }
-
-    return messageQueueSize >= this.maximumQueueByteSize;
+  private Boolean isBackPressured() {
+    return this.currentQueueSizeInBytes >= this.maximumQueueByteSize;
   }
 
   public boolean offer(Message message) {
@@ -144,6 +141,14 @@ public class AnalyticsClient {
 
     try {
       messageQueue.put(message);
+      currentQueueSizeInBytes =+ messageSizeInBytes(message);
+
+      if (isBackPressured()) {
+        log.print(VERBOSE, "Maximum storage size has been hit. Flushing...");
+
+        enqueue(FlushMessage.POISON);
+        currentQueueSizeInBytes = 0;
+      }
     } catch (InterruptedException e) {
       log.print(ERROR, e, "Interrupted while adding message %s.", message);
       Thread.currentThread().interrupt();
@@ -221,11 +226,6 @@ public class AnalyticsClient {
 
           Boolean isBlockingSignal = message == FlushMessage.POISON || message == StopMessage.STOP;
           Boolean isOverflow = messages.size() >= size;
-
-          if (isBackPressured(messages)) {
-            log.print(VERBOSE, "Maximum storage size has been hit. Flushing");
-            isOverflow = true;
-          }
 
           if (!messages.isEmpty() && (isOverflow || isBlockingSignal)) {
             Batch batch = Batch.create(CONTEXT, messages);
@@ -317,6 +317,7 @@ public class AnalyticsClient {
         return false;
       } catch (IOException error) {
         client.log.print(DEBUG, error, "Could not upload batch %s. Retrying.", batch.sequence());
+        notifyCallbacksWithException(batch, error);
 
         return true;
       } catch (Exception exception) {
