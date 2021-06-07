@@ -141,7 +141,7 @@ public class AnalyticsClient {
 
     try {
       messageQueue.put(message);
-      currentQueueSizeInBytes =+ messageSizeInBytes(message);
+      currentQueueSizeInBytes = +messageSizeInBytes(message);
 
       if (isBackPressured()) {
         log.print(VERBOSE, "Maximum storage size has been hit. Flushing...");

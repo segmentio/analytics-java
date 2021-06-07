@@ -221,7 +221,8 @@ public class AnalyticsClientTest {
     properties.put("property3", generateMassDataOfSize(MAX_BYTE_SIZE + 10));
 
     for (int i = 0; i < 10; i++) {
-      TrackMessage bigMessage = TrackMessage.builder("Big Event").userId("bar").properties(properties).build();
+      TrackMessage bigMessage =
+          TrackMessage.builder("Big Event").userId("bar").properties(properties).build();
       client.enqueue(bigMessage);
     }
 
