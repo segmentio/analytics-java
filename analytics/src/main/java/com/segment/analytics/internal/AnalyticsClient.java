@@ -144,14 +144,15 @@ public class AnalyticsClient {
     try {
       messageQueue.put(message);
 
+      int tempSize = this.currentQueueSizeInBytes;
       int messageByteSize = messageSizeInBytes(message);
       if (isBackPressuredAfterSize(messageByteSize)) {
-        currentQueueSizeInBytes = messageByteSize;
+        this.currentQueueSizeInBytes = messageByteSize;
         messageQueue.put(FlushMessage.POISON);
 
-        log.print(VERBOSE, String.format("Maximum storage size has been hit %d. Flushing...", currentQueueSizeInBytes));
+        log.print(VERBOSE, "Maximum storage size has been hit Flushing...");
       } else {
-        currentQueueSizeInBytes += messageByteSize;
+        this.currentQueueSizeInBytes += messageByteSize;
       }
     } catch (InterruptedException e) {
       log.print(ERROR, e, "Interrupted while adding message %s.", message);

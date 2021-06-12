@@ -235,7 +235,7 @@ public class AnalyticsClientTest {
   public void flushWhenMultipleMessagesReachesMaxSize() throws InterruptedException {
     AnalyticsClient client = newClient();
     Map<String, String> properties = new HashMap<String, String>();
-    properties.put("property3", generateMassDataOfSize((MAX_BYTE_SIZE - 190) / 10));
+    properties.put("property3", generateMassDataOfSize(MAX_BYTE_SIZE / 9));
 
     for (int i = 0; i < 10; i++) {
       TrackMessage bigMessage =
