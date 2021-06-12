@@ -60,9 +60,10 @@ public class AnalyticsClientTest {
       Backo.builder().base(TimeUnit.NANOSECONDS, 1).factor(1).build();
 
   private int DEFAULT_RETRIES = 10;
-  private int MAX_BYTE_SIZE = 1024 * 50; // 50kb
+  private int MAX_BYTE_SIZE = 1024 * 500; // 500kb
 
   Log log = Log.NONE;
+  
   ThreadFactory threadFactory;
   @Mock BlockingQueue<Message> messageQueue;
   @Mock SegmentService segmentService;
