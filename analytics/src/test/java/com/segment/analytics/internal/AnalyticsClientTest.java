@@ -202,7 +202,7 @@ public class AnalyticsClientTest {
     AnalyticsClient client = newClient();
     Map<String, String> properties = new HashMap<String, String>();
 
-    properties.put("property2", generateMassDataOfSize(MAX_BYTE_SIZE - 500));
+    properties.put("property2", generateMassDataOfSize(MAX_BYTE_SIZE - 200));
 
     TrackMessage bigMessage =
         TrackMessage.builder("Big Event").userId("bar").properties(properties).build();
@@ -218,7 +218,7 @@ public class AnalyticsClientTest {
     AnalyticsClient client = newClient();
     Map<String, String> properties = new HashMap<String, String>();
 
-    properties.put("property3", generateMassDataOfSize(MAX_BYTE_SIZE + 10));
+    properties.put("property3", generateMassDataOfSize(MAX_BYTE_SIZE));
 
     for (int i = 0; i < 10; i++) {
       TrackMessage bigMessage =
@@ -229,6 +229,23 @@ public class AnalyticsClientTest {
     wait(messageQueue);
 
     verify(networkExecutor, times(10)).submit(any(Runnable.class));
+  }
+
+  @Test
+  public void flushWhenMultipleMessagesReachesMaxSize() throws InterruptedException {
+    AnalyticsClient client = newClient();
+    Map<String, String> properties = new HashMap<String, String>();
+    properties.put("property3", generateMassDataOfSize((MAX_BYTE_SIZE - 190) / 10));
+
+    for (int i = 0; i < 10; i++) {
+      TrackMessage bigMessage =
+          TrackMessage.builder("Big Event").userId("bar").properties(properties).build();
+      client.enqueue(bigMessage);
+    }
+
+    wait(messageQueue);
+
+    verify(networkExecutor, times(1)).submit(any(Runnable.class));
   }
 
   @Test
