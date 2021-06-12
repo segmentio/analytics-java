@@ -63,7 +63,7 @@ public class AnalyticsClientTest {
   private int MAX_BYTE_SIZE = 1024 * 500; // 500kb
 
   Log log = Log.NONE;
-  
+
   ThreadFactory threadFactory;
   @Mock BlockingQueue<Message> messageQueue;
   @Mock SegmentService segmentService;

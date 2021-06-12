@@ -261,7 +261,8 @@ public class Analytics {
         throw new IllegalArgumentException("maximumQueueSizeInBytes must not be less than 1.");
       }
       if (bytes > 500 * 1024) {
-        throw new IllegalArgumentException("Segment can only allows a maximum payload size of 500kb per batch request");
+        throw new IllegalArgumentException(
+            "Segment can only allows a maximum payload size of 500kb per batch request");
       }
       this.maximumQueueSizeInBytes = bytes;
       return this;

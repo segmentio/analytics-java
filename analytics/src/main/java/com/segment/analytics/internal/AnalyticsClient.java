@@ -104,7 +104,6 @@ public class AnalyticsClient {
 
     this.currentQueueSizeInBytes = 0;
 
-
     looperExecutor.submit(new Looper());
 
     flushScheduler = Executors.newScheduledThreadPool(1, threadFactory);
@@ -128,7 +127,8 @@ public class AnalyticsClient {
 
   private Boolean isBackPressuredAfterSize(int incomingSize) {
     int POISON_BYTE_SIZE = messageSizeInBytes(FlushMessage.POISON);
-    return (this.currentQueueSizeInBytes + incomingSize + POISON_BYTE_SIZE) >= this.maximumQueueByteSize;
+    int sizeAfterAdd = this.currentQueueSizeInBytes + incomingSize + POISON_BYTE_SIZE;
+    return sizeAfterAdd >= this.maximumQueueByteSize;
   }
 
   public boolean offer(Message message) {
