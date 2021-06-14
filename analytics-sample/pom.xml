@@ -6,7 +6,7 @@
   <parent>
     <artifactId>analytics-parent</artifactId>
     <groupId>com.segment.analytics.java</groupId>
-    <version>3.1.2-SNAPSHOT</version>
+    <version>3.1.2</version>
   </parent>
 
   <artifactId>analytics-sample</artifactId>
