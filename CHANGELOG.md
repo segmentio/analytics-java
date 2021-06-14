@@ -1,3 +1,9 @@
+# Version 3.1.2 (June 14, 2021)
+
+**Pull Requests Merged:**
+
+- [Fix](https://github.com/segmentio/analytics-java/pull/245) Fix issues around backpressure calculation
+
 # Version 3.1.1 (May 31, 2021)
 
 **Pull Requests Merged:**
