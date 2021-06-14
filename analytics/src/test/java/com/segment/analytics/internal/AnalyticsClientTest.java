@@ -60,9 +60,10 @@ public class AnalyticsClientTest {
       Backo.builder().base(TimeUnit.NANOSECONDS, 1).factor(1).build();
 
   private int DEFAULT_RETRIES = 10;
-  private int MAX_BYTE_SIZE = 1024 * 50; // 50kb
+  private int MAX_BYTE_SIZE = 1024 * 500; // 500kb
 
   Log log = Log.NONE;
+
   ThreadFactory threadFactory;
   @Mock BlockingQueue<Message> messageQueue;
   @Mock SegmentService segmentService;
@@ -202,7 +203,7 @@ public class AnalyticsClientTest {
     AnalyticsClient client = newClient();
     Map<String, String> properties = new HashMap<String, String>();
 
-    properties.put("property2", generateMassDataOfSize(MAX_BYTE_SIZE - 500));
+    properties.put("property2", generateMassDataOfSize(MAX_BYTE_SIZE - 200));
 
     TrackMessage bigMessage =
         TrackMessage.builder("Big Event").userId("bar").properties(properties).build();
@@ -218,16 +219,34 @@ public class AnalyticsClientTest {
     AnalyticsClient client = newClient();
     Map<String, String> properties = new HashMap<String, String>();
 
-    properties.put("property3", generateMassDataOfSize(MAX_BYTE_SIZE + 10));
+    properties.put("property3", generateMassDataOfSize(MAX_BYTE_SIZE));
 
     for (int i = 0; i < 10; i++) {
-      TrackMessage bigMessage = TrackMessage.builder("Big Event").userId("bar").properties(properties).build();
+      TrackMessage bigMessage =
+          TrackMessage.builder("Big Event").userId("bar").properties(properties).build();
       client.enqueue(bigMessage);
     }
 
     wait(messageQueue);
 
     verify(networkExecutor, times(10)).submit(any(Runnable.class));
+  }
+
+  @Test
+  public void flushWhenMultipleMessagesReachesMaxSize() throws InterruptedException {
+    AnalyticsClient client = newClient();
+    Map<String, String> properties = new HashMap<String, String>();
+    properties.put("property3", generateMassDataOfSize(MAX_BYTE_SIZE / 9));
+
+    for (int i = 0; i < 10; i++) {
+      TrackMessage bigMessage =
+          TrackMessage.builder("Big Event").userId("bar").properties(properties).build();
+      client.enqueue(bigMessage);
+    }
+
+    wait(messageQueue);
+
+    verify(networkExecutor, times(1)).submit(any(Runnable.class));
   }
 
   @Test
