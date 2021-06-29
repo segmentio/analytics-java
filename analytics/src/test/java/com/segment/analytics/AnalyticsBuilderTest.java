@@ -96,7 +96,7 @@ public class AnalyticsBuilderTest {
   }
 
   @Test
-  public void negativeRetryCount() {
+  public void invalidRetryCount() {
     try {
       builder.retries(0);
       fail("Should fail for retries less than 1");

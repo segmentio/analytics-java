@@ -367,6 +367,9 @@ public class Analytics {
       if (maximumQueueSizeInBytes == 0) {
         maximumQueueSizeInBytes = MESSAGE_QUEUE_MAX_BYTE_SIZE;
       }
+      if (maximumFlushAttempts == 0) {
+        maximumFlushAttempts = 3;
+      }
       if (messageTransformers == null) {
         messageTransformers = Collections.emptyList();
       } else {
