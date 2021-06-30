@@ -90,7 +90,7 @@ public class AnalyticsClientTest {
         segmentService,
         50,
         TimeUnit.HOURS.toMillis(1),
-        DEFAULT_RETRIES,
+        0,
         MAX_BYTE_SIZE,
         log,
         threadFactory,
@@ -407,6 +407,40 @@ public class AnalyticsClientTest {
                   @Override
                   public boolean matches(IOException exception) {
                     return exception.getMessage().equals("11 retries exhausted");
+                  }
+                }));
+  }
+
+  @Test
+  public void hasDefaultRetriesSetTo3() {
+    AnalyticsClient client = newClient();
+    TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
+    Batch batch = batchFor(trackMessage);
+
+    when(segmentService.upload(batch))
+        .thenAnswer(
+            new Answer<Call<UploadResponse>>() {
+              public Call<UploadResponse> answer(InvocationOnMock invocation) {
+                Response<UploadResponse> failResponse =
+                    Response.error(429, ResponseBody.create(null, "Not Found"));
+                return Calls.response(failResponse);
+              }
+            });
+
+    BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch, 3);
+    batchUploadTask.run();
+
+    // DEFAULT_RETRIES == maxRetries
+    // tries 11(one normal run + 10 retries)
+    verify(segmentService, times(4)).upload(batch);
+    verify(callback)
+        .failure(
+            eq(trackMessage),
+            argThat(
+                new ArgumentMatcher<IOException>() {
+                  @Override
+                  public boolean matches(IOException exception) {
+                    return exception.getMessage().equals("4 retries exhausted");
                   }
                 }));
   }
