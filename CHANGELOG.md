@@ -1,3 +1,8 @@
+# Version 3.1.3 (July 9, 2021)
+
+- [Fix](https://github.com/segmentio/analytics-java/pull/256) Set the default retries to 3
+- [Chore] Dependency upgrades
+
 # Version 3.1.2 (June 14, 2021)
 
 **Pull Requests Merged:**
