@@ -128,7 +128,7 @@ public class AnalyticsClient {
   private Boolean isBackPressuredAfterSize(int incomingSize) {
     int POISON_BYTE_SIZE = messageSizeInBytes(FlushMessage.POISON);
     int sizeAfterAdd = this.currentQueueSizeInBytes + incomingSize + POISON_BYTE_SIZE;
-    return sizeAfterAdd >= this.maximumQueueByteSize;
+    return sizeAfterAdd >= Math.min(this.maximumQueueByteSize, 1024 * 500);
   }
 
   public boolean offer(Message message) {

@@ -233,6 +233,37 @@ public class AnalyticsClientTest {
   }
 
   @Test
+  public void flushHowManyTimesNecessaryToStayWithinLimit() throws InterruptedException {
+    AnalyticsClient client =
+        new AnalyticsClient(
+            messageQueue,
+            segmentService,
+            50,
+            TimeUnit.HOURS.toMillis(1),
+            0,
+            MAX_BYTE_SIZE * 4,
+            log,
+            threadFactory,
+            networkExecutor,
+            Collections.singletonList(callback),
+            isShutDown);
+
+    Map<String, String> properties = new HashMap<String, String>();
+
+    properties.put("property3", generateMassDataOfSize(MAX_BYTE_SIZE));
+
+    for (int i = 0; i < 4; i++) {
+      TrackMessage bigMessage =
+          TrackMessage.builder("Big Event").userId("bar").properties(properties).build();
+      client.enqueue(bigMessage);
+    }
+
+    wait(messageQueue);
+
+    verify(networkExecutor, times(4)).submit(any(Runnable.class));
+  }
+
+  @Test
   public void flushWhenMultipleMessagesReachesMaxSize() throws InterruptedException {
     AnalyticsClient client = newClient();
     Map<String, String> properties = new HashMap<String, String>();
