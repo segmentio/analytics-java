@@ -299,7 +299,7 @@ public class AnalyticsBuilderTest {
     String expectedURL = "https://dummy.url/api/v1/segment/";
 
     assertEquals(expectedURL, builder.uploadURL.toString());
-    assertNotEquals(expectedURL, "this wont be set anyway");
+    assertNotEquals("this wont be set anyway", builder.endpoint.toString());
   }
 
   @Test
