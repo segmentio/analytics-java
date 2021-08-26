@@ -338,11 +338,11 @@ public class Analytics {
               .create();
 
       if (endpoint == null) {
-        endpoint = HttpUrl.parse(DEFAULT_ENDPOINT + DEFAULT_PATH);
-      }
-
-      if (endpoint == null && uploadURL != null) {
-        endpoint = uploadURL;
+        if (uploadURL != null) {
+          endpoint = uploadURL;
+        } else {
+          endpoint = HttpUrl.parse(DEFAULT_ENDPOINT + DEFAULT_PATH);
+        }
       }
 
       if (client == null) {
