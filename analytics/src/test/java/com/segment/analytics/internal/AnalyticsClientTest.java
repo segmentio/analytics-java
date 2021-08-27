@@ -62,7 +62,18 @@ public class AnalyticsClientTest {
   private int DEFAULT_RETRIES = 10;
   private int MAX_BYTE_SIZE = 1024 * 500; // 500kb
 
-  Log log = Log.NONE;
+  Log log = new Log() {
+    @Override
+    public void print(Level level, String format, Object... args) {
+      System.out.println(level + ":\t" + String.format(format, args));
+    }
+
+    @Override
+    public void print(Level level, Throwable error, String format, Object... args) {
+      System.out.println(level + ":\t" + String.format(format, args));
+      System.out.println(error);
+    }
+  };
 
   ThreadFactory threadFactory;
   @Mock BlockingQueue<Message> messageQueue;
@@ -194,7 +205,7 @@ public class AnalyticsClientTest {
         TrackMessage.builder("Big Event").userId("bar").properties(properties).build();
     client.enqueue(bigMessage);
 
-    // can't test for exact size cause other attributes come in play
+    // can't test for exact size cause other request attributes come in play
     assertThat(client.messageSizeInBytes(bigMessage)).isGreaterThan(1024 * 33);
   }
 
@@ -216,6 +227,24 @@ public class AnalyticsClientTest {
 
   @Test
   public void flushWhenReachesMaxSize() throws InterruptedException {
+    AnalyticsClient client = newClient();
+    Map<String, String> properties = new HashMap<String, String>();
+
+    properties.put("bigProperty", generateMassDataOfSize(MAX_BYTE_SIZE / 5));
+
+    for (int i = 0; i < 10; i++) {
+      TrackMessage bigMessage =
+          TrackMessage.builder("Big Event").userId("bar").properties(properties).build();
+      client.enqueue(bigMessage);
+    }
+
+    wait(messageQueue);
+
+    verify(networkExecutor, times(2)).submit(any(Runnable.class));
+  }
+
+  @Test
+  public void wontEnqueueLastMessageIfThatExceedsAPILimit() throws InterruptedException {
     AnalyticsClient client = newClient();
     Map<String, String> properties = new HashMap<String, String>();
 
@@ -250,7 +279,7 @@ public class AnalyticsClientTest {
 
     Map<String, String> properties = new HashMap<String, String>();
 
-    properties.put("property3", generateMassDataOfSize(MAX_BYTE_SIZE));
+    properties.put("halfSize", generateMassDataOfSize(MAX_BYTE_SIZE / 2));
 
     for (int i = 0; i < 4; i++) {
       TrackMessage bigMessage =
@@ -260,7 +289,7 @@ public class AnalyticsClientTest {
 
     wait(messageQueue);
 
-    verify(networkExecutor, times(4)).submit(any(Runnable.class));
+    verify(networkExecutor, times(2)).submit(any(Runnable.class));
   }
 
   @Test

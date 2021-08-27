@@ -126,9 +126,8 @@ public class AnalyticsClient {
   }
 
   private Boolean isBackPressuredAfterSize(int incomingSize) {
-    int POISON_BYTE_SIZE = messageSizeInBytes(FlushMessage.POISON);
-    int sizeAfterAdd = this.currentQueueSizeInBytes + incomingSize + POISON_BYTE_SIZE;
-    return sizeAfterAdd >= Math.min(this.maximumQueueByteSize, 1024 * 500);
+    int sizeAfterAdd = currentQueueSizeInBytes + incomingSize;
+    return sizeAfterAdd > Math.min(maximumQueueByteSize, 1024 * 500);
   }
 
   public boolean offer(Message message) {
@@ -142,18 +141,25 @@ public class AnalyticsClient {
     }
 
     try {
-      messageQueue.put(message);
-
-      int tempSize = this.currentQueueSizeInBytes;
       int messageByteSize = messageSizeInBytes(message);
+
       if (isBackPressuredAfterSize(messageByteSize)) {
-        this.currentQueueSizeInBytes = messageByteSize;
-        messageQueue.put(FlushMessage.POISON);
+        if(messageQueue.size() == 0) { 
+          messageQueue.put(message);
+          messageQueue.put(FlushMessage.POISON);
+        } else {
+          messageQueue.put(FlushMessage.POISON);
+          messageQueue.put(message);
+        }
 
         log.print(VERBOSE, "Maximum storage size has been hit Flushing...");
+
+        currentQueueSizeInBytes = messageByteSize;
       } else {
-        this.currentQueueSizeInBytes += messageByteSize;
+        messageQueue.put(message);
+        currentQueueSizeInBytes += messageByteSize;
       }
+
     } catch (InterruptedException e) {
       log.print(ERROR, e, "Interrupted while adding message %s.", message);
       Thread.currentThread().interrupt();
