@@ -62,18 +62,19 @@ public class AnalyticsClientTest {
   private int DEFAULT_RETRIES = 10;
   private int MAX_BYTE_SIZE = 1024 * 500; // 500kb
 
-  Log log = new Log() {
-    @Override
-    public void print(Level level, String format, Object... args) {
-      System.out.println(level + ":\t" + String.format(format, args));
-    }
+  Log log =
+      new Log() {
+        @Override
+        public void print(Level level, String format, Object... args) {
+          System.out.println(level + ":\t" + String.format(format, args));
+        }
 
-    @Override
-    public void print(Level level, Throwable error, String format, Object... args) {
-      System.out.println(level + ":\t" + String.format(format, args));
-      System.out.println(error);
-    }
-  };
+        @Override
+        public void print(Level level, Throwable error, String format, Object... args) {
+          System.out.println(level + ":\t" + String.format(format, args));
+          System.out.println(error);
+        }
+      };
 
   ThreadFactory threadFactory;
   @Mock BlockingQueue<Message> messageQueue;
