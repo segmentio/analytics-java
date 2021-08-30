@@ -145,7 +145,7 @@ public class AnalyticsClient {
       log.print(VERBOSE, "Current queue size(bytes): %d", currentQueueSizeInBytes);
 
       if (isBackPressuredAfterSize(messageByteSize)) {
-        if(messageQueue.size() == 0) { 
+        if (messageQueue.size() == 0) {
           messageQueue.put(message);
           messageQueue.put(FlushMessage.POISON);
           currentQueueSizeInBytes = 0;
