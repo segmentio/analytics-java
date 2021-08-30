@@ -270,7 +270,7 @@ public class AnalyticsClientTest {
             50,
             TimeUnit.HOURS.toMillis(1),
             0,
-            MAX_BYTE_SIZE * 4,
+            MAX_BYTE_SIZE,
             log,
             threadFactory,
             networkExecutor,

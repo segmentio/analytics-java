@@ -142,19 +142,20 @@ public class AnalyticsClient {
 
     try {
       int messageByteSize = messageSizeInBytes(message);
+      log.print(VERBOSE, "Current queue size(bytes): %d", currentQueueSizeInBytes);
 
       if (isBackPressuredAfterSize(messageByteSize)) {
         if(messageQueue.size() == 0) { 
           messageQueue.put(message);
           messageQueue.put(FlushMessage.POISON);
+          currentQueueSizeInBytes = 0;
         } else {
           messageQueue.put(FlushMessage.POISON);
           messageQueue.put(message);
+          currentQueueSizeInBytes = messageByteSize;
         }
 
         log.print(VERBOSE, "Maximum storage size has been hit Flushing...");
-
-        currentQueueSizeInBytes = messageByteSize;
       } else {
         messageQueue.put(message);
         currentQueueSizeInBytes += messageByteSize;
