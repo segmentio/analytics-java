@@ -291,7 +291,7 @@ public class AnalyticsBuilderTest {
   }
 
   @Test
-  public void shouldPriotizeUploadURLOverEndpoint() {
+  public void shouldPrioritizeUploadURLOverEndpoint() {
     builder
         .endpoint("this wont be set anyway")
         .setUploadURL("https://dummy.url/api/v1/segment/")
