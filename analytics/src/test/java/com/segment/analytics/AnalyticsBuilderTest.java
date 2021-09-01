@@ -3,6 +3,7 @@ package com.segment.analytics;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
@@ -280,6 +281,25 @@ public class AnalyticsBuilderTest {
   public void buildsWithValidUploadURL() {
     Analytics analytics = builder.setUploadURL("https://example.com/v2/batch/").build();
     assertThat(analytics).isNotNull();
+  }
+
+  @Test
+  public void buildsCorrectEndpointWithUploadURL() {
+    builder.setUploadURL("https://dummy.url/api/v1/segment/").build();
+    String expectedURL = "https://dummy.url/api/v1/segment/";
+    assertEquals(expectedURL, builder.endpoint.toString());
+  }
+
+  @Test
+  public void shouldPrioritizeUploadURLOverEndpoint() {
+    builder
+        .endpoint("this wont be set anyway")
+        .setUploadURL("https://dummy.url/api/v1/segment/")
+        .build();
+    String expectedURL = "https://dummy.url/api/v1/segment/";
+
+    assertEquals(expectedURL, builder.uploadURL.toString());
+    assertNotEquals("this wont be set anyway", builder.endpoint.toString());
   }
 
   @Test
