@@ -34,6 +34,9 @@ public abstract class PageMessage implements Message {
   @Nullable
   public abstract Map<String, ?> properties();
 
+  @Nullable
+  public abstract String category();
+
   public Builder toBuilder() {
     return new Builder(this);
   }
@@ -42,11 +45,13 @@ public abstract class PageMessage implements Message {
   public static class Builder extends MessageBuilder<PageMessage, Builder> {
     private String name;
     private Map<String, ?> properties;
+    private String category;
 
     private Builder(PageMessage page) {
       super(page);
       name = page.name();
       properties = page.properties();
+      category = page.category();
     }
 
     private Builder(String name) {
@@ -70,6 +75,14 @@ public abstract class PageMessage implements Message {
       return this;
     }
 
+    public Builder category(String category) {
+      if (category == null) {
+        throw new NullPointerException("Null category");
+      }
+      this.category = category;
+      return this;
+    }
+
     @Override
     Builder self() {
       return this;
@@ -85,7 +98,7 @@ public abstract class PageMessage implements Message {
         String userId,
         Map<String, Object> integrations) {
       return new AutoValue_PageMessage(
-          type, messageId, timestamp, context, anonymousId, userId, integrations, name, properties);
+          type, messageId, timestamp, context, anonymousId, userId, integrations, name, properties, category);
     }
   }
 }
