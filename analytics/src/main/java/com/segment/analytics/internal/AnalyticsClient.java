@@ -13,6 +13,7 @@ import com.segment.analytics.messages.Batch;
 import com.segment.analytics.messages.Message;
 import com.segment.backo.Backo;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -122,7 +123,7 @@ public class AnalyticsClient {
   public int messageSizeInBytes(Message message) {
     Gson gson = new Gson();
     String stringifiedMessage = gson.toJson(message);
-    return stringifiedMessage.length();
+    return stringifiedMessage.getBytes(StandardCharsets.UTF_8).length;
   }
 
   private Boolean isBackPressuredAfterSize(int incomingSize) {
