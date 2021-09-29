@@ -143,7 +143,6 @@ public class AnalyticsClient {
 
     try {
       int messageByteSize = messageSizeInBytes(message);
-      log.print(VERBOSE, "Current queue size(bytes): %d", currentQueueSizeInBytes);
 
       if (isBackPressuredAfterSize(messageByteSize)) {
         if (messageQueue.size() == 0) {
