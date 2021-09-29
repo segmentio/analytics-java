@@ -146,6 +146,7 @@ public class AnalyticsClient {
 
       int tempSize = this.currentQueueSizeInBytes;
       int messageByteSize = messageSizeInBytes(message);
+
       if (isBackPressuredAfterSize(messageByteSize)) {
         this.currentQueueSizeInBytes = messageByteSize;
         messageQueue.put(FlushMessage.POISON);
@@ -316,8 +317,7 @@ public class AnalyticsClient {
         }
 
         client.log.print(DEBUG, "Could not upload batch %s. Giving up.", batch.sequence());
-
-        notifyCallbacksWithException(batch, new IOException("HTTP Error"));
+        notifyCallbacksWithException(batch, new IOException(response.errorBody().string()));
 
         return false;
       } catch (IOException error) {
