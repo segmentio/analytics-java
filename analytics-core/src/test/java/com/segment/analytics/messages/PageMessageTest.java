@@ -26,15 +26,26 @@ public class PageMessageTest {
   }
 
   @Test
+  public void invalidCategoryThrows() {
+    try {
+      PageMessage.builder("name").category(null);
+    } catch (NullPointerException e) {
+      assertThat(e).hasMessage("Null category");
+    }
+  }
+
+  @Test
   public void toBuilder() {
     PageMessage original =
         PageMessage.builder("name")
             .properties(ImmutableMap.of("foo", "bar"))
             .userId("userId")
+            .category("foobar")
             .build();
     PageMessage copy = original.toBuilder().build();
 
     assertThat(copy.name()).isEqualTo("name");
     assertThat(copy.properties()).isEqualTo(ImmutableMap.of("foo", "bar"));
+    assertThat(copy.category()).isEqualTo("foobar");
   }
 }
