@@ -1,0 +1,2088 @@
+# Interfaces
+
+ *In this article
+About interfaces
+Actor
+Assignable
+AuditEntry
+Closable
+Comment
+Contribution
+Deletable
+EnterpriseAuditEntryData
+GitObject
+GitSignature
+HovercardContext
+Labelable
+Lockable
+MemberStatusable
+Minimizable
+Node
+OauthApplicationAuditEntryData
+OrganizationAuditEntryData
+PackageOwner
+ProfileOwner
+ProjectNextOwner
+ProjectOwner
+Reactable
+RepositoryAuditEntryData
+RepositoryDiscussionAuthor
+RepositoryDiscussionCommentAuthor
+RepositoryInfo
+RepositoryNode
+RepositoryOwner
+RequirableByPullRequest
+Sponsorable
+Starrable
+Subscribable
+TeamAuditEntryData
+TopicAuditEntryData
+UniformResourceLocatable
+Updatable
+UpdatableComment
+Votable
+Interfaces
+ *About interfaces
+Interfaces serve as parent objects from which other objects can inherit.
+
+For example, Lockable is an interface because both Issue and PullRequest objects can be locked. An interface has its own list of named fields that are shared by implementing objects.
+
+For more information, see "Implementation."
+
+Actor
+Represents an object which can take actions on GitHub. Typically a User or Bot.
+
+Implemented by
+Bot
+EnterpriseUserAccount
+Mannequin
+Organization
+User
+Fields
+Name	Description
+avatarUrl (URI!)
+
+A URL pointing to the actor's public avatar.
+
+Arguments
+
+size (Int)
+
+The size of the resulting square image.
+
+login (String!)
+
+The username of the actor.
+
+resourcePath (URI!)
+
+The HTTP path for this actor.
+
+url (URI!)
+
+The HTTP URL for this actor.
+
+Assignable
+An object that can have users assigned to it.
+
+Implemented by
+Issue
+PullRequest
+Fields
+Name	Description
+assignees (UserConnection!)
+
+A list of Users assigned to this object.
+
+Arguments
+
+after (String)
+
+Returns the elements in the list that come after the specified cursor.
+
+before (String)
+
+Returns the elements in the list that come before the specified cursor.
+
+first (Int)
+
+Returns the first n elements from the list.
+
+last (Int)
+
+Returns the last n elements from the list.
+
+AuditEntry
+An entry in the audit log.
+
+Implemented by
+MembersCanDeleteReposClearAuditEntry
+MembersCanDeleteReposDisableAuditEntry
+MembersCanDeleteReposEnableAuditEntry
+OauthApplicationCreateAuditEntry
+OrgAddBillingManagerAuditEntry
+OrgAddMemberAuditEntry
+OrgBlockUserAuditEntry
+OrgConfigDisableCollaboratorsOnlyAuditEntry
+OrgConfigEnableCollaboratorsOnlyAuditEntry
+OrgCreateAuditEntry
+OrgDisableOauthAppRestrictionsAuditEntry
+OrgDisableSamlAuditEntry
+OrgDisableTwoFactorRequirementAuditEntry
+OrgEnableOauthAppRestrictionsAuditEntry
+OrgEnableSamlAuditEntry
+OrgEnableTwoFactorRequirementAuditEntry
+OrgInviteMemberAuditEntry
+OrgInviteToBusinessAuditEntry
+OrgOauthAppAccessApprovedAuditEntry
+OrgOauthAppAccessDeniedAuditEntry
+OrgOauthAppAccessRequestedAuditEntry
+OrgRemoveBillingManagerAuditEntry
+OrgRemoveMemberAuditEntry
+OrgRemoveOutsideCollaboratorAuditEntry
+OrgRestoreMemberAuditEntry
+OrgUnblockUserAuditEntry
+OrgUpdateDefaultRepositoryPermissionAuditEntry
+OrgUpdateMemberAuditEntry
+OrgUpdateMemberRepositoryCreationPermissionAuditEntry
+OrgUpdateMemberRepositoryInvitationPermissionAuditEntry
+PrivateRepositoryForkingDisableAuditEntry
+PrivateRepositoryForkingEnableAuditEntry
+RepoAccessAuditEntry
+RepoAddMemberAuditEntry
+RepoAddTopicAuditEntry
+RepoArchivedAuditEntry
+RepoChangeMergeSettingAuditEntry
+RepoConfigDisableAnonymousGitAccessAuditEntry
+RepoConfigDisableCollaboratorsOnlyAuditEntry
+RepoConfigDisableContributorsOnlyAuditEntry
+RepoConfigDisableSockpuppetDisallowedAuditEntry
+RepoConfigEnableAnonymousGitAccessAuditEntry
+RepoConfigEnableCollaboratorsOnlyAuditEntry
+RepoConfigEnableContributorsOnlyAuditEntry
+RepoConfigEnableSockpuppetDisallowedAuditEntry
+RepoConfigLockAnonymousGitAccessAuditEntry
+RepoConfigUnlockAnonymousGitAccessAuditEntry
+RepoCreateAuditEntry
+RepoDestroyAuditEntry
+RepoRemoveMemberAuditEntry
+RepoRemoveTopicAuditEntry
+RepositoryVisibilityChangeDisableAuditEntry
+RepositoryVisibilityChangeEnableAuditEntry
+TeamAddMemberAuditEntry
+TeamAddRepositoryAuditEntry
+TeamChangeParentTeamAuditEntry
+TeamRemoveMemberAuditEntry
+TeamRemoveRepositoryAuditEntry
+Fields
+Name	Description
+action (String!)
+
+The action name.
+
+actor (AuditEntryActor)
+
+The user who initiated the action.
+
+actorIp (String)
+
+The IP address of the actor.
+
+actorLocation (ActorLocation)
+
+A readable representation of the actor's location.
+
+actorLogin (String)
+
+The username of the user who initiated the action.
+
+actorResourcePath (URI)
+
+The HTTP path for the actor.
+
+actorUrl (URI)
+
+The HTTP URL for the actor.
+
+createdAt (PreciseDateTime!)
+
+The time the action was initiated.
+
+operationType (OperationType)
+
+The corresponding operation type for the action.
+
+user (User)
+
+The user affected by the action.
+
+userLogin (String)
+
+For actions involving two users, the actor is the initiator and the user is the affected user.
+
+userResourcePath (URI)
+
+The HTTP path for the user.
+
+userUrl (URI)
+
+The HTTP URL for the user.
+
+Closable
+An object that can be closed.
+
+Implemented by
+Issue
+Milestone
+Project
+ProjectNext
+PullRequest
+Fields
+Name	Description
+closed (Boolean!)
+
+true if the object is closed (definition of closed may depend on type).
+
+closedAt (DateTime)
+
+Identifies the date and time when the object was closed.
+
+Comment
+Represents a comment.
+
+Implemented by
+CommitComment
+Discussion
+DiscussionComment
+GistComment
+Issue
+IssueComment
+PullRequest
+PullRequestReview
+PullRequestReviewComment
+TeamDiscussion
+TeamDiscussionComment
+Fields
+Name	Description
+author (Actor)
+
+The actor who authored the comment.
+
+authorAssociation (CommentAuthorAssociation!)
+
+Author's association with the subject of the comment.
+
+body (String!)
+
+The body as Markdown.
+
+bodyHTML (HTML!)
+
+The body rendered to HTML.
+
+bodyText (String!)
+
+The body rendered to text.
+
+createdAt (DateTime!)
+
+Identifies the date and time when the object was created.
+
+createdViaEmail (Boolean!)
+
+Check if this comment was created via an email reply.
+
+editor (Actor)
+
+The actor who edited the comment.
+
+includesCreatedEdit (Boolean!)
+
+Check if this comment was edited and includes an edit with the creation data.
+
+lastEditedAt (DateTime)
+
+The moment the editor made the last edit.
+
+publishedAt (DateTime)
+
+Identifies when the comment was published at.
+
+updatedAt (DateTime!)
+
+Identifies the date and time when the object was last updated.
+
+userContentEdits (UserContentEditConnection)
+
+A list of edits to this content.
+
+Arguments
+
+after (String)
+
+Returns the elements in the list that come after the specified cursor.
+
+before (String)
+
+Returns the elements in the list that come before the specified cursor.
+
+first (Int)
+
+Returns the first n elements from the list.
+
+last (Int)
+
+Returns the last n elements from the list.
+
+viewerDidAuthor (Boolean!)
+
+Did the viewer author this comment.
+
+Contribution
+Represents a contribution a user made on GitHub, such as opening an issue.
+
+Implemented by
+CreatedCommitContribution
+CreatedIssueContribution
+CreatedPullRequestContribution
+CreatedPullRequestReviewContribution
+CreatedRepositoryContribution
+JoinedGitHubContribution
+RestrictedContribution
+Fields
+Name	Description
+isRestricted (Boolean!)
+
+Whether this contribution is associated with a record you do not have access to. For example, your own 'first issue' contribution may have been made on a repository you can no longer access.
+
+occurredAt (DateTime!)
+
+When this contribution was made.
+
+resourcePath (URI!)
+
+The HTTP path for this contribution.
+
+url (URI!)
+
+The HTTP URL for this contribution.
+
+user (User!)
+
+The user who made this contribution.
+
+Deletable
+Entities that can be deleted.
+
+Implemented by
+CommitComment
+Discussion
+DiscussionComment
+GistComment
+IssueComment
+PullRequestReview
+PullRequestReviewComment
+TeamDiscussion
+TeamDiscussionComment
+Fields
+Name	Description
+viewerCanDelete (Boolean!)
+
+Check if the current viewer can delete this object.
+
+EnterpriseAuditEntryData
+Metadata for an audit entry containing enterprise account information.
+
+Implemented by
+MembersCanDeleteReposClearAuditEntry
+MembersCanDeleteReposDisableAuditEntry
+MembersCanDeleteReposEnableAuditEntry
+OrgInviteToBusinessAuditEntry
+PrivateRepositoryForkingDisableAuditEntry
+PrivateRepositoryForkingEnableAuditEntry
+RepositoryVisibilityChangeDisableAuditEntry
+RepositoryVisibilityChangeEnableAuditEntry
+Fields
+Name	Description
+enterpriseResourcePath (URI)
+
+The HTTP path for this enterprise.
+
+enterpriseSlug (String)
+
+The slug of the enterprise.
+
+enterpriseUrl (URI)
+
+The HTTP URL for this enterprise.
+
+GitObject
+Represents a Git object.
+
+Implemented by
+Blob
+Commit
+Tag
+Tree
+Fields
+Name	Description
+abbreviatedOid (String!)
+
+An abbreviated version of the Git object ID.
+
+commitResourcePath (URI!)
+
+The HTTP path for this Git object.
+
+commitUrl (URI!)
+
+The HTTP URL for this Git object.
+
+oid (GitObjectID!)
+
+The Git object ID.
+
+repository (Repository!)
+
+The Repository the Git object belongs to.
+
+GitSignature
+Information about a signature (GPG or S/MIME) on a Commit or Tag.
+
+Implemented by
+GpgSignature
+SmimeSignature
+UnknownSignature
+Fields
+Name	Description
+email (String!)
+
+Email used to sign this object.
+
+isValid (Boolean!)
+
+True if the signature is valid and verified by GitHub.
+
+payload (String!)
+
+Payload for GPG signing object. Raw ODB object without the signature header.
+
+signature (String!)
+
+ASCII-armored signature header from object.
+
+signer (User)
+
+GitHub user corresponding to the email signing this commit.
+
+state (GitSignatureState!)
+
+The state of this signature. VALID if signature is valid and verified by GitHub, otherwise represents reason why signature is considered invalid.
+
+wasSignedByGitHub (Boolean!)
+
+True if the signature was made with GitHub's signing key.
+
+HovercardContext
+An individual line of a hovercard.
+
+Implemented by
+GenericHovercardContext
+OrganizationTeamsHovercardContext
+OrganizationsHovercardContext
+ReviewStatusHovercardContext
+ViewerHovercardContext
+Fields
+Name	Description
+message (String!)
+
+A string describing this context.
+
+octicon (String!)
+
+An octicon to accompany this context.
+
+Labelable
+An object that can have labels assigned to it.
+
+Implemented by
+Discussion
+Issue
+PullRequest
+Fields
+Name	Description
+labels (LabelConnection)
+
+A list of labels associated with the object.
+
+Arguments
+
+after (String)
+
+Returns the elements in the list that come after the specified cursor.
+
+before (String)
+
+Returns the elements in the list that come before the specified cursor.
+
+first (Int)
+
+Returns the first n elements from the list.
+
+last (Int)
+
+Returns the last n elements from the list.
+
+orderBy (LabelOrder)
+
+Ordering options for labels returned from the connection.
+
+Lockable
+An object that can be locked.
+
+Implemented by
+Discussion
+Issue
+PullRequest
+Fields
+Name	Description
+activeLockReason (LockReason)
+
+Reason that the conversation was locked.
+
+locked (Boolean!)
+
+true if the object is locked.
+
+MemberStatusable
+Entities that have members who can set status messages.
+
+Implemented by
+Organization
+Team
+Fields
+Name	Description
+memberStatuses (UserStatusConnection!)
+
+Get the status messages members of this entity have set that are either public or visible only to the organization.
+
+Arguments
+
+after (String)
+
+Returns the elements in the list that come after the specified cursor.
+
+before (String)
+
+Returns the elements in the list that come before the specified cursor.
+
+first (Int)
+
+Returns the first n elements from the list.
+
+last (Int)
+
+Returns the last n elements from the list.
+
+orderBy (UserStatusOrder)
+
+Ordering options for user statuses returned from the connection.
+
+Minimizable
+Entities that can be minimized.
+
+Implemented by
+CommitComment
+DiscussionComment
+GistComment
+IssueComment
+PullRequestReviewComment
+Fields
+Name	Description
+isMinimized (Boolean!)
+
+Returns whether or not a comment has been minimized.
+
+minimizedReason (String)
+
+Returns why the comment was minimized.
+
+viewerCanMinimize (Boolean!)
+
+Check if the current viewer can minimize this object.
+
+Node
+An object with an ID.
+
+Implemented by
+AddedToProjectEvent
+App
+AssignedEvent
+AutoMergeDisabledEvent
+AutoMergeEnabledEvent
+AutoRebaseEnabledEvent
+AutoSquashEnabledEvent
+AutomaticBaseChangeFailedEvent
+AutomaticBaseChangeSucceededEvent
+BaseRefChangedEvent
+BaseRefDeletedEvent
+BaseRefForcePushedEvent
+Blob
+Bot
+BranchProtectionRule
+CWE
+CheckRun
+CheckSuite
+ClosedEvent
+CodeOfConduct
+CommentDeletedEvent
+Commit
+CommitComment
+CommitCommentThread
+ConnectedEvent
+ConvertToDraftEvent
+ConvertedNoteToIssueEvent
+CrossReferencedEvent
+DemilestonedEvent
+DependencyGraphManifest
+DeployKey
+DeployedEvent
+Deployment
+DeploymentEnvironmentChangedEvent
+DeploymentReview
+DeploymentStatus
+DisconnectedEvent
+Discussion
+DiscussionCategory
+DiscussionComment
+Enterprise
+EnterpriseAdministratorInvitation
+EnterpriseIdentityProvider
+EnterpriseRepositoryInfo
+EnterpriseServerInstallation
+EnterpriseServerUserAccount
+EnterpriseServerUserAccountEmail
+EnterpriseServerUserAccountsUpload
+EnterpriseUserAccount
+Environment
+ExternalIdentity
+Gist
+GistComment
+HeadRefDeletedEvent
+HeadRefForcePushedEvent
+HeadRefRestoredEvent
+IpAllowListEntry
+Issue
+IssueComment
+Label
+LabeledEvent
+Language
+License
+LockedEvent
+Mannequin
+MarkedAsDuplicateEvent
+MarketplaceCategory
+MarketplaceListing
+MembersCanDeleteReposClearAuditEntry
+MembersCanDeleteReposDisableAuditEntry
+MembersCanDeleteReposEnableAuditEntry
+MentionedEvent
+MergedEvent
+Milestone
+MilestonedEvent
+MovedColumnsInProjectEvent
+OIDCProvider
+OauthApplicationCreateAuditEntry
+OrgAddBillingManagerAuditEntry
+OrgAddMemberAuditEntry
+OrgBlockUserAuditEntry
+OrgConfigDisableCollaboratorsOnlyAuditEntry
+OrgConfigEnableCollaboratorsOnlyAuditEntry
+OrgCreateAuditEntry
+OrgDisableOauthAppRestrictionsAuditEntry
+OrgDisableSamlAuditEntry
+OrgDisableTwoFactorRequirementAuditEntry
+OrgEnableOauthAppRestrictionsAuditEntry
+OrgEnableSamlAuditEntry
+OrgEnableTwoFactorRequirementAuditEntry
+OrgInviteMemberAuditEntry
+OrgInviteToBusinessAuditEntry
+OrgOauthAppAccessApprovedAuditEntry
+OrgOauthAppAccessDeniedAuditEntry
+OrgOauthAppAccessRequestedAuditEntry
+OrgRemoveBillingManagerAuditEntry
+OrgRemoveMemberAuditEntry
+OrgRemoveOutsideCollaboratorAuditEntry
+OrgRestoreMemberAuditEntry
+OrgUnblockUserAuditEntry
+OrgUpdateDefaultRepositoryPermissionAuditEntry
+OrgUpdateMemberAuditEntry
+OrgUpdateMemberRepositoryCreationPermissionAuditEntry
+OrgUpdateMemberRepositoryInvitationPermissionAuditEntry
+Organization
+OrganizationIdentityProvider
+OrganizationInvitation
+Package
+PackageFile
+PackageTag
+PackageVersion
+PinnedDiscussion
+PinnedEvent
+PinnedIssue
+PrivateRepositoryForkingDisableAuditEntry
+PrivateRepositoryForkingEnableAuditEntry
+Project
+ProjectCard
+ProjectColumn
+ProjectNext
+ProjectNextItem
+ProjectNextItemFieldValue
+PublicKey
+PullRequest
+PullRequestCommit
+PullRequestCommitCommentThread
+PullRequestReview
+PullRequestReviewComment
+PullRequestReviewThread
+Push
+PushAllowance
+Reaction
+ReadyForReviewEvent
+Ref
+ReferencedEvent
+Release
+ReleaseAsset
+RemovedFromProjectEvent
+RenamedTitleEvent
+ReopenedEvent
+RepoAccessAuditEntry
+RepoAddMemberAuditEntry
+RepoAddTopicAuditEntry
+RepoArchivedAuditEntry
+RepoChangeMergeSettingAuditEntry
+RepoConfigDisableAnonymousGitAccessAuditEntry
+RepoConfigDisableCollaboratorsOnlyAuditEntry
+RepoConfigDisableContributorsOnlyAuditEntry
+RepoConfigDisableSockpuppetDisallowedAuditEntry
+RepoConfigEnableAnonymousGitAccessAuditEntry
+RepoConfigEnableCollaboratorsOnlyAuditEntry
+RepoConfigEnableContributorsOnlyAuditEntry
+RepoConfigEnableSockpuppetDisallowedAuditEntry
+RepoConfigLockAnonymousGitAccessAuditEntry
+RepoConfigUnlockAnonymousGitAccessAuditEntry
+RepoCreateAuditEntry
+RepoDestroyAuditEntry
+RepoRemoveMemberAuditEntry
+RepoRemoveTopicAuditEntry
+Repository
+RepositoryInvitation
+RepositoryTopic
+RepositoryVisibilityChangeDisableAuditEntry
+RepositoryVisibilityChangeEnableAuditEntry
+RepositoryVulnerabilityAlert
+ReviewDismissalAllowance
+ReviewDismissedEvent
+ReviewRequest
+ReviewRequestRemovedEvent
+ReviewRequestedEvent
+SavedReply
+SecurityAdvisory
+SponsorsActivity
+SponsorsListing
+SponsorsTier
+Sponsorship
+SponsorshipNewsletter
+Status
+StatusCheckRollup
+StatusContext
+SubscribedEvent
+Tag
+Team
+TeamAddMemberAuditEntry
+TeamAddRepositoryAuditEntry
+TeamChangeParentTeamAuditEntry
+TeamDiscussion
+TeamDiscussionComment
+TeamRemoveMemberAuditEntry
+TeamRemoveRepositoryAuditEntry
+Topic
+TransferredEvent
+Tree
+UnassignedEvent
+UnlabeledEvent
+UnlockedEvent
+UnmarkedAsDuplicateEvent
+UnpinnedEvent
+UnsubscribedEvent
+User
+UserBlockedEvent
+UserContentEdit
+UserStatus
+VerifiableDomain
+Workflow
+WorkflowRun
+Fields
+Name	Description
+id (ID!)
+
+ID of the object.
+
+OauthApplicationAuditEntryData
+Metadata for an audit entry with action oauth_application.*.
+
+Implemented by
+OauthApplicationCreateAuditEntry
+OrgOauthAppAccessApprovedAuditEntry
+OrgOauthAppAccessDeniedAuditEntry
+OrgOauthAppAccessRequestedAuditEntry
+Fields
+Name	Description
+oauthApplicationName (String)
+
+The name of the OAuth Application.
+
+oauthApplicationResourcePath (URI)
+
+The HTTP path for the OAuth Application.
+
+oauthApplicationUrl (URI)
+
+The HTTP URL for the OAuth Application.
+
+OrganizationAuditEntryData
+Metadata for an audit entry with action org.*.
+
+Implemented by
+MembersCanDeleteReposClearAuditEntry
+MembersCanDeleteReposDisableAuditEntry
+MembersCanDeleteReposEnableAuditEntry
+OauthApplicationCreateAuditEntry
+OrgAddBillingManagerAuditEntry
+OrgAddMemberAuditEntry
+OrgBlockUserAuditEntry
+OrgConfigDisableCollaboratorsOnlyAuditEntry
+OrgConfigEnableCollaboratorsOnlyAuditEntry
+OrgCreateAuditEntry
+OrgDisableOauthAppRestrictionsAuditEntry
+OrgDisableSamlAuditEntry
+OrgDisableTwoFactorRequirementAuditEntry
+OrgEnableOauthAppRestrictionsAuditEntry
+OrgEnableSamlAuditEntry
+OrgEnableTwoFactorRequirementAuditEntry
+OrgInviteMemberAuditEntry
+OrgInviteToBusinessAuditEntry
+OrgOauthAppAccessApprovedAuditEntry
+OrgOauthAppAccessDeniedAuditEntry
+OrgOauthAppAccessRequestedAuditEntry
+OrgRemoveBillingManagerAuditEntry
+OrgRemoveMemberAuditEntry
+OrgRemoveOutsideCollaboratorAuditEntry
+OrgRestoreMemberAuditEntry
+OrgRestoreMemberMembershipOrganizationAuditEntryData
+OrgUnblockUserAuditEntry
+OrgUpdateDefaultRepositoryPermissionAuditEntry
+OrgUpdateMemberAuditEntry
+OrgUpdateMemberRepositoryCreationPermissionAuditEntry
+OrgUpdateMemberRepositoryInvitationPermissionAuditEntry
+PrivateRepositoryForkingDisableAuditEntry
+PrivateRepositoryForkingEnableAuditEntry
+RepoAccessAuditEntry
+RepoAddMemberAuditEntry
+RepoAddTopicAuditEntry
+RepoArchivedAuditEntry
+RepoChangeMergeSettingAuditEntry
+RepoConfigDisableAnonymousGitAccessAuditEntry
+RepoConfigDisableCollaboratorsOnlyAuditEntry
+RepoConfigDisableContributorsOnlyAuditEntry
+RepoConfigDisableSockpuppetDisallowedAuditEntry
+RepoConfigEnableAnonymousGitAccessAuditEntry
+RepoConfigEnableCollaboratorsOnlyAuditEntry
+RepoConfigEnableContributorsOnlyAuditEntry
+RepoConfigEnableSockpuppetDisallowedAuditEntry
+RepoConfigLockAnonymousGitAccessAuditEntry
+RepoConfigUnlockAnonymousGitAccessAuditEntry
+RepoCreateAuditEntry
+RepoDestroyAuditEntry
+RepoRemoveMemberAuditEntry
+RepoRemoveTopicAuditEntry
+RepositoryVisibilityChangeDisableAuditEntry
+RepositoryVisibilityChangeEnableAuditEntry
+TeamAddMemberAuditEntry
+TeamAddRepositoryAuditEntry
+TeamChangeParentTeamAuditEntry
+TeamRemoveMemberAuditEntry
+TeamRemoveRepositoryAuditEntry
+Fields
+Name	Description
+organization (Organization)
+
+The Organization associated with the Audit Entry.
+
+organizationName (String)
+
+The name of the Organization.
+
+organizationResourcePath (URI)
+
+The HTTP path for the organization.
+
+organizationUrl (URI)
+
+The HTTP URL for the organization.
+
+PackageOwner
+Represents an owner of a package.
+
+Implemented by
+Organization
+Repository
+User
+Fields
+Name	Description
+packages (PackageConnection!)
+
+A list of packages under the owner.
+
+Arguments
+
+after (String)
+
+Returns the elements in the list that come after the specified cursor.
+
+before (String)
+
+Returns the elements in the list that come before the specified cursor.
+
+first (Int)
+
+Returns the first n elements from the list.
+
+last (Int)
+
+Returns the last n elements from the list.
+
+names ([String])
+
+Find packages by their names.
+
+orderBy (PackageOrder)
+
+Ordering of the returned packages.
+
+packageType (PackageType)
+
+Filter registry package by type.
+
+repositoryId (ID)
+
+Find packages in a repository by ID.
+
+ProfileOwner
+Represents any entity on GitHub that has a profile page.
+
+Implemented by
+Organization
+User
+Fields
+Name	Description
+anyPinnableItems (Boolean!)
+
+Determine if this repository owner has any items that can be pinned to their profile.
+
+Arguments
+
+type (PinnableItemType)
+
+Filter to only a particular kind of pinnable item.
+
+email (String)
+
+The public profile email.
+
+itemShowcase (ProfileItemShowcase!)
+
+Showcases a selection of repositories and gists that the profile owner has either curated or that have been selected automatically based on popularity.
+
+location (String)
+
+The public profile location.
+
+login (String!)
+
+The username used to login.
+
+name (String)
+
+The public profile name.
+
+pinnableItems (PinnableItemConnection!)
+
+A list of repositories and gists this profile owner can pin to their profile.
+
+Arguments
+
+after (String)
+
+Returns the elements in the list that come after the specified cursor.
+
+before (String)
+
+Returns the elements in the list that come before the specified cursor.
+
+first (Int)
+
+Returns the first n elements from the list.
+
+last (Int)
+
+Returns the last n elements from the list.
+
+types ([PinnableItemType!])
+
+Filter the types of pinnable items that are returned.
+
+pinnedItems (PinnableItemConnection!)
+
+A list of repositories and gists this profile owner has pinned to their profile.
+
+Arguments
+
+after (String)
+
+Returns the elements in the list that come after the specified cursor.
+
+before (String)
+
+Returns the elements in the list that come before the specified cursor.
+
+first (Int)
+
+Returns the first n elements from the list.
+
+last (Int)
+
+Returns the last n elements from the list.
+
+types ([PinnableItemType!])
+
+Filter the types of pinned items that are returned.
+
+pinnedItemsRemaining (Int!)
+
+Returns how many more items this profile owner can pin to their profile.
+
+viewerCanChangePinnedItems (Boolean!)
+
+Can the viewer pin repositories and gists to the profile?.
+
+websiteUrl (URI)
+
+The public profile website URL.
+
+ProjectNextOwner
+Represents an owner of a Project.
+
+Implemented by
+Organization
+User
+Fields
+Name	Description
+projectNext (ProjectNext)
+
+Find project by project next number.
+
+Arguments
+
+number (Int!)
+
+The project next number.
+
+projectsNext (ProjectNextConnection!)
+
+A list of project next items under the owner.
+
+Arguments
+
+after (String)
+
+Returns the elements in the list that come after the specified cursor.
+
+before (String)
+
+Returns the elements in the list that come before the specified cursor.
+
+first (Int)
+
+Returns the first n elements from the list.
+
+last (Int)
+
+Returns the last n elements from the list.
+
+ProjectOwner
+Represents an owner of a Project.
+
+Implemented by
+Organization
+Repository
+User
+Fields
+Name	Description
+project (Project)
+
+Find project by number.
+
+Arguments
+
+number (Int!)
+
+The project number to find.
+
+projects (ProjectConnection!)
+
+A list of projects under the owner.
+
+Arguments
+
+after (String)
+
+Returns the elements in the list that come after the specified cursor.
+
+before (String)
+
+Returns the elements in the list that come before the specified cursor.
+
+first (Int)
+
+Returns the first n elements from the list.
+
+last (Int)
+
+Returns the last n elements from the list.
+
+orderBy (ProjectOrder)
+
+Ordering options for projects returned from the connection.
+
+search (String)
+
+Query to search projects by, currently only searching by name.
+
+states ([ProjectState!])
+
+A list of states to filter the projects by.
+
+projectsResourcePath (URI!)
+
+The HTTP path listing owners projects.
+
+projectsUrl (URI!)
+
+The HTTP URL listing owners projects.
+
+viewerCanCreateProjects (Boolean!)
+
+Can the current viewer create new projects on this owner.
+
+Reactable
+Represents a subject that can be reacted on.
+
+Implemented by
+CommitComment
+Discussion
+DiscussionComment
+Issue
+IssueComment
+PullRequest
+PullRequestReview
+PullRequestReviewComment
+Release
+TeamDiscussion
+TeamDiscussionComment
+Fields
+Name	Description
+databaseId (Int)
+
+Identifies the primary key from the database.
+
+reactionGroups ([ReactionGroup!])
+
+A list of reactions grouped by content left on the subject.
+
+reactions (ReactionConnection!)
+
+A list of Reactions left on the Issue.
+
+Arguments
+
+after (String)
+
+Returns the elements in the list that come after the specified cursor.
+
+before (String)
+
+Returns the elements in the list that come before the specified cursor.
+
+content (ReactionContent)
+
+Allows filtering Reactions by emoji.
+
+first (Int)
+
+Returns the first n elements from the list.
+
+last (Int)
+
+Returns the last n elements from the list.
+
+orderBy (ReactionOrder)
+
+Allows specifying the order in which reactions are returned.
+
+viewerCanReact (Boolean!)
+
+Can user react to this subject.
+
+RepositoryAuditEntryData
+Metadata for an audit entry with action repo.*.
+
+Implemented by
+OrgRestoreMemberMembershipRepositoryAuditEntryData
+PrivateRepositoryForkingDisableAuditEntry
+PrivateRepositoryForkingEnableAuditEntry
+RepoAccessAuditEntry
+RepoAddMemberAuditEntry
+RepoAddTopicAuditEntry
+RepoArchivedAuditEntry
+RepoChangeMergeSettingAuditEntry
+RepoConfigDisableAnonymousGitAccessAuditEntry
+RepoConfigDisableCollaboratorsOnlyAuditEntry
+RepoConfigDisableContributorsOnlyAuditEntry
+RepoConfigDisableSockpuppetDisallowedAuditEntry
+RepoConfigEnableAnonymousGitAccessAuditEntry
+RepoConfigEnableCollaboratorsOnlyAuditEntry
+RepoConfigEnableContributorsOnlyAuditEntry
+RepoConfigEnableSockpuppetDisallowedAuditEntry
+RepoConfigLockAnonymousGitAccessAuditEntry
+RepoConfigUnlockAnonymousGitAccessAuditEntry
+RepoCreateAuditEntry
+RepoDestroyAuditEntry
+RepoRemoveMemberAuditEntry
+RepoRemoveTopicAuditEntry
+TeamAddRepositoryAuditEntry
+TeamRemoveRepositoryAuditEntry
+Fields
+Name	Description
+repository (Repository)
+
+The repository associated with the action.
+
+repositoryName (String)
+
+The name of the repository.
+
+repositoryResourcePath (URI)
+
+The HTTP path for the repository.
+
+repositoryUrl (URI)
+
+The HTTP URL for the repository.
+
+RepositoryDiscussionAuthor
+Represents an author of discussions in repositories.
+
+Implemented by
+Organization
+User
+Fields
+Name	Description
+repositoryDiscussions (DiscussionConnection!)
+
+Discussions this user has started.
+
+Arguments
+
+after (String)
+
+Returns the elements in the list that come after the specified cursor.
+
+answered (Boolean)
+
+Filter discussions to only those that have been answered or not. Defaults to including both answered and unanswered discussions.
+
+before (String)
+
+Returns the elements in the list that come before the specified cursor.
+
+first (Int)
+
+Returns the first n elements from the list.
+
+last (Int)
+
+Returns the last n elements from the list.
+
+orderBy (DiscussionOrder)
+
+Ordering options for discussions returned from the connection.
+
+repositoryId (ID)
+
+Filter discussions to only those in a specific repository.
+
+RepositoryDiscussionCommentAuthor
+Represents an author of discussion comments in repositories.
+
+Implemented by
+Organization
+User
+Fields
+Name	Description
+repositoryDiscussionComments (DiscussionCommentConnection!)
+
+Discussion comments this user has authored.
+
+Arguments
+
+after (String)
+
+Returns the elements in the list that come after the specified cursor.
+
+before (String)
+
+Returns the elements in the list that come before the specified cursor.
+
+first (Int)
+
+Returns the first n elements from the list.
+
+last (Int)
+
+Returns the last n elements from the list.
+
+onlyAnswers (Boolean)
+
+Filter discussion comments to only those that were marked as the answer.
+
+The default value is false.
+
+repositoryId (ID)
+
+Filter discussion comments to only those in a specific repository.
+
+RepositoryInfo
+A subset of repository info.
+
+Implemented by
+Repository
+Fields
+Name	Description
+createdAt (DateTime!)
+
+Identifies the date and time when the object was created.
+
+description (String)
+
+The description of the repository.
+
+descriptionHTML (HTML!)
+
+The description of the repository rendered to HTML.
+
+forkCount (Int!)
+
+Returns how many forks there are of this repository in the whole network.
+
+hasIssuesEnabled (Boolean!)
+
+Indicates if the repository has issues feature enabled.
+
+hasProjectsEnabled (Boolean!)
+
+Indicates if the repository has the Projects feature enabled.
+
+hasWikiEnabled (Boolean!)
+
+Indicates if the repository has wiki feature enabled.
+
+homepageUrl (URI)
+
+The repository's URL.
+
+isArchived (Boolean!)
+
+Indicates if the repository is unmaintained.
+
+isFork (Boolean!)
+
+Identifies if the repository is a fork.
+
+isInOrganization (Boolean!)
+
+Indicates if a repository is either owned by an organization, or is a private fork of an organization repository.
+
+isLocked (Boolean!)
+
+Indicates if the repository has been locked or not.
+
+isMirror (Boolean!)
+
+Identifies if the repository is a mirror.
+
+isPrivate (Boolean!)
+
+Identifies if the repository is private or internal.
+
+isTemplate (Boolean!)
+
+Identifies if the repository is a template that can be used to generate new repositories.
+
+licenseInfo (License)
+
+The license associated with the repository.
+
+lockReason (RepositoryLockReason)
+
+The reason the repository has been locked.
+
+mirrorUrl (URI)
+
+The repository's original mirror URL.
+
+name (String!)
+
+The name of the repository.
+
+nameWithOwner (String!)
+
+The repository's name with owner.
+
+openGraphImageUrl (URI!)
+
+The image used to represent this repository in Open Graph data.
+
+owner (RepositoryOwner!)
+
+The User owner of the repository.
+
+pushedAt (DateTime)
+
+Identifies when the repository was last pushed to.
+
+resourcePath (URI!)
+
+The HTTP path for this repository.
+
+shortDescriptionHTML (HTML!)
+
+A description of the repository, rendered to HTML without any links in it.
+
+Arguments
+
+limit (Int)
+
+How many characters to return.
+
+The default value is 200.
+
+updatedAt (DateTime!)
+
+Identifies the date and time when the object was last updated.
+
+url (URI!)
+
+The HTTP URL for this repository.
+
+usesCustomOpenGraphImage (Boolean!)
+
+Whether this repository has a custom image to use with Open Graph as opposed to being represented by the owner's avatar.
+
+visibility (RepositoryVisibility!)
+
+Indicates the repository's visibility level.
+
+RepositoryNode
+Represents a object that belongs to a repository.
+
+Implemented by
+CommitComment
+CommitCommentThread
+Discussion
+DiscussionCategory
+Issue
+IssueComment
+PinnedDiscussion
+PullRequest
+PullRequestCommitCommentThread
+PullRequestReview
+PullRequestReviewComment
+RepositoryVulnerabilityAlert
+Fields
+Name	Description
+repository (Repository!)
+
+The repository associated with this node.
+
+RepositoryOwner
+Represents an owner of a Repository.
+
+Implemented by
+Organization
+User
+Fields
+Name	Description
+avatarUrl (URI!)
+
+A URL pointing to the owner's public avatar.
+
+Arguments
+
+size (Int)
+
+The size of the resulting square image.
+
+login (String!)
+
+The username used to login.
+
+repositories (RepositoryConnection!)
+
+A list of repositories that the user owns.
+
+Arguments
+
+affiliations ([RepositoryAffiliation])
+
+Array of viewer's affiliation options for repositories returned from the connection. For example, OWNER will include only repositories that the current viewer owns.
+
+after (String)
+
+Returns the elements in the list that come after the specified cursor.
+
+before (String)
+
+Returns the elements in the list that come before the specified cursor.
+
+first (Int)
+
+Returns the first n elements from the list.
+
+isFork (Boolean)
+
+If non-null, filters repositories according to whether they are forks of another repository.
+
+isLocked (Boolean)
+
+If non-null, filters repositories according to whether they have been locked.
+
+last (Int)
+
+Returns the last n elements from the list.
+
+orderBy (RepositoryOrder)
+
+Ordering options for repositories returned from the connection.
+
+ownerAffiliations ([RepositoryAffiliation])
+
+Array of owner's affiliation options for repositories returned from the connection. For example, OWNER will include only repositories that the organization or user being viewed owns.
+
+privacy (RepositoryPrivacy)
+
+If non-null, filters repositories according to privacy.
+
+repository (Repository)
+
+Find Repository.
+
+Arguments
+
+name (String!)
+
+Name of Repository to find.
+
+resourcePath (URI!)
+
+The HTTP URL for the owner.
+
+url (URI!)
+
+The HTTP URL for the owner.
+
+RequirableByPullRequest
+Represents a type that can be required by a pull request for merging.
+
+Implemented by
+CheckRun
+StatusContext
+Fields
+Name	Description
+isRequired (Boolean!)
+
+Whether this is required to pass before merging for a specific pull request.
+
+Arguments
+
+pullRequestId (ID)
+
+The id of the pull request this is required for.
+
+pullRequestNumber (Int)
+
+The number of the pull request this is required for.
+
+Sponsorable
+Entities that can be sponsored through GitHub Sponsors.
+
+Implemented by
+Organization
+User
+Fields
+Name	Description
+estimatedNextSponsorsPayoutInCents (Int!)
+
+The estimated next GitHub Sponsors payout for this user/organization in cents (USD).
+
+hasSponsorsListing (Boolean!)
+
+True if this user/organization has a GitHub Sponsors listing.
+
+isSponsoredBy (Boolean!)
+
+Check if the given account is sponsoring this user/organization.
+
+Arguments
+
+accountLogin (String!)
+
+The target account's login.
+
+isSponsoringViewer (Boolean!)
+
+True if the viewer is sponsored by this user/organization.
+
+monthlyEstimatedSponsorsIncomeInCents (Int!)
+
+The estimated monthly GitHub Sponsors income for this user/organization in cents (USD).
+
+sponsoring (SponsorConnection!)
+
+List of users and organizations this entity is sponsoring.
+
+Arguments
+
+after (String)
+
+Returns the elements in the list that come after the specified cursor.
+
+before (String)
+
+Returns the elements in the list that come before the specified cursor.
+
+first (Int)
+
+Returns the first n elements from the list.
+
+last (Int)
+
+Returns the last n elements from the list.
+
+orderBy (SponsorOrder)
+
+Ordering options for the users and organizations returned from the connection.
+
+sponsors (SponsorConnection!)
+
+List of sponsors for this user or organization.
+
+Arguments
+
+after (String)
+
+Returns the elements in the list that come after the specified cursor.
+
+before (String)
+
+Returns the elements in the list that come before the specified cursor.
+
+first (Int)
+
+Returns the first n elements from the list.
+
+last (Int)
+
+Returns the last n elements from the list.
+
+orderBy (SponsorOrder)
+
+Ordering options for sponsors returned from the connection.
+
+tierId (ID)
+
+If given, will filter for sponsors at the given tier. Will only return sponsors whose tier the viewer is permitted to see.
+
+sponsorsActivities (SponsorsActivityConnection!)
+
+Events involving this sponsorable, such as new sponsorships.
+
+Arguments
+
+after (String)
+
+Returns the elements in the list that come after the specified cursor.
+
+before (String)
+
+Returns the elements in the list that come before the specified cursor.
+
+first (Int)
+
+Returns the first n elements from the list.
+
+last (Int)
+
+Returns the last n elements from the list.
+
+orderBy (SponsorsActivityOrder)
+
+Ordering options for activity returned from the connection.
+
+period (SponsorsActivityPeriod)
+
+Filter activities returned to only those that occurred in a given time range.
+
+The default value is MONTH.
+
+sponsorsListing (SponsorsListing)
+
+The GitHub Sponsors listing for this user or organization.
+
+sponsorshipForViewerAsSponsor (Sponsorship)
+
+The sponsorship from the viewer to this user/organization; that is, the sponsorship where you're the sponsor. Only returns a sponsorship if it is active.
+
+sponsorshipForViewerAsSponsorable (Sponsorship)
+
+The sponsorship from this user/organization to the viewer; that is, the sponsorship you're receiving. Only returns a sponsorship if it is active.
+
+sponsorshipNewsletters (SponsorshipNewsletterConnection!)
+
+List of sponsorship updates sent from this sponsorable to sponsors.
+
+Arguments
+
+after (String)
+
+Returns the elements in the list that come after the specified cursor.
+
+before (String)
+
+Returns the elements in the list that come before the specified cursor.
+
+first (Int)
+
+Returns the first n elements from the list.
+
+last (Int)
+
+Returns the last n elements from the list.
+
+orderBy (SponsorshipNewsletterOrder)
+
+Ordering options for sponsorship updates returned from the connection.
+
+sponsorshipsAsMaintainer (SponsorshipConnection!)
+
+This object's sponsorships as the maintainer.
+
+Arguments
+
+after (String)
+
+Returns the elements in the list that come after the specified cursor.
+
+before (String)
+
+Returns the elements in the list that come before the specified cursor.
+
+first (Int)
+
+Returns the first n elements from the list.
+
+includePrivate (Boolean)
+
+Whether or not to include private sponsorships in the result set.
+
+The default value is false.
+
+last (Int)
+
+Returns the last n elements from the list.
+
+orderBy (SponsorshipOrder)
+
+Ordering options for sponsorships returned from this connection. If left blank, the sponsorships will be ordered based on relevancy to the viewer.
+
+sponsorshipsAsSponsor (SponsorshipConnection!)
+
+This object's sponsorships as the sponsor.
+
+Arguments
+
+after (String)
+
+Returns the elements in the list that come after the specified cursor.
+
+before (String)
+
+Returns the elements in the list that come before the specified cursor.
+
+first (Int)
+
+Returns the first n elements from the list.
+
+last (Int)
+
+Returns the last n elements from the list.
+
+orderBy (SponsorshipOrder)
+
+Ordering options for sponsorships returned from this connection. If left blank, the sponsorships will be ordered based on relevancy to the viewer.
+
+viewerCanSponsor (Boolean!)
+
+Whether or not the viewer is able to sponsor this user/organization.
+
+viewerIsSponsoring (Boolean!)
+
+True if the viewer is sponsoring this user/organization.
+
+Starrable
+Things that can be starred.
+
+Implemented by
+Gist
+Repository
+Topic
+Fields
+Name	Description
+stargazerCount (Int!)
+
+Returns a count of how many stargazers there are on this object.
+
+stargazers (StargazerConnection!)
+
+A list of users who have starred this starrable.
+
+Arguments
+
+after (String)
+
+Returns the elements in the list that come after the specified cursor.
+
+before (String)
+
+Returns the elements in the list that come before the specified cursor.
+
+first (Int)
+
+Returns the first n elements from the list.
+
+last (Int)
+
+Returns the last n elements from the list.
+
+orderBy (StarOrder)
+
+Order for connection.
+
+viewerHasStarred (Boolean!)
+
+Returns a boolean indicating whether the viewing user has starred this starrable.
+
+Subscribable
+Entities that can be subscribed to for web and email notifications.
+
+Implemented by
+Commit
+Discussion
+Issue
+PullRequest
+Repository
+Team
+TeamDiscussion
+Fields
+Name	Description
+viewerCanSubscribe (Boolean!)
+
+Check if the viewer is able to change their subscription status for the repository.
+
+viewerSubscription (SubscriptionState)
+
+Identifies if the viewer is watching, not watching, or ignoring the subscribable entity.
+
+TeamAuditEntryData
+Metadata for an audit entry with action team.*.
+
+Implemented by
+OrgRestoreMemberMembershipTeamAuditEntryData
+TeamAddMemberAuditEntry
+TeamAddRepositoryAuditEntry
+TeamChangeParentTeamAuditEntry
+TeamRemoveMemberAuditEntry
+TeamRemoveRepositoryAuditEntry
+Fields
+Name	Description
+team (Team)
+
+The team associated with the action.
+
+teamName (String)
+
+The name of the team.
+
+teamResourcePath (URI)
+
+The HTTP path for this team.
+
+teamUrl (URI)
+
+The HTTP URL for this team.
+
+TopicAuditEntryData
+Metadata for an audit entry with a topic.
+
+Implemented by
+RepoAddTopicAuditEntry
+RepoRemoveTopicAuditEntry
+Fields
+Name	Description
+topic (Topic)
+
+The name of the topic added to the repository.
+
+topicName (String)
+
+The name of the topic added to the repository.
+
+UniformResourceLocatable
+Represents a type that can be retrieved by a URL.
+
+Implemented by
+Bot
+CheckRun
+ClosedEvent
+Commit
+ConvertToDraftEvent
+CrossReferencedEvent
+Gist
+Issue
+Mannequin
+MergedEvent
+Milestone
+Organization
+PullRequest
+PullRequestCommit
+ReadyForReviewEvent
+Release
+Repository
+RepositoryTopic
+ReviewDismissedEvent
+TeamDiscussion
+TeamDiscussionComment
+User
+Fields
+Name	Description
+resourcePath (URI!)
+
+The HTML path to this resource.
+
+url (URI!)
+
+The URL to this resource.
+
+Updatable
+Entities that can be updated.
+
+Implemented by
+CommitComment
+Discussion
+DiscussionComment
+GistComment
+Issue
+IssueComment
+Project
+ProjectNext
+PullRequest
+PullRequestReview
+PullRequestReviewComment
+TeamDiscussion
+TeamDiscussionComment
+Fields
+Name	Description
+viewerCanUpdate (Boolean!)
+
+Check if the current viewer can update this object.
+
+UpdatableComment
+Comments that can be updated.
+
+Implemented by
+CommitComment
+DiscussionComment
+GistComment
+Issue
+IssueComment
+PullRequest
+PullRequestReview
+PullRequestReviewComment
+TeamDiscussion
+TeamDiscussionComment
+Fields
+Name	Description
+viewerCannotUpdateReasons ([CommentCannotUpdateReason!]!)
+
+Reasons why the current viewer can not update this comment.
+
+Votable
+A subject that may be upvoted.
+
+Implemented by
+Discussion
+DiscussionComment
+Fields
+Name	Description
+upvoteCount (Int!)
+
+Number of upvotes that this subject has received.
+
+viewerCanUpvote (Boolean!)
+
+Whether or not the current user can add or remove an upvote on this subject.
+
+viewerHasUpvoted (Boolean!)
+
+Whether or not the current user has already upvoted this subject.
+
+Did this doc help you?
+Privacy policy
+Help us make these docs great!
+All GitHub docs are open source. See something that's wrong or unclear? Submit a pull request.
+
+Or, learn how to contribute.
+
+Still need help?
+Ask the GitHub community
+Contact support
+© 2021 GitHub, Inc.
+Terms
+Privacy
+Security
+Status
+Help
+Contact GitHub
+Pricing
+Developer API
+Training
+Blog
