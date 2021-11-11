@@ -13,6 +13,7 @@ import com.segment.analytics.messages.Batch;
 import com.segment.analytics.messages.Message;
 import com.segment.backo.Backo;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -120,14 +121,18 @@ public class AnalyticsClient {
   }
 
   public int messageSizeInBytes(Message message) {
+    //@jorgen25 test idea: Check if this is correctly testing byte size and not just char length with regular characters
     Gson gson = new Gson();
     String stringifiedMessage = gson.toJson(message);
-    return stringifiedMessage.length();
+
+    int sizeInBytes = stringifiedMessage.getBytes(StandardCharsets.UTF_8).length;
+    return sizeInBytes;
   }
 
   private Boolean isBackPressuredAfterSize(int incomingSize) {
     int POISON_BYTE_SIZE = messageSizeInBytes(FlushMessage.POISON);
     int sizeAfterAdd = this.currentQueueSizeInBytes + incomingSize + POISON_BYTE_SIZE;
+    //@jorgen25 we should have this loose ints in a constant
     return sizeAfterAdd >= Math.min(this.maximumQueueByteSize, 1024 * 500);
   }
 
@@ -141,12 +146,20 @@ public class AnalyticsClient {
       return;
     }
 
+    //@jorgen25 test ideas: happy path: several messages did not go over limit
+    // sad path 1: many messages did not go over limit but last one makes it go over the limit
+    //sad path 2: single message that is way over the limit
     try {
+      //@jorgen25 message here could be regular msg, POISON or STOP, maybe just do regular logic if its regular
+      //message and if its POISON/STOP put message in and return?
       messageQueue.put(message);
 
       int tempSize = this.currentQueueSizeInBytes;
       int messageByteSize = messageSizeInBytes(message);
 
+      //@jorgen25 also if its regular message, size of this last incoming message could make queue go over
+      //the 500KB limit and we already put it in the queue. Even if we are measuring correctly we could go over the limit
+      //by adding BEFORE checking which could still work if we have another check while creating the batch to submit
       if (isBackPressuredAfterSize(messageByteSize)) {
         this.currentQueueSizeInBytes = messageByteSize;
         messageQueue.put(FlushMessage.POISON);
@@ -215,6 +228,8 @@ public class AnalyticsClient {
     @Override
     public void run() {
       List<Message> messages = new ArrayList<>();
+      //@jorgen25  have a linkedList for pendingMessages (so we can poll() from it later FIFO order)
+      //and a currentMessagesSizeInBytes  int for original messages list
       try {
         while (!stop) {
           Message message = messageQueue.take();
@@ -228,12 +243,24 @@ public class AnalyticsClient {
             }
           } else {
             messages.add(message);
+            //@jorgen25 check message size here too, if incoming message will increase messages size above the limit
+            //put message in pendingMessages list, also check if single incoming message by itself is over the limit.
+            //If it is then log and discard????
           }
 
           Boolean isBlockingSignal = message == FlushMessage.POISON || message == StopMessage.STOP;
-          Boolean isOverflow = messages.size() >= size;
+          Boolean isOverflow = messages.size() >= size; //@jorgen25 isOverflow should also check if pendingMessages is not empty
+          //if it is it means isOverflow = true as well
 
           if (!messages.isEmpty() && (isOverflow || isBlockingSignal)) {
+            //@jorgen25  - create test case to check size for batch size, as it is now there is nothing guaranteeing
+            //entire batch did not go over 500KB limit at this point
+
+            //@jorgen25 What about a single massive message which goes over the limit, do we log it and discard it ??
+
+            //@jorgen25 have while loop before this line for while (!pendingMessages.isEmpty())
+            // poll message and send pending message in batch by itself
+            //also only go to this block below if !messages.isEmpty()
             Batch batch = Batch.create(CONTEXT, messages);
             log.print(
                 VERBOSE,

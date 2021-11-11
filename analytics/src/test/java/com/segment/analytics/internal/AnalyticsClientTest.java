@@ -28,11 +28,7 @@ import com.segment.analytics.messages.TrackMessage;
 import com.segment.backo.Backo;
 import com.squareup.burst.BurstJUnit4;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -594,4 +590,27 @@ public class AnalyticsClientTest {
                   }
                 }));
   }
+
+
+  @Test
+  public void enqueueSingleHugeMessageWhenNotShutdown(MessageBuilderTest builder)
+          throws InterruptedException {
+    AnalyticsClient client = newClient();
+
+    final String massData = generateMassDataOfSize(1024 * 510);
+    Map<String, String> integrationOpts = new HashMap<>();
+    integrationOpts.put("massData", massData);
+    Message message = builder.get().userId("foo").integrationOptions("someKey", integrationOpts).build();
+
+    int size = client.messageSizeInBytes(message);
+    //will be slightly bigger than expected, which is ok
+    client.enqueue(message);
+
+    verify(messageQueue).put(message);
+    verify(networkExecutor).submit(any(AnalyticsClient.BatchUploadTask.class));
+    //we verified that huge above the limit message is going into the queue AND that the message is
+    //getting submitted in the batch, need to modify the enqueue method or the logic when creating batch
+  }
+
+
 }
