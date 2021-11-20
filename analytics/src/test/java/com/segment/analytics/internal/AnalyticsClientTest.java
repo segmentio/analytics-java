@@ -834,6 +834,8 @@ public class AnalyticsClientTest {
     verify(messageQueue).put(POISON);
 
     wait(messageQueue);
+    client.shutdown();
+    while(!isShutDown.get()) {}
 
     verify(networkExecutor, times(1)).submit(any(AnalyticsClient.BatchUploadTask.class));
   }
