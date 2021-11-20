@@ -835,7 +835,7 @@ public class AnalyticsClientTest {
 
     wait(messageQueue);
     client.shutdown();
-    while(!isShutDown.get()) {}
+    while (!isShutDown.get()) {}
 
     verify(networkExecutor, times(1)).submit(any(AnalyticsClient.BatchUploadTask.class));
   }
