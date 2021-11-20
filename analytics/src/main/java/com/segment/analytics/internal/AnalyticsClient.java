@@ -15,13 +15,13 @@ import com.segment.backo.Backo;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.Collections;
-import java.util.Map;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -31,7 +31,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import retrofit2.Call;
 import retrofit2.Response;
 
@@ -131,6 +130,7 @@ public class AnalyticsClient {
 
   /**
    * Creating GSON object everytime we check the size seems costly, create one static instance
+   *
    * @return static gson instance
    */
   public static Gson getGsonInstance() {
@@ -139,7 +139,6 @@ public class AnalyticsClient {
     }
     return gsonInstance;
   }
-
 
   public int messageSizeInBytes(Message message) {
     Gson gson = getGsonInstance();
@@ -166,11 +165,13 @@ public class AnalyticsClient {
     }
 
     try {
-      //@jorgen25 message here could be regular msg, POISON or STOP. Only do regular logic if its valid message
+      // @jorgen25 message here could be regular msg, POISON or STOP. Only do regular logic if its
+      // valid message
       if (message != StopMessage.STOP && message != FlushMessage.POISON) {
         int messageByteSize = messageSizeInBytes(message);
 
-        //@jorgen25 check if message is below 32kb limit for individual messages, no need to check for extra characters
+        // @jorgen25 check if message is below 32kb limit for individual messages, no need to check
+        // for extra characters
         if (messageByteSize <= MSG_MAX_SIZE) {
           messageQueue.put(message);
 
@@ -183,7 +184,8 @@ public class AnalyticsClient {
             this.currentQueueSizeInBytes += messageByteSize;
           }
         } else {
-          log.print(ERROR, "Message was above individual limit. MessageId: %s", message.messageId());
+          log.print(
+              ERROR, "Message was above individual limit. MessageId: %s", message.messageId());
         }
       } else {
         messageQueue.put(message);
@@ -248,9 +250,11 @@ public class AnalyticsClient {
     @Override
     public void run() {
       LinkedList<Message> messages = new LinkedList<>();
-      //@jorgen25 we could check size at the moment we are creating batch but it will be very time consuming.
-      //its better to check as we take messages and since Message does not implement hashcode we can use messageId
-      Map<String,Integer> messageIdSizeMap = new HashMap<>();
+      // @jorgen25 we could check size at the moment we are creating batch but it will be very time
+      // consuming.
+      // its better to check as we take messages and since Message does not implement hashcode we
+      // can use messageId
+      Map<String, Integer> messageIdSizeMap = new HashMap<>();
       AtomicInteger sequenceCounter = new AtomicInteger(1);
       int contextSize = getGsonInstance().toJson(CONTEXT).getBytes(ENCODING).length;
       try {
@@ -273,15 +277,17 @@ public class AnalyticsClient {
           Boolean isOverflow = messages.size() >= size;
 
           if (!messages.isEmpty() && (isOverflow || isBlockingSignal)) {
-            while(!messages.isEmpty()) {
-              Batch batch = BatchUtility.createBatch(messages, messageIdSizeMap, contextSize, sequenceCounter);
+            while (!messages.isEmpty()) {
+              Batch batch =
+                  BatchUtility.createBatch(
+                      messages, messageIdSizeMap, contextSize, sequenceCounter);
               log.print(
-                      VERBOSE,
-                      "Batching %s message(s) into batch %s.",
-                      batch.batch().size(),
-                      batch.sequence());
+                  VERBOSE,
+                  "Batching %s message(s) into batch %s.",
+                  batch.batch().size(),
+                  batch.sequence());
               networkExecutor.submit(
-                      BatchUploadTask.create(AnalyticsClient.this, batch, maximumRetries));
+                  BatchUploadTask.create(AnalyticsClient.this, batch, maximumRetries));
             }
             messages = new LinkedList<>();
             messageIdSizeMap.clear();
@@ -293,11 +299,6 @@ public class AnalyticsClient {
       }
       log.print(VERBOSE, "Looper stopped");
     }
-
-
-
-
-
   }
 
   static class BatchUploadTask implements Runnable {
@@ -406,30 +407,34 @@ public class AnalyticsClient {
     }
   }
 
-
   public static class BatchUtility {
     /**
      * Method to create a batch considering threshold of 500Kb for entire batch
+     *
      * @param list
      * @return batch object
      */
-    public static Batch createBatch(LinkedList<Message> list, Map<String, Integer> messageIdSizeMap,
-                                    int contextSize, AtomicInteger sequenceCounter) {
+    public static Batch createBatch(
+        LinkedList<Message> list,
+        Map<String, Integer> messageIdSizeMap,
+        int contextSize,
+        AtomicInteger sequenceCounter) {
       List<Message> messagesForBatch = new ArrayList<>();
       Batch batch = null;
 
       int currentBatchSize = 0;
 
-      //since we are handling max size of 32 kbs when enqueing msg, one single msg will not be above limit
-      while(list.size() > 0 && currentBatchSize <= BATCH_MAX_SIZE) {
+      // since we are handling max size of 32 kbs when enqueing msg, one single msg will not be
+      // above limit
+      while (list.size() > 0 && currentBatchSize <= BATCH_MAX_SIZE) {
         Message msg = list.peek();
         int msgSize = messageIdSizeMap.get(msg.messageId());
-        int defaultBatchSizeSoFar = getBatchDefaultSize(contextSize, messagesForBatch.size() + 1, sequenceCounter);
+        int defaultBatchSizeSoFar =
+            getBatchDefaultSize(contextSize, messagesForBatch.size() + 1, sequenceCounter);
         if ((currentBatchSize + msgSize + defaultBatchSizeSoFar) < BATCH_MAX_SIZE) {
           messagesForBatch.add(list.poll());
-          currentBatchSize+=msgSize;
-        }
-        else {
+          currentBatchSize += msgSize;
+        } else {
           break;
         }
       }
@@ -439,47 +444,53 @@ public class AnalyticsClient {
       return batch;
     }
 
-
-     /**
+    /**
      * Method to determine what is the expected default size of the batch regardless of messages
      *
-     * Sample batch:
-     {"batch":[{"type":"alias","messageId":"fc9198f9-d827-47fb-96c8-095bd3405d93","timestamp":"Nov 18, 2021,
-     2:45:07 PM","userId":"jorgen25","integrations":{"someKey":{"data":"aaaaa"}},"previousId":"foo"},{"type":"alias",
-     "messageId":"3ce6f88c-36cb-4991-83f8-157e10261a89","timestamp":"Nov 18, 2021, 2:45:07 PM","userId":"jorgen25",
-     "integrations":{"someKey":{"data":"aaaaa"}},"previousId":"foo"},{"type":"alias",
-     "messageId":"a328d339-899a-4a14-9835-ec91e303ac4d","timestamp":"Nov 18, 2021, 2:45:07 PM",
-     "userId":"jorgen25","integrations":{"someKey":{"data":"aaaaa"}},"previousId":"foo"},{"type":"alias",
-     "messageId":"57b0ceb4-a1cf-4599-9fba-0a44c7041004","timestamp":"Nov 18, 2021, 2:45:07 PM",
-     "userId":"jorgen25","integrations":{"someKey":{"data":"aaaaa"}},"previousId":"foo"}],
-     "sentAt":"Nov 18, 2021, 2:45:07 PM","context":{"library":{"name":"analytics-java","version":"3.1.3"}},"sequence":1}
-
-     * total size of batch : 886
+     * <p>Sample batch:
+     * {"batch":[{"type":"alias","messageId":"fc9198f9-d827-47fb-96c8-095bd3405d93","timestamp":"Nov
+     * 18, 2021, 2:45:07
+     * PM","userId":"jorgen25","integrations":{"someKey":{"data":"aaaaa"}},"previousId":"foo"},{"type":"alias",
+     * "messageId":"3ce6f88c-36cb-4991-83f8-157e10261a89","timestamp":"Nov 18, 2021, 2:45:07
+     * PM","userId":"jorgen25",
+     * "integrations":{"someKey":{"data":"aaaaa"}},"previousId":"foo"},{"type":"alias",
+     * "messageId":"a328d339-899a-4a14-9835-ec91e303ac4d","timestamp":"Nov 18, 2021, 2:45:07 PM",
+     * "userId":"jorgen25","integrations":{"someKey":{"data":"aaaaa"}},"previousId":"foo"},{"type":"alias",
+     * "messageId":"57b0ceb4-a1cf-4599-9fba-0a44c7041004","timestamp":"Nov 18, 2021, 2:45:07 PM",
+     * "userId":"jorgen25","integrations":{"someKey":{"data":"aaaaa"}},"previousId":"foo"}],
+     * "sentAt":"Nov 18, 2021, 2:45:07
+     * PM","context":{"library":{"name":"analytics-java","version":"3.1.3"}},"sequence":1}
      *
-     * BREAKDOWN:
-     * {"batch":[MESSAGE1,MESSAGE2,MESSAGE3,MESSAGE4],"sentAt":"MMM dd, yyyy, HH:mm:ss tt","context":CONTEXT,"sequence":1}
+     * <p>total size of batch : 886
      *
-     * so we need to account for:
-     * 1 -message size: 189 * 4 = 756
-     * 2 -context object size = 55 in this sample  ->  756 + 55 = 811
-     * 3 -Metadata (This has the sent data/sequence characters)  + extra chars (these are chars like "batch":[] or "context":  etc and will be pretty much the same length in every batch -> size is 73   --> 811 + 73 = 884
-      *                 (well 72 actually, char 73 is the sequence digit which we account for in point 5)
-     * 4 -Commas between each message, the total number of commas is number_of_msgs - 1 = 3    ->  884 + 3 = 887 (sample is 886 because the hour in sentData this time happens to be 2:45 but it could be 12:45
-     * 5 -Sequence Number increments with every batch created
+     * <p>BREAKDOWN: {"batch":[MESSAGE1,MESSAGE2,MESSAGE3,MESSAGE4],"sentAt":"MMM dd, yyyy, HH:mm:ss
+     * tt","context":CONTEXT,"sequence":1}
      *
-     * so formulae to determine the expected default size of the batch is
+     * <p>so we need to account for: 1 -message size: 189 * 4 = 756 2 -context object size = 55 in
+     * this sample -> 756 + 55 = 811 3 -Metadata (This has the sent data/sequence characters) +
+     * extra chars (these are chars like "batch":[] or "context": etc and will be pretty much the
+     * same length in every batch -> size is 73 --> 811 + 73 = 884 (well 72 actually, char 73 is the
+     * sequence digit which we account for in point 5) 4 -Commas between each message, the total
+     * number of commas is number_of_msgs - 1 = 3 -> 884 + 3 = 887 (sample is 886 because the hour
+     * in sentData this time happens to be 2:45 but it could be 12:45 5 -Sequence Number increments
+     * with every batch created
      *
-     * @return: defaultSize = messages size + context size + metadata size + comma number + sequence digits
+     * <p>so formulae to determine the expected default size of the batch is
      *
+     * @return: defaultSize = messages size + context size + metadata size + comma number + sequence
+     *     digits
      * @return
      */
-    private static int getBatchDefaultSize(int contextSize, int currentMessageNumber, AtomicInteger sequenceCounter) {
+    private static int getBatchDefaultSize(
+        int contextSize, int currentMessageNumber, AtomicInteger sequenceCounter) {
       // sample data: {"batch":[],"sentAt":"MMM dd, yyyy, HH:mm:ss tt","context":,"sequence":1} - 73
       int metadataExtraCharsSize = 73;
       int commaNumber = currentMessageNumber - 1;
 
-      return contextSize + metadataExtraCharsSize + commaNumber + String.valueOf(sequenceCounter.incrementAndGet()).length();
+      return contextSize
+          + metadataExtraCharsSize
+          + commaNumber
+          + String.valueOf(sequenceCounter.incrementAndGet()).length();
     }
   }
-
 }
