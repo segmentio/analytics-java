@@ -354,6 +354,8 @@ public class AnalyticsClientTest {
       client.enqueue(bigMessage);
     }
     wait(messageQueue);
+    client.shutdown();
+    while (!isShutDown.get()) {}
     verify(networkExecutor, times(2)).submit(any(Runnable.class));
   }
 
