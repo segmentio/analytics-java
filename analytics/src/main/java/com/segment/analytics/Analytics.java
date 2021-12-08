@@ -9,17 +9,17 @@ import com.segment.analytics.internal.AnalyticsClient;
 import com.segment.analytics.internal.AnalyticsVersion;
 import com.segment.analytics.messages.Message;
 import com.segment.analytics.messages.MessageBuilder;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import okhttp3.ConnectionSpec;
-import okhttp3.OkHttpClient;
 import okhttp3.HttpUrl;
+import okhttp3.OkHttpClient;
 import okhttp3.TlsVersion;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
@@ -417,9 +417,11 @@ public class Analytics {
               .addInterceptor(interceptor);
 
       if (forceTlsV1) {
-        ConnectionSpec connectionSpec = new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS)
-                .tlsVersions(TlsVersion.TLS_1_0, TlsVersion.TLS_1_1, TlsVersion.TLS_1_2, TlsVersion.TLS_1_3)
-              .build();
+        ConnectionSpec connectionSpec =
+            new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS)
+                .tlsVersions(
+                    TlsVersion.TLS_1_0, TlsVersion.TLS_1_1, TlsVersion.TLS_1_2, TlsVersion.TLS_1_3)
+                .build();
 
         builder = builder.connectionSpecs(Arrays.asList(connectionSpec));
       }
