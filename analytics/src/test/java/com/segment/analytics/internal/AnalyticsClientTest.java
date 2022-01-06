@@ -6,15 +6,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
-import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.Mockito.*;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 import com.segment.analytics.Callback;
 import com.segment.analytics.Log;
@@ -47,6 +40,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import retrofit2.Call;
@@ -65,7 +59,7 @@ public class AnalyticsClientTest {
   Log log = Log.NONE;
 
   ThreadFactory threadFactory;
-  @Mock BlockingQueue<Message> messageQueue;
+  @Spy LinkedBlockingQueue<Message> messageQueue;
   @Mock SegmentService segmentService;
   @Mock ExecutorService networkExecutor;
   @Mock Callback callback;
@@ -75,10 +69,10 @@ public class AnalyticsClientTest {
 
   @Before
   public void setUp() {
-    initMocks(this);
+    openMocks(this);
 
     isShutDown = new AtomicBoolean(false);
-    messageQueue = spy(new LinkedBlockingQueue<Message>());
+
     threadFactory = Executors.defaultThreadFactory();
   }
 
@@ -534,7 +528,7 @@ public class AnalyticsClientTest {
     client.shutdown();
 
     verify(messageQueue, times(0)).put(any(Message.class));
-    verifyZeroInteractions(networkExecutor, callback, segmentService);
+    verifyNoInteractions(networkExecutor, callback, segmentService);
   }
 
   @Test
