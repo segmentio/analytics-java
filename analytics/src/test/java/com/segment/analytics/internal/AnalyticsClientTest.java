@@ -925,6 +925,9 @@ public class AnalyticsClientTest {
     }
     client.enqueue(POISON);
     wait(messageQueue);
+
+    client.shutdown();
+    while (!isShutDown.get()) {}
     verify(networkExecutor, times(1)).submit(any(Runnable.class));
   }
 
