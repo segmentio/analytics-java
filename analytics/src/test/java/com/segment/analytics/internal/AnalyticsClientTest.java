@@ -3,16 +3,16 @@ package com.segment.analytics.internal;
 import static com.segment.analytics.internal.FlushMessage.POISON;
 import static com.segment.analytics.internal.StopMessage.STOP;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
@@ -44,7 +44,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import okhttp3.ResponseBody;
 import org.junit.Before;
 import org.junit.Test;
@@ -327,8 +326,13 @@ public class AnalyticsClientTest {
     }
 
     wait(messageQueue);
-
-    verify(networkExecutor, times(4)).submit(any(Runnable.class));
+    /**
+     * modified from expected 4 to expected 3 times, since we removed the inner loop. The inner loop
+     * was forcing to message list created from the queue to keep making batches even if its a 1
+     * message batch until the message list is empty, that was forcing the code to make one last
+     * batch of 1 msg in size bumping the number of times a batch would be submitted from 3 to 4
+     */
+    verify(networkExecutor, times(3)).submit(any(Runnable.class));
   }
 
   /**
@@ -613,7 +617,7 @@ public class AnalyticsClientTest {
     client.shutdown();
 
     verify(messageQueue, times(0)).put(any(Message.class));
-    verifyZeroInteractions(networkExecutor, callback, segmentService);
+    verifyNoInteractions(networkExecutor, callback, segmentService);
   }
 
   @Test
@@ -859,7 +863,6 @@ public class AnalyticsClientTest {
     int msgSize = 1024 * 18; // 18KB
     LinkedList<Message> messages = new LinkedList<>();
     Map<String, Integer> messageIdSizeMap = new HashMap<>();
-    AtomicInteger sequenceCounter = new AtomicInteger();
 
     // Create context
     Map<String, String> library = new LinkedHashMap<>();
@@ -883,8 +886,7 @@ public class AnalyticsClientTest {
 
     while (!messages.isEmpty()) {
       Batch batch =
-          AnalyticsClient.BatchUtility.createBatch(
-              messages, messageIdSizeMap, contextSize, sequenceCounter);
+          AnalyticsClient.BatchUtility.createBatch(messages, messageIdSizeMap, contextSize);
       int batchSize =
           AnalyticsClient.getGsonInstance().toJson(batch).getBytes(StandardCharsets.UTF_8).length;
       assertThat(batchSize).isLessThan(MAX_BATCH_SIZE);
@@ -961,7 +963,13 @@ public class AnalyticsClientTest {
     client.shutdown();
     while (!isShutDown.get()) {}
 
-    verify(networkExecutor, times(8)).submit(any(Runnable.class));
+    /**
+     * modified from expected 8 to expected 7 times, since we removed the inner loop. The inner loop
+     * was forcing to message list created from the queue to keep making batches even if its a 1
+     * message batch until the message list is empty, that was forcing the code to make one last
+     * batch of 1 msg in size bumping the number of times a batch would be submitted from 7 to 8
+     */
+    verify(networkExecutor, times(7)).submit(any(Runnable.class));
   }
 
   @Test

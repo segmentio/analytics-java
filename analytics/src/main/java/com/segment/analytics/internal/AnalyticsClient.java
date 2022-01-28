@@ -30,7 +30,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import retrofit2.Call;
 import retrofit2.Response;
 
@@ -250,12 +249,7 @@ public class AnalyticsClient {
     @Override
     public void run() {
       LinkedList<Message> messages = new LinkedList<>();
-      // @jorgen25 we could check size at the moment we are creating batch but it will be very time
-      // consuming.
-      // its better to check as we take messages and since Message does not implement hashcode we
-      // can use messageId
       Map<String, Integer> messageIdSizeMap = new HashMap<>();
-      AtomicInteger sequenceCounter = new AtomicInteger(1);
       int contextSize = getGsonInstance().toJson(CONTEXT).getBytes(ENCODING).length;
       try {
         while (!stop) {
@@ -277,20 +271,14 @@ public class AnalyticsClient {
           Boolean isOverflow = messages.size() >= size;
 
           if (!messages.isEmpty() && (isOverflow || isBlockingSignal)) {
-            while (!messages.isEmpty()) {
-              Batch batch =
-                  BatchUtility.createBatch(
-                      messages, messageIdSizeMap, contextSize, sequenceCounter);
-              log.print(
-                  VERBOSE,
-                  "Batching %s message(s) into batch %s.",
-                  batch.batch().size(),
-                  batch.sequence());
-              networkExecutor.submit(
-                  BatchUploadTask.create(AnalyticsClient.this, batch, maximumRetries));
-            }
-            messages = new LinkedList<>();
-            messageIdSizeMap.clear();
+            Batch batch = BatchUtility.createBatch(messages, messageIdSizeMap, contextSize);
+            log.print(
+                VERBOSE,
+                "Batching %s message(s) into batch %s.",
+                batch.batch().size(),
+                batch.sequence());
+            networkExecutor.submit(
+                BatchUploadTask.create(AnalyticsClient.this, batch, maximumRetries));
           }
         }
       } catch (InterruptedException e) {
@@ -415,31 +403,27 @@ public class AnalyticsClient {
      * @return batch object
      */
     public static Batch createBatch(
-        LinkedList<Message> list,
-        Map<String, Integer> messageIdSizeMap,
-        int contextSize,
-        AtomicInteger sequenceCounter) {
+        LinkedList<Message> list, Map<String, Integer> messageIdSizeMap, int contextSize) {
       List<Message> messagesForBatch = new ArrayList<>();
       Batch batch = null;
 
       int currentBatchSize = 0;
 
-      // since we are handling max size of 32 kbs when enqueing msg, one single msg will not be
+      // since we are handling max size of 32 kbs when enqueuing msg, one single msg will not be
       // above limit
       while (list.size() > 0 && currentBatchSize <= BATCH_MAX_SIZE) {
         Message msg = list.peek();
         int msgSize = messageIdSizeMap.get(msg.messageId());
-        int defaultBatchSizeSoFar =
-            getBatchDefaultSize(contextSize, messagesForBatch.size() + 1, sequenceCounter);
+        int defaultBatchSizeSoFar = getBatchDefaultSize(contextSize, messagesForBatch.size() + 1);
         if ((currentBatchSize + msgSize + defaultBatchSizeSoFar) < BATCH_MAX_SIZE) {
           messagesForBatch.add(list.poll());
           currentBatchSize += msgSize;
+          messageIdSizeMap.remove(msg.messageId());
         } else {
           break;
         }
       }
       batch = Batch.create(CONTEXT, messagesForBatch);
-      sequenceCounter.set(batch.sequence());
 
       return batch;
     }
@@ -481,8 +465,7 @@ public class AnalyticsClient {
      *     digits
      * @return
      */
-    private static int getBatchDefaultSize(
-        int contextSize, int currentMessageNumber, AtomicInteger sequenceCounter) {
+    private static int getBatchDefaultSize(int contextSize, int currentMessageNumber) {
       // sample data: {"batch":[],"sentAt":"MMM dd, yyyy, HH:mm:ss tt","context":,"sequence":1} - 73
       int metadataExtraCharsSize = 73;
       int commaNumber = currentMessageNumber - 1;
@@ -490,7 +473,7 @@ public class AnalyticsClient {
       return contextSize
           + metadataExtraCharsSize
           + commaNumber
-          + String.valueOf(sequenceCounter.incrementAndGet()).length();
+          + String.valueOf(Integer.MAX_VALUE).length();
     }
   }
 }
