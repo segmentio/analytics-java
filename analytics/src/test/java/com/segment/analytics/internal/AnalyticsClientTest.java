@@ -255,7 +255,6 @@ public class AnalyticsClientTest {
     verify(networkExecutor, never()).submit(any(Runnable.class));
   }
 
-
   /**
    * Modified this test case since we are changing logic to NOT allow messages bigger than 32 kbs
    * individually to be enqueued, hence had to lower the size of the generated msg here. chose
