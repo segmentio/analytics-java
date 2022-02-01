@@ -17,7 +17,6 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -30,6 +29,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import retrofit2.Call;
 import retrofit2.Response;
 
@@ -172,14 +172,16 @@ public class AnalyticsClient {
         // @jorgen25 check if message is below 32kb limit for individual messages, no need to check
         // for extra characters
         if (messageByteSize <= MSG_MAX_SIZE) {
-          messageQueue.put(message);
+          //          messageQueue.put(message);
 
           if (isBackPressuredAfterSize(messageByteSize)) {
             this.currentQueueSizeInBytes = messageByteSize;
             messageQueue.put(FlushMessage.POISON);
+            messageQueue.put(message);
 
             log.print(VERBOSE, "Maximum storage size has been hit Flushing...");
           } else {
+            messageQueue.put(message);
             this.currentQueueSizeInBytes += messageByteSize;
           }
         } else {
@@ -249,7 +251,8 @@ public class AnalyticsClient {
     @Override
     public void run() {
       LinkedList<Message> messages = new LinkedList<>();
-      Map<String, Integer> messageIdSizeMap = new HashMap<>();
+      AtomicInteger currentBatchSize = new AtomicInteger();
+      boolean batchSizeLimitReached = false;
       int contextSize = getGsonInstance().toJson(CONTEXT).getBytes(ENCODING).length;
       try {
         while (!stop) {
@@ -263,15 +266,29 @@ public class AnalyticsClient {
               log.print(VERBOSE, "Flushing messages.");
             }
           } else {
-            messageIdSizeMap.put(message.messageId(), messageSizeInBytes(message));
-            messages.add(message);
+            // we do  +1 because we are accounting for this new message we just took from the queue
+            // which is not in list yet
+            // need to check if this message is going to make us go over the limit considering
+            // default batch size as well
+            int defaultBatchSize =
+                BatchUtility.getBatchDefaultSize(contextSize, messages.size() + 1);
+            int msgSize = messageSizeInBytes(message);
+            if (currentBatchSize.get() + msgSize + defaultBatchSize <= BATCH_MAX_SIZE) {
+              messages.add(message);
+              currentBatchSize.addAndGet(msgSize);
+            } else {
+              // put message that did not make the cut this time back on the queue, we already took
+              // this message if we dont put it back its lost
+              // we take care of that after submitting the batch
+              batchSizeLimitReached = true;
+            }
           }
 
           Boolean isBlockingSignal = message == FlushMessage.POISON || message == StopMessage.STOP;
           Boolean isOverflow = messages.size() >= size;
 
-          if (!messages.isEmpty() && (isOverflow || isBlockingSignal)) {
-            Batch batch = BatchUtility.createBatch(messages, messageIdSizeMap, contextSize);
+          if (!messages.isEmpty() && (isOverflow || isBlockingSignal || batchSizeLimitReached)) {
+            Batch batch = Batch.create(CONTEXT, new ArrayList<>(messages));
             log.print(
                 VERBOSE,
                 "Batching %s message(s) into batch %s.",
@@ -279,6 +296,16 @@ public class AnalyticsClient {
                 batch.sequence());
             networkExecutor.submit(
                 BatchUploadTask.create(AnalyticsClient.this, batch, maximumRetries));
+
+            currentBatchSize.set(0);
+            messages.clear();
+            if (batchSizeLimitReached) {
+              // If this is true that means the last message that would make us go over the limit
+              // was not added,
+              // add it to the now cleared messages list so its not lost
+              messages.add(message);
+            }
+            batchSizeLimitReached = false;
           }
         }
       } catch (InterruptedException e) {
@@ -396,37 +423,6 @@ public class AnalyticsClient {
   }
 
   public static class BatchUtility {
-    /**
-     * Method to create a batch considering threshold of 500Kb for entire batch
-     *
-     * @param list
-     * @return batch object
-     */
-    public static Batch createBatch(
-        LinkedList<Message> list, Map<String, Integer> messageIdSizeMap, int contextSize) {
-      List<Message> messagesForBatch = new ArrayList<>();
-      Batch batch = null;
-
-      int currentBatchSize = 0;
-
-      // since we are handling max size of 32 kbs when enqueuing msg, one single msg will not be
-      // above limit
-      while (list.size() > 0 && currentBatchSize <= BATCH_MAX_SIZE) {
-        Message msg = list.peek();
-        int msgSize = messageIdSizeMap.get(msg.messageId());
-        int defaultBatchSizeSoFar = getBatchDefaultSize(contextSize, messagesForBatch.size() + 1);
-        if ((currentBatchSize + msgSize + defaultBatchSizeSoFar) < BATCH_MAX_SIZE) {
-          messagesForBatch.add(list.poll());
-          currentBatchSize += msgSize;
-          messageIdSizeMap.remove(msg.messageId());
-        } else {
-          break;
-        }
-      }
-      batch = Batch.create(CONTEXT, messagesForBatch);
-
-      return batch;
-    }
 
     /**
      * Method to determine what is the expected default size of the batch regardless of messages

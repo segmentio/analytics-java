@@ -32,8 +32,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Random;
@@ -257,34 +255,6 @@ public class AnalyticsClientTest {
     verify(networkExecutor, never()).submit(any(Runnable.class));
   }
 
-  /**
-   * Planning to remove this test case since logic change makes test case unnecessary. The purpose
-   * of the test case was to test scenario when one BIG message (of MAX_BYTE_SIZE = 1024 * 500)
-   * would backpressure queue for each message put in queue so it would be backpressured 10 times,
-   * then flushed 10 times and 10 batches would be submitted
-   *
-   * <p>Since logic changed to not allow msgs larger than 32kbs abd batches over 500kb this test
-   * case would be the exact same one as flushWhenMultipleMessagesReachesMaxSize test case
-   *
-   * @throws InterruptedException
-   */
-  //  @Test
-  //  public void flushWhenReachesMaxSize() throws InterruptedException {
-  //    AnalyticsClient client = newClient();
-  //    Map<String, String> properties = new HashMap<String, String>();
-  //
-  //    properties.put("property3", generateMassDataOfSize(MAX_BYTE_SIZE));
-  //
-  //    for (int i = 0; i < 10; i++) {
-  //      TrackMessage bigMessage =
-  //          TrackMessage.builder("Big Event").userId("bar").properties(properties).build();
-  //      client.enqueue(bigMessage);
-  //    }
-  //
-  //    wait(messageQueue);
-  //
-  //    verify(networkExecutor, times(10)).submit(any(Runnable.class));
-  //  }
 
   /**
    * Modified this test case since we are changing logic to NOT allow messages bigger than 32 kbs
@@ -851,47 +821,6 @@ public class AnalyticsClientTest {
    * Test cases for Batch creation logic
    * ****************************************************************************************************************
    */
-
-  /**
-   * This takes time since its getting size of each message and each batch created
-   *
-   * @param builder
-   */
-  @Test
-  public void createBatchConfirmSizeNotViolated(MessageBuilderTest builder) {
-
-    int msgSize = 1024 * 18; // 18KB
-    LinkedList<Message> messages = new LinkedList<>();
-    Map<String, Integer> messageIdSizeMap = new HashMap<>();
-
-    // Create context
-    Map<String, String> library = new LinkedHashMap<>();
-    library.put("name", "analytics-java");
-    library.put("version", AnalyticsVersion.get());
-    Map<String, Object> context = new LinkedHashMap<>();
-    context.put("library", Collections.unmodifiableMap(library));
-    Map<String, ?> CONTEXT = Collections.unmodifiableMap(context);
-    int contextSize =
-        AnalyticsClient.getGsonInstance().toJson(CONTEXT).getBytes(StandardCharsets.UTF_8).length;
-
-    for (int i = 0; i < 40; i++) {
-      final String data = generateDataOfSizeSpecialChars(msgSize, true);
-      Map<String, String> integrationOpts = new HashMap<>();
-      integrationOpts.put("data", data);
-      Message message =
-          builder.get().userId("jorgen25").integrationOptions("someKey", integrationOpts).build();
-      messageIdSizeMap.put(message.messageId(), newClient().messageSizeInBytes(message));
-      messages.add(message);
-    }
-
-    while (!messages.isEmpty()) {
-      Batch batch =
-          AnalyticsClient.BatchUtility.createBatch(messages, messageIdSizeMap, contextSize);
-      int batchSize =
-          AnalyticsClient.getGsonInstance().toJson(batch).getBytes(StandardCharsets.UTF_8).length;
-      assertThat(batchSize).isLessThan(MAX_BATCH_SIZE);
-    }
-  }
 
   /**
    * Several messages are enqueued and then submitted in a batch
