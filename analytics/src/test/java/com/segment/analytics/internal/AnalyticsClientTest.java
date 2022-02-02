@@ -3,16 +3,16 @@ package com.segment.analytics.internal;
 import static com.segment.analytics.internal.FlushMessage.POISON;
 import static com.segment.analytics.internal.StopMessage.STOP;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Matchers.eq;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.verifyZeroInteractions;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
@@ -534,7 +534,7 @@ public class AnalyticsClientTest {
     client.shutdown();
 
     verify(messageQueue, times(0)).put(any(Message.class));
-    verifyZeroInteractions(networkExecutor, callback, segmentService);
+    verifyNoInteractions(networkExecutor, callback, segmentService);
   }
 
   @Test
