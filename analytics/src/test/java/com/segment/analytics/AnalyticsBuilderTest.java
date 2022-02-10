@@ -379,6 +379,12 @@ public class AnalyticsBuilderTest {
   }
 
   @Test
+  public void buildsWithForceTlsV1() {
+    Analytics analytics = builder.forceTlsVersion1().build();
+    assertThat(analytics).isNotNull();
+  }
+
+  @Test
   public void multipleCallbacks() {
     Analytics analytics =
         builder.callback(mock(Callback.class)).callback(mock(Callback.class)).build();
