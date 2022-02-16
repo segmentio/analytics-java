@@ -7,14 +7,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 import com.segment.analytics.Callback;
 import com.segment.analytics.Log;
@@ -33,7 +32,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -47,6 +45,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import retrofit2.Call;
@@ -65,7 +64,7 @@ public class AnalyticsClientTest {
   Log log = Log.NONE;
 
   ThreadFactory threadFactory;
-  @Mock BlockingQueue<Message> messageQueue;
+  @Spy LinkedBlockingQueue<Message> messageQueue;
   @Mock SegmentService segmentService;
   @Mock ExecutorService networkExecutor;
   @Mock Callback callback;
@@ -75,10 +74,9 @@ public class AnalyticsClientTest {
 
   @Before
   public void setUp() {
-    initMocks(this);
+    openMocks(this);
 
     isShutDown = new AtomicBoolean(false);
-    messageQueue = spy(new LinkedBlockingQueue<Message>());
     threadFactory = Executors.defaultThreadFactory();
   }
 
