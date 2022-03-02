@@ -29,7 +29,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>8</java.version>
     <kotlin.version>1.6.10</kotlin.version>
-    <spotless.version>2.20.2</spotless.version>
+    <spotless.version>2.21.0</spotless.version>
     <retrofit.version>2.9.0</retrofit.version>
     <auto.version>1.9</auto.version>
 
