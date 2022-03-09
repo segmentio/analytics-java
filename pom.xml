@@ -37,7 +37,7 @@
     <gson.version>2.9.0</gson.version>
     <okhttp.version>4.9.3</okhttp.version>
     <logging.version>4.9.3</logging.version>
-    <guava.version>31.0-jre</guava.version>
+    <guava.version>31.1-jre</guava.version>
     <backo.version>1.0.0</backo.version>
     <spring.boot.version>2.6.4</spring.boot.version>
     <docopt.version>0.6.0.20150202</docopt.version>
