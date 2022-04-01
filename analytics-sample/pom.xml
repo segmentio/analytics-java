@@ -6,7 +6,7 @@
   <parent>
     <artifactId>analytics-parent</artifactId>
     <groupId>com.segment.analytics.java</groupId>
-    <version>3.1.3</version>
+    <version>3.2.0</version>
   </parent>
 
   <artifactId>analytics-sample</artifactId>
@@ -47,4 +47,8 @@
     </plugins>
   </build>
 
+
+  <scm>
+    <tag>analytics-parent-3.2.0</tag>
+  </scm>
 </project>
