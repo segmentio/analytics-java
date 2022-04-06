@@ -385,7 +385,6 @@ public class AnalyticsClient {
         return false;
       } catch (IOException error) {
         client.log.print(DEBUG, error, "Could not upload batch %s. Retrying.", batch.sequence());
-        notifyCallbacksWithException(batch, error);
 
         return true;
       } catch (Exception exception) {
