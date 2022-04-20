@@ -28,6 +28,9 @@ import retrofit2.converter.gson.GsonConverterFactory;
 /**
  * The entry point into the Segment for Java library.
  *
+ * <p>Segments Javan Analytics library is thread safe as it is an immutable object once its created. 
+ * It also uses a LinkedBlockingQueue to process msgs which is a proven thread safe collection
+ *
  * <p>The idea is simple: one pipeline for all your data. Segment is the single hub to collect,
  * translate and route your data with the flip of a switch.
  *
