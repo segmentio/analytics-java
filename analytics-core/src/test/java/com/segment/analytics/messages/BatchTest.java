@@ -6,6 +6,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.segment.analytics.TestUtils;
 import com.squareup.burst.BurstJUnit4;
+
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import org.junit.Test;
@@ -24,6 +26,17 @@ public class BatchTest {
 
     assertThat(batch.batch()).isEqualTo(messages);
     assertThat(batch.context()).isEqualTo(context);
+  }
+  
+  @Test
+  public void createSentAtNull(TestUtils.MessageBuilderFactory factory) {
+    Message message = factory.get().userId("userId").build();
+    Map<String, String> context = ImmutableMap.of("foo", "bar");
+    List<Message> messages = ImmutableList.of(message);
+
+    Batch batch = Batch.create(context, messages, null);
+    
+    assertThat(batch.sentAt()).isNull();
   }
 
   @Test
