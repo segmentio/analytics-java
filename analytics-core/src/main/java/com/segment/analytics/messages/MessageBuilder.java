@@ -74,8 +74,8 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
   }
 
   /**
-   * Set a sentAt for the event. By default, the current sentAt is used, but you may override
-   * it for historical import.
+   * Set a sentAt for the event. By default, the current sentAt is used, but you may override it for
+   * historical import.
    *
    * @see <a href="https://segment.com/docs/spec/common/#-sentAt-">SentAt</a>
    */
@@ -83,7 +83,7 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
     this.sentAt = sentAt;
     return self();
   }
-  
+
   /**
    * Set a timestamp for the event. By default, the current timestamp is used, but you may override
    * it for historical import.
@@ -215,7 +215,7 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
     if (timestamp == null) {
       timestamp = new Date();
     }
-    
+
     Date sentAt = this.sentAt;
 
     String messageId = this.messageId;
@@ -230,7 +230,8 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
       integrations = ImmutableMap.copyOf(this.integrations);
     }
 
-    return realBuild(type, messageId, sentAt, timestamp, context, anonymousId, userId, integrations);
+    return realBuild(
+        type, messageId, sentAt, timestamp, context, anonymousId, userId, integrations);
   }
 
   /** Returns the {@link Message.Type} of the message this builder is constructing. */

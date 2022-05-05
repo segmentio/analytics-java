@@ -62,8 +62,16 @@ public abstract class AliasMessage implements Message {
         String anonymousId,
         String userId,
         Map<String, Object> integrations) {
-      return new AutoValue_AliasMessage(anonymousId, context, integrations, messageId, sentAt, 
-    		  timestamp, type, userId, previousId);
+      return new AutoValue_AliasMessage(
+          anonymousId,
+          context,
+          integrations,
+          messageId,
+          sentAt,
+          timestamp,
+          type,
+          userId,
+          previousId);
     }
 
     @Override

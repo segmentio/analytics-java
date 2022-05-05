@@ -86,7 +86,16 @@ public abstract class ScreenMessage implements Message {
         String userId,
         Map<String, Object> integrations) {
       return new AutoValue_ScreenMessage(
-          anonymousId, context, integrations, messageId, sentAt, timestamp, type, userId, name, properties);
+          anonymousId,
+          context,
+          integrations,
+          messageId,
+          sentAt,
+          timestamp,
+          type,
+          userId,
+          name,
+          properties);
     }
   }
 }

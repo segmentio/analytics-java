@@ -99,17 +99,17 @@ public abstract class PageMessage implements Message {
         String userId,
         Map<String, Object> integrations) {
       return new AutoValue_PageMessage(
-    		  anonymousId,
-    		  context,
-    		  integrations,
-    		  messageId,
-    		  sentAt,
-    		  timestamp,
-    		  type,
-    		  userId,
-    		  name,
-    		  properties,
-    		  category);
+          anonymousId,
+          context,
+          integrations,
+          messageId,
+          sentAt,
+          timestamp,
+          type,
+          userId,
+          name,
+          properties,
+          category);
     }
   }
 }

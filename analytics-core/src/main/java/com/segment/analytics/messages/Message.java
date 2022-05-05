@@ -28,10 +28,10 @@ public interface Message {
 
   @Nullable
   Date sentAt();
-  
+
   @Nonnull
   Date timestamp();
-  
+
   @Nullable
   Map<String, ?> context();
 

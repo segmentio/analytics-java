@@ -22,7 +22,7 @@ class StopMessage implements Message {
   public String messageId() {
     throw new UnsupportedOperationException();
   }
-  
+
   @Nullable
   @Override
   public Date sentAt() {
@@ -63,5 +63,4 @@ class StopMessage implements Message {
   public String toString() {
     return "StopMessage{}";
   }
-
 }
