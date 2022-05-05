@@ -71,7 +71,7 @@ public abstract class IdentifyMessage implements Message {
       }
 
       return new AutoValue_IdentifyMessage(
-          anonymousId, context, integrations, messageId, sentAt, timestamp, type, userId, traits);
+          type, messageId, timestamp, context, anonymousId, userId, integrations, traits);
     }
 
     @Override

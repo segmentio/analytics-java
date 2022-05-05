@@ -83,14 +83,14 @@ public abstract class GroupMessage implements Message {
         String userId,
         Map<String, Object> integrations) {
       return new AutoValue_GroupMessage(
-          anonymousId,
-          context,
-          integrations,
+          type,
           messageId,
           sentAt,
           timestamp,
-          type,
+          context,
+          anonymousId,
           userId,
+          integrations,
           groupId,
           traits);
     }

@@ -86,14 +86,14 @@ public abstract class TrackMessage implements Message {
         String userId,
         Map<String, Object> integrations) {
       return new AutoValue_TrackMessage(
-          anonymousId,
-          context,
-          integrations,
+          type,
           messageId,
           sentAt,
           timestamp,
-          type,
+          context,
+          anonymousId,
           userId,
+          integrations,
           event,
           properties);
     }

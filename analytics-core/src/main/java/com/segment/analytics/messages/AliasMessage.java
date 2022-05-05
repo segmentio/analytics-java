@@ -63,14 +63,14 @@ public abstract class AliasMessage implements Message {
         String userId,
         Map<String, Object> integrations) {
       return new AutoValue_AliasMessage(
-          anonymousId,
-          context,
-          integrations,
+          type,
           messageId,
           sentAt,
           timestamp,
-          type,
+          context,
+          anonymousId,
           userId,
+          integrations,
           previousId);
     }
 
