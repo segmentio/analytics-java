@@ -79,19 +79,21 @@ public abstract class TrackMessage implements Message {
     protected TrackMessage realBuild(
         Type type,
         String messageId,
+        Date sentAt,
         Date timestamp,
         Map<String, ?> context,
         String anonymousId,
         String userId,
         Map<String, Object> integrations) {
       return new AutoValue_TrackMessage(
-          type,
-          messageId,
-          timestamp,
-          context,
           anonymousId,
-          userId,
+          context,
           integrations,
+          messageId,
+          sentAt,
+          timestamp,
+          type,
+          userId,
           event,
           properties);
     }
