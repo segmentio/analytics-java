@@ -6,7 +6,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.annotation.Nullable;
 
 @AutoValue
 @AutoGson
@@ -26,7 +25,6 @@ public abstract class Batch {
 
   public abstract List<Message> batch();
 
-  @Nullable
   public abstract Date sentAt();
 
   public abstract Map<String, ?> context();
