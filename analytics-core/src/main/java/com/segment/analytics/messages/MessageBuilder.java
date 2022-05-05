@@ -16,6 +16,7 @@ import java.util.UUID;
 public abstract class MessageBuilder<T extends Message, V extends MessageBuilder> {
   private final Message.Type type;
   private String messageId;
+  private Date sentAt;
   private Date timestamp;
   private Map<String, ?> context;
   private String anonymousId;
@@ -69,6 +70,17 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
       throw new IllegalArgumentException("messageId cannot be null or empty.");
     }
     this.messageId = messageId;
+    return self();
+  }
+
+  /**
+   * Set a sentAt for the event. By default, the current sentAt is used, but you may override it for
+   * historical import.
+   *
+   * @see <a href="https://segment.com/docs/spec/common/#-sentAt-">SentAt</a>
+   */
+  public V sentAt(Date sentAt) {
+    this.sentAt = sentAt;
     return self();
   }
 
@@ -180,6 +192,7 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
   protected abstract T realBuild(
       Message.Type type,
       String messageId,
+      Date sentAt,
       Date timestamp,
       Map<String, ?> context,
       String anonymousId,
@@ -203,6 +216,8 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
       timestamp = new Date();
     }
 
+    Date sentAt = this.sentAt;
+
     String messageId = this.messageId;
     if (messageId == null) {
       messageId = UUID.randomUUID().toString();
@@ -215,7 +230,8 @@ public abstract class MessageBuilder<T extends Message, V extends MessageBuilder
       integrations = ImmutableMap.copyOf(this.integrations);
     }
 
-    return realBuild(type, messageId, timestamp, context, anonymousId, userId, integrations);
+    return realBuild(
+        type, messageId, sentAt, timestamp, context, anonymousId, userId, integrations);
   }
 
   /** Returns the {@link Message.Type} of the message this builder is constructing. */

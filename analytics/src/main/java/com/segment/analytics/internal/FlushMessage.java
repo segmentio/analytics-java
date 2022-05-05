@@ -23,6 +23,12 @@ class FlushMessage implements Message {
     throw new UnsupportedOperationException();
   }
 
+  @Nullable
+  @Override
+  public Date sentAt() {
+    throw new UnsupportedOperationException();
+  }
+
   @Nonnull
   @Override
   public Date timestamp() {

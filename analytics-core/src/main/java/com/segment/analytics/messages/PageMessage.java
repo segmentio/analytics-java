@@ -92,6 +92,7 @@ public abstract class PageMessage implements Message {
     protected PageMessage realBuild(
         Type type,
         String messageId,
+        Date sentAt,
         Date timestamp,
         Map<String, ?> context,
         String anonymousId,
@@ -100,6 +101,7 @@ public abstract class PageMessage implements Message {
       return new AutoValue_PageMessage(
           type,
           messageId,
+          sentAt,
           timestamp,
           context,
           anonymousId,
