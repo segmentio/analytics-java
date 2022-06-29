@@ -28,7 +28,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>8</java.version>
-    <kotlin.version>1.6.21</kotlin.version>
+    <kotlin.version>1.7.0</kotlin.version>
     <spotless.version>2.22.1</spotless.version>
     <retrofit.version>2.9.0</retrofit.version>
     <auto.version>1.9</auto.version>
@@ -46,7 +46,7 @@
     <junit.version>4.13.2</junit.version>
     <burst.version>1.2.0</burst.version>
     <mockito.version>4.4.0</mockito.version>
-    <assertj.version>3.22.0</assertj.version>
+    <assertj.version>3.23.1</assertj.version>
   </properties>
 
   <scm>
