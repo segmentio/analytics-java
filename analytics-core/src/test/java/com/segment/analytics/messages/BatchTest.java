@@ -53,7 +53,7 @@ public class BatchTest {
 
     Batch batch = Batch.create(context, messages);
 
-    assertThat(batch.sentAt()).isEqualTo(new Date());
+    assertThat(batch.sentAt()).isEqualToIgnoringHours(new Date());
   }
 
   @Test
