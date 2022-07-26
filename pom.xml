@@ -28,7 +28,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>8</java.version>
-    <kotlin.version>1.7.0</kotlin.version>
+    <kotlin.version>1.7.10</kotlin.version>
     <spotless.version>2.23.0</spotless.version>
     <retrofit.version>2.9.0</retrofit.version>
     <auto.version>1.9</auto.version>
@@ -39,7 +39,7 @@
     <logging.version>4.10.0</logging.version>
     <guava.version>31.1-jre</guava.version>
     <backo.version>1.0.0</backo.version>
-    <spring.boot.version>2.7.1</spring.boot.version>
+    <spring.boot.version>2.7.2</spring.boot.version>
     <docopt.version>0.6.0.20150202</docopt.version>
 
     <!-- Test Dependencies -->
