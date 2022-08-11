@@ -1,3 +1,6 @@
+# Version 3.3.1 (Aug 11, 2022)
+- [Chore] Dependency upgrades
+
 # Version 3.3.0 (May 12, 2022)
 - [Chore] Dependency upgrades
 - [New](https://github.com/segmentio/analytics-java/pull/345) Add option to sentAt field to be null
