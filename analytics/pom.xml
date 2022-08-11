@@ -6,11 +6,11 @@
   <parent>
     <groupId>com.segment.analytics.java</groupId>
     <artifactId>analytics-parent</artifactId>
-    <version>3.2.1-SNAPSHOT</version>
+    <version>3.3.0</version>
   </parent>
 
   <artifactId>analytics</artifactId>
-  <version>3.1.3</version>
+  <version>3.3.0</version>
   <name>Analytics for Java</name>
 
   <dependencies>
