@@ -431,7 +431,7 @@ public class Analytics {
       Retrofit restAdapter =
           new Retrofit.Builder()
               .addConverterFactory(GsonConverterFactory.create(gson))
-              .baseUrl(endpoint)
+              .baseUrl(DEFAULT_ENDPOINT)
               .client(client)
               .build();
 
@@ -439,6 +439,7 @@ public class Analytics {
 
       AnalyticsClient analyticsClient =
           AnalyticsClient.create(
+              endpoint,
               segmentService,
               queueCapacity,
               flushQueueSize,

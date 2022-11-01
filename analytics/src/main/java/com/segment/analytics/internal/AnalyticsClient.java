@@ -30,6 +30,8 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import okhttp3.HttpUrl;
 import retrofit2.Call;
 import retrofit2.Response;
 
@@ -50,6 +52,7 @@ public class AnalyticsClient {
   }
 
   private final BlockingQueue<Message> messageQueue;
+  private final HttpUrl uploadUrl;
   private final SegmentService service;
   private final int size;
   private final int maximumRetries;
@@ -63,6 +66,7 @@ public class AnalyticsClient {
   private final AtomicBoolean isShutDown;
 
   public static AnalyticsClient create(
+      HttpUrl uploadUrl,
       SegmentService segmentService,
       int queueCapacity,
       int flushQueueSize,
@@ -75,6 +79,7 @@ public class AnalyticsClient {
       List<Callback> callbacks) {
     return new AnalyticsClient(
         new LinkedBlockingQueue<Message>(queueCapacity),
+        uploadUrl,
         segmentService,
         flushQueueSize,
         flushIntervalInMillis,
@@ -89,6 +94,7 @@ public class AnalyticsClient {
 
   AnalyticsClient(
       BlockingQueue<Message> messageQueue,
+      HttpUrl uploadUrl,
       SegmentService service,
       int maxQueueSize,
       long flushIntervalInMillis,
@@ -100,6 +106,7 @@ public class AnalyticsClient {
       List<Callback> callbacks,
       AtomicBoolean isShutDown) {
     this.messageQueue = messageQueue;
+    this.uploadUrl = uploadUrl;
     this.service = service;
     this.size = maxQueueSize;
     this.maximumRetries = maximumRetries;
@@ -355,7 +362,7 @@ public class AnalyticsClient {
       client.log.print(VERBOSE, "Uploading batch %s.", batch.sequence());
 
       try {
-        Call<UploadResponse> call = client.service.upload(batch);
+        Call<UploadResponse> call = client.service.upload(client.uploadUrl, batch);
         Response<UploadResponse> response = call.execute();
 
         if (response.isSuccessful()) {
