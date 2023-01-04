@@ -91,7 +91,7 @@ public class AnalyticsClient {
         new AtomicBoolean(false));
   }
 
-  AnalyticsClient(
+  public AnalyticsClient(
       BlockingQueue<Message> messageQueue,
       HttpUrl uploadUrl,
       SegmentService service,
@@ -134,11 +134,11 @@ public class AnalyticsClient {
   }
 
   /**
-   * Creating GSON object everytime we check the size seems costly, create one static instance
+   * Creating GSON object everytime we check the size seems costly
    *
-   * @return static gson instance
+   * @return gson instance
    */
-  public static Gson getGsonInstance() {
+  public Gson getGsonInstance() {
     if (gsonInstance == null) {
       gsonInstance = new Gson();
     }
