@@ -193,7 +193,7 @@ public class AnalyticsClient {
         } else {
           log.print(
               ERROR, "Message was above individual limit. MessageId: %s", message.messageId());
-          throw new InterruptedException(
+          throw new IllegalArgumentException(
               "Message was above individual limit. MessageId: " + message.messageId());
         }
       } else {

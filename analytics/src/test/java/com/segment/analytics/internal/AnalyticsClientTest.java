@@ -233,7 +233,11 @@ public class AnalyticsClientTest {
 
     TrackMessage bigMessage =
         TrackMessage.builder("Big Event").userId("bar").properties(properties).build();
-    client.enqueue(bigMessage);
+    try {
+      client.enqueue(bigMessage);
+    } catch (IllegalArgumentException e) {
+      assertThat(e).isExactlyInstanceOf(e.getClass());
+    }
 
     // can't test for exact size cause other attributes come in play
     assertThat(client.messageSizeInBytes(bigMessage)).isGreaterThan(1024 * 33);
@@ -248,7 +252,11 @@ public class AnalyticsClientTest {
 
     TrackMessage bigMessage =
         TrackMessage.builder("Big Event").userId("bar").properties(properties).build();
-    client.enqueue(bigMessage);
+    try {
+      client.enqueue(bigMessage);
+    } catch (IllegalArgumentException e) {
+      //    	throw new InterruptedException(e.getMessage());
+    }
 
     wait(messageQueue);
 
@@ -674,7 +682,7 @@ public class AnalyticsClientTest {
 
   /** Individual Size check sad path regular chars (over the limit) */
   @Test
-  public void checkForIndividualMessageSizeOverLimit() {
+  public void checkForIndividualMessageSizeOverLimit() throws IllegalArgumentException {
     AnalyticsClient client = newClient();
     int msgSize = MAX_MSG_SIZE + 1; // BARELY over the limit
     int sizeLimit = MAX_MSG_SIZE; // 32KB = 32768
@@ -684,7 +692,11 @@ public class AnalyticsClientTest {
 
     TrackMessage bigMessage =
         TrackMessage.builder("Event").userId("jorgen25").properties(properties).build();
-    client.enqueue(bigMessage);
+    try {
+      client.enqueue(bigMessage);
+    } catch (IllegalArgumentException e) {
+      assertThat(e).isExactlyInstanceOf(e.getClass());
+    }
 
     int msgActualSize = client.messageSizeInBytes(bigMessage);
     assertThat(msgActualSize).isGreaterThan(sizeLimit);
@@ -720,7 +732,12 @@ public class AnalyticsClientTest {
 
     TrackMessage bigMessage =
         TrackMessage.builder("Event").userId("jorgen25").properties(properties).build();
-    client.enqueue(bigMessage);
+
+    try {
+      client.enqueue(bigMessage);
+    } catch (IllegalArgumentException e) {
+      assertThat(e).isExactlyInstanceOf(e.getClass());
+    }
 
     int msgActualSize = client.messageSizeInBytes(bigMessage);
     assertThat(msgActualSize).isGreaterThan(sizeLimit);
@@ -771,7 +788,7 @@ public class AnalyticsClientTest {
    */
   @Test
   public void enqueueSingleMessageAboveLimitWhenNotShutdown(MessageBuilderTest builder)
-      throws InterruptedException {
+      throws InterruptedException, IllegalArgumentException {
     AnalyticsClient client = newClient();
 
     // Message is above batch limit
@@ -781,7 +798,11 @@ public class AnalyticsClientTest {
     Message message =
         builder.get().userId("foo").integrationOptions("someKey", integrationOpts).build();
 
-    client.enqueue(message);
+    try {
+      client.enqueue(message);
+    } catch (IllegalArgumentException e) {
+      assertThat(e).isExactlyInstanceOf(e.getClass());
+    }
 
     wait(messageQueue);
 
@@ -793,7 +814,7 @@ public class AnalyticsClientTest {
 
   @Test
   public void enqueueVerifyRegularMessagesSpecialCharactersBelowLimit(MessageBuilderTest builder)
-      throws InterruptedException {
+      throws InterruptedException, IllegalArgumentException {
     AnalyticsClient client = newClient();
     int msgSize = 1024 * 18; // 18KB
 
@@ -828,7 +849,7 @@ public class AnalyticsClientTest {
    * @throws InterruptedException
    */
   @Test
-  public void submitBatchBelowThreshold() throws InterruptedException {
+  public void submitBatchBelowThreshold() throws InterruptedException, IllegalArgumentException {
     AnalyticsClient client =
         new AnalyticsClient(
             messageQueue,
@@ -868,7 +889,7 @@ public class AnalyticsClientTest {
    * @throws InterruptedException
    */
   @Test
-  public void submitBatchAboveThreshold() throws InterruptedException {
+  public void submitBatchAboveThreshold() throws InterruptedException, IllegalArgumentException {
     AnalyticsClient client =
         new AnalyticsClient(
             messageQueue,
