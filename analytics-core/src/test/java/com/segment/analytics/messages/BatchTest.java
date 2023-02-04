@@ -17,13 +17,15 @@ import org.junit.runner.RunWith;
 @RunWith(BurstJUnit4.class)
 public class BatchTest {
 
+  private static final String writeKey = "writeKey";
+
   @Test
   public void create(TestUtils.MessageBuilderFactory factory) {
     Message message = factory.get().userId("userId").build();
     Map<String, String> context = ImmutableMap.of("foo", "bar");
     List<Message> messages = ImmutableList.of(message);
 
-    Batch batch = Batch.create(context, messages);
+    Batch batch = Batch.create(context, messages, writeKey);
 
     assertThat(batch.batch()).isEqualTo(messages);
     assertThat(batch.context()).isEqualTo(context);
@@ -40,7 +42,7 @@ public class BatchTest {
     Map<String, String> context = ImmutableMap.of("foo", "bar");
     List<Message> messages = ImmutableList.of(message);
 
-    Batch batch = Batch.create(context, messages);
+    Batch batch = Batch.create(context, messages, writeKey);
 
     assertThat(batch.sentAt()).isEqualTo(messages.get(0).sentAt());
   }
@@ -51,7 +53,7 @@ public class BatchTest {
     Map<String, String> context = ImmutableMap.of("foo", "bar");
     List<Message> messages = ImmutableList.of(message);
 
-    Batch batch = Batch.create(context, messages);
+    Batch batch = Batch.create(context, messages, writeKey);
 
     assertThat(batch.sentAt()).isEqualToIgnoringHours(new Date());
   }
@@ -62,8 +64,8 @@ public class BatchTest {
     Map<String, String> context = ImmutableMap.of("foo", "bar");
     List<Message> messages = ImmutableList.of(message);
 
-    Batch first = Batch.create(context, messages);
-    Batch second = Batch.create(context, messages);
+    Batch first = Batch.create(context, messages, writeKey);
+    Batch second = Batch.create(context, messages, writeKey);
 
     assertThat(first.sequence() + 1).isEqualTo(second.sequence());
   }

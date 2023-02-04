@@ -16,8 +16,7 @@ public class AnalyticsRequestInterceptorTest {
 
   @Test
   public void testInterceptor() throws IOException {
-    AnalyticsRequestInterceptor interceptor =
-        new AnalyticsRequestInterceptor("writeKey", "userAgent");
+    AnalyticsRequestInterceptor interceptor = new AnalyticsRequestInterceptor("userAgent");
 
     final Request request = new Request.Builder().url("https://api.segment.io").get().build();
 
@@ -25,7 +24,6 @@ public class AnalyticsRequestInterceptorTest {
         new ChainAdapter(request, mockConnection) {
           @Override
           public Response proceed(Request request) throws IOException {
-            assertThat(request.header("Authorization"), Is.is("Basic d3JpdGVLZXk6"));
             assertThat(request.header("User-Agent"), Is.is("userAgent"));
             return null;
           }
