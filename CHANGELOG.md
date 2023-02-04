@@ -1,3 +1,9 @@
+# Version 3.4.0 (Feb 04, 2023)
+- [Chore] Dependency upgrades
+- [New](https://github.com/segmentio/analytics-java/pull/408) Remove writeKey from header, add writeKey on payload(batch) 
+- [New](https://github.com/segmentio/analytics-java/pull/406) Change exception to identify the limited exceed for the message 
+- [New](https://github.com/segmentio/analytics-java/pull/400) Change method static to public to create a GSON instance 
+
 # Version 3.3.1 (Aug 11, 2022)
 - [Chore] Dependency upgrades
 - [New](https://github.com/segmentio/analytics-java/pull/345) Add option to sentAt field to be null
