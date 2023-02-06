@@ -413,7 +413,7 @@ public class Analytics {
       OkHttpClient.Builder builder =
           client
               .newBuilder()
-              .addInterceptor(new AnalyticsRequestInterceptor(writeKey, userAgent))
+              .addInterceptor(new AnalyticsRequestInterceptor(userAgent))
               .addInterceptor(interceptor);
 
       if (forceTlsV1) {
@@ -449,7 +449,8 @@ public class Analytics {
               log,
               threadFactory,
               networkExecutor,
-              callbacks);
+              callbacks,
+              writeKey);
 
       return new Analytics(analyticsClient, messageTransformers, messageInterceptors, log);
     }

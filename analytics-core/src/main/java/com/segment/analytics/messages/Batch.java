@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public abstract class Batch {
   private static final AtomicInteger SEQUENCE_GENERATOR = new AtomicInteger();
 
-  public static Batch create(Map<String, ?> context, List<Message> batch) {
+  public static Batch create(Map<String, ?> context, List<Message> batch, String writeKey) {
     Message sentAtNull =
         batch.stream().filter(message -> message.sentAt() != null).findAny().orElse(null);
 
@@ -20,7 +20,8 @@ public abstract class Batch {
         batch,
         sentAtNull == null ? new Date() : sentAtNull.sentAt(),
         context,
-        SEQUENCE_GENERATOR.incrementAndGet());
+        SEQUENCE_GENERATOR.incrementAndGet(),
+        writeKey);
   }
 
   public abstract List<Message> batch();
@@ -30,4 +31,6 @@ public abstract class Batch {
   public abstract Map<String, ?> context();
 
   public abstract int sequence();
+
+  public abstract String writeKey();
 }

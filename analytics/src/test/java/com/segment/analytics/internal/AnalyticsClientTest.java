@@ -68,6 +68,7 @@ public class AnalyticsClientTest {
       MAX_MSG_SIZE
           - 200; // Once we create msg object with this size it barely below 32 threshold so good
   // for tests
+  private static String writeKey = "writeKey";
 
   Log log = Log.NONE;
 
@@ -103,7 +104,8 @@ public class AnalyticsClientTest {
         threadFactory,
         networkExecutor,
         Collections.singletonList(callback),
-        isShutDown);
+        isShutDown,
+        writeKey);
   }
 
   @Test
@@ -290,7 +292,8 @@ public class AnalyticsClientTest {
             threadFactory,
             networkExecutor,
             Collections.singletonList(callback),
-            isShutDown);
+            isShutDown,
+            writeKey);
 
     Map<String, String> properties = new HashMap<String, String>();
 
@@ -357,7 +360,8 @@ public class AnalyticsClientTest {
   }
 
   static Batch batchFor(Message message) {
-    return Batch.create(Collections.<String, Object>emptyMap(), Collections.singletonList(message));
+    return Batch.create(
+        Collections.<String, Object>emptyMap(), Collections.singletonList(message), writeKey);
   }
 
   @Test
@@ -863,7 +867,8 @@ public class AnalyticsClientTest {
             threadFactory,
             networkExecutor,
             Collections.singletonList(callback),
-            isShutDown);
+            isShutDown,
+            writeKey);
 
     Map<String, String> properties = new HashMap<String, String>();
     properties.put("property3", generateDataOfSizeSpecialChars(MAX_MSG_SIZE, true));
@@ -903,7 +908,8 @@ public class AnalyticsClientTest {
             threadFactory,
             networkExecutor,
             Collections.singletonList(callback),
-            isShutDown);
+            isShutDown,
+            writeKey);
 
     Map<String, String> properties = new HashMap<String, String>();
     properties.put("property3", generateDataOfSizeSpecialChars(MAX_MSG_SIZE, true));
@@ -942,7 +948,8 @@ public class AnalyticsClientTest {
             threadFactory,
             networkExecutor,
             Collections.singletonList(callback),
-            isShutDown);
+            isShutDown,
+            writeKey);
 
     Map<String, String> properties = new HashMap<String, String>();
     properties.put("property3", generateDataOfSizeSpecialChars(1024 * 8, true));

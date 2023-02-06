@@ -21,6 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -40,6 +41,7 @@ public class AnalyticsClient {
   private static final int MSG_MAX_SIZE = 1024 * 32;
   private static final Charset ENCODING = StandardCharsets.UTF_8;
   private static Gson gsonInstance;
+  private static final String instanceId = UUID.randomUUID().toString();
 
   static {
     Map<String, String> library = new LinkedHashMap<>();
@@ -47,6 +49,7 @@ public class AnalyticsClient {
     library.put("version", AnalyticsVersion.get());
     Map<String, Object> context = new LinkedHashMap<>();
     context.put("library", Collections.unmodifiableMap(library));
+    context.put("instanceId", instanceId);
     CONTEXT = Collections.unmodifiableMap(context);
   }
 
@@ -63,6 +66,7 @@ public class AnalyticsClient {
   private final ExecutorService looperExecutor;
   private final ScheduledExecutorService flushScheduler;
   private final AtomicBoolean isShutDown;
+  private final String writeKey;
 
   public static AnalyticsClient create(
       HttpUrl uploadUrl,
@@ -75,7 +79,8 @@ public class AnalyticsClient {
       Log log,
       ThreadFactory threadFactory,
       ExecutorService networkExecutor,
-      List<Callback> callbacks) {
+      List<Callback> callbacks,
+      String writeKey) {
     return new AnalyticsClient(
         new LinkedBlockingQueue<Message>(queueCapacity),
         uploadUrl,
@@ -88,7 +93,8 @@ public class AnalyticsClient {
         threadFactory,
         networkExecutor,
         callbacks,
-        new AtomicBoolean(false));
+        new AtomicBoolean(false),
+        writeKey);
   }
 
   public AnalyticsClient(
@@ -103,7 +109,8 @@ public class AnalyticsClient {
       ThreadFactory threadFactory,
       ExecutorService networkExecutor,
       List<Callback> callbacks,
-      AtomicBoolean isShutDown) {
+      AtomicBoolean isShutDown,
+      String writeKey) {
     this.messageQueue = messageQueue;
     this.uploadUrl = uploadUrl;
     this.service = service;
@@ -115,6 +122,7 @@ public class AnalyticsClient {
     this.looperExecutor = Executors.newSingleThreadExecutor(threadFactory);
     this.networkExecutor = networkExecutor;
     this.isShutDown = isShutDown;
+    this.writeKey = writeKey;
 
     this.currentQueueSizeInBytes = 0;
 
@@ -296,7 +304,7 @@ public class AnalyticsClient {
           Boolean isOverflow = messages.size() >= size;
 
           if (!messages.isEmpty() && (isOverflow || isBlockingSignal || batchSizeLimitReached)) {
-            Batch batch = Batch.create(CONTEXT, new ArrayList<>(messages));
+            Batch batch = Batch.create(CONTEXT, new ArrayList<>(messages), writeKey);
             log.print(
                 VERBOSE,
                 "Batching %s message(s) into batch %s.",
