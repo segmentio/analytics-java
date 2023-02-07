@@ -11,7 +11,7 @@
 
   <groupId>com.segment.analytics.java</groupId>
   <artifactId>analytics-parent</artifactId>
-  <version>3.3.2-SNAPSHOT</version>
+  <version>3.4.0</version>
   <packaging>pom</packaging>
   <name>Analytics for Java (Parent)</name>
   <description>The hassle-free way to add analytics to your Android app.</description>
@@ -53,7 +53,7 @@
     <url>https://github.com/segmentio/analytics-java/</url>
     <connection>scm:git:https://github.com/segmentio/analytics-java.git</connection>
     <developerConnection>scm:git:git@github.com:segmentio/analytics-java.git</developerConnection>
-    <tag>HEAD</tag>
+    <tag>analytics-parent-3.4.0</tag>
   </scm>
 
   <issueManagement>
