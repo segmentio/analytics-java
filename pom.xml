@@ -31,7 +31,7 @@
     <kotlin.version>1.7.20</kotlin.version>
     <spotless.version>2.27.2</spotless.version>
     <retrofit.version>2.9.0</retrofit.version>
-    <auto.version>1.10</auto.version>
+    <auto.version>1.10.1</auto.version>
 
     <findbugs.version>3.0.1</findbugs.version>
     <gson.version>2.9.1</gson.version>
@@ -189,7 +189,7 @@
                 <version>1.5</version>
                 <style>GOOGLE</style>
               </googleJavaFormat>
-              <removeUnusedImports />
+              <removeUnusedImports/>
             </java>
           </configuration>
         </plugin>
@@ -229,7 +229,7 @@
                     </goals>
                   </pluginExecutionFilter>
                   <action>
-                    <ignore />
+                    <ignore/>
                   </action>
                 </pluginExecution>
               </pluginExecutions>
@@ -276,7 +276,7 @@
             <format>html</format>
             <format>xml</format>
           </formats>
-          <check />
+          <check/>
         </configuration>
       </plugin>
       <plugin>
