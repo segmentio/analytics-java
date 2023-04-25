@@ -25,3 +25,17 @@ In your Spring Boot configuration (`application.properties`, environment, or
 similar), provide the property `segment.analytics.writeKey`. The
 autoconfiguration will register an `Analytics` bean in the Spring context
 ready for use.
+
+=== Customization
+
+To customize the `Analytics` client you can define a `SegmentAnalyticsCustomizer` bean,
+which receives the builder instance.
+
+For example if you want to use a regional endpoint you can define a customizer like so:
+
+```java
+@Bean
+SegmentAnalyticsCustomizer segmentAnalyticsCustomizer() {
+    return builder -> builder.endpoint("events.eu1.segmentapis.com");
+}
+```
