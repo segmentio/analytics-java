@@ -1,6 +1,7 @@
 package com.segment.analytics.autoconfigure;
 
 import com.segment.analytics.Analytics;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -20,7 +21,9 @@ public class SegmentAnalyticsAutoConfiguration {
   @Autowired private SegmentProperties properties;
 
   @Bean
-  public Analytics segmentAnalytics() {
-    return Analytics.builder(properties.getWriteKey()).build();
+  public Analytics segmentAnalytics(ObjectProvider<SegmentAnalyticsCustomizer> customizerProvider) {
+    Analytics.Builder builder = Analytics.builder(properties.getWriteKey());
+    customizerProvider.orderedStream().forEach((customizer) -> customizer.customize(builder));
+    return builder.build();
   }
 }
