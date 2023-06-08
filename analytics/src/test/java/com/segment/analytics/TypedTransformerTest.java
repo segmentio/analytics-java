@@ -1,7 +1,7 @@
 package com.segment.analytics;
 
+import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 
 import com.segment.analytics.messages.AliasMessage;
 import com.segment.analytics.messages.GroupMessage;
@@ -18,26 +18,26 @@ public class TypedTransformerTest {
 
     AliasMessage.Builder alias = AliasMessage.builder("foo").userId("bar");
     transformer.transform(alias);
-    verify(transformer).alias(alias);
+    assertFalse(transformer.alias(alias));
 
     GroupMessage.Builder group = GroupMessage.builder("foo").userId("bar");
     transformer.transform(group);
-    verify(transformer).group(group);
+    assertFalse(transformer.group(group));
 
     IdentifyMessage.Builder identify = IdentifyMessage.builder().userId("bar");
     transformer.transform(identify);
-    verify(transformer).identify(identify);
+    assertFalse(transformer.identify(identify));
 
     ScreenMessage.Builder screen = ScreenMessage.builder("foo").userId("bar");
     transformer.transform(screen);
-    verify(transformer).screen(screen);
+    assertFalse(transformer.screen(screen));
 
     PageMessage.Builder page = PageMessage.builder("foo").userId("bar");
     transformer.transform(page);
-    verify(transformer).page(page);
+    assertFalse(transformer.page(page));
 
     TrackMessage.Builder track = TrackMessage.builder("foo").userId("bar");
     transformer.transform(track);
-    verify(transformer).track(track);
+    assertFalse(transformer.track(track));
   }
 }
