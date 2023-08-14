@@ -40,7 +40,7 @@ public class AnalyticsClient {
   private static final int BATCH_MAX_SIZE = 1024 * 500;
   private static final int MSG_MAX_SIZE = 1024 * 32;
   private static final Charset ENCODING = StandardCharsets.UTF_8;
-  private static Gson gsonInstance;
+  private Gson gsonInstance;
   private static final String instanceId = UUID.randomUUID().toString();
 
   static {
@@ -80,7 +80,8 @@ public class AnalyticsClient {
       ThreadFactory threadFactory,
       ExecutorService networkExecutor,
       List<Callback> callbacks,
-      String writeKey) {
+      String writeKey,
+      Gson gsonInstance) {
     return new AnalyticsClient(
         new LinkedBlockingQueue<Message>(queueCapacity),
         uploadUrl,
@@ -94,7 +95,8 @@ public class AnalyticsClient {
         networkExecutor,
         callbacks,
         new AtomicBoolean(false),
-        writeKey);
+        writeKey,
+        gsonInstance);
   }
 
   public AnalyticsClient(
@@ -110,7 +112,8 @@ public class AnalyticsClient {
       ExecutorService networkExecutor,
       List<Callback> callbacks,
       AtomicBoolean isShutDown,
-      String writeKey) {
+      String writeKey,
+      Gson gsonInstance) {
     this.messageQueue = messageQueue;
     this.uploadUrl = uploadUrl;
     this.service = service;
@@ -123,6 +126,7 @@ public class AnalyticsClient {
     this.networkExecutor = networkExecutor;
     this.isShutDown = isShutDown;
     this.writeKey = writeKey;
+    this.gsonInstance = gsonInstance;
 
     this.currentQueueSizeInBytes = 0;
 
@@ -141,24 +145,10 @@ public class AnalyticsClient {
         TimeUnit.MILLISECONDS);
   }
 
-  /**
-   * Creating GSON object everytime we check the size seems costly
-   *
-   * @return gson instance
-   */
-  public Gson getGsonInstance() {
-    if (gsonInstance == null) {
-      gsonInstance = new Gson();
-    }
-    return gsonInstance;
-  }
-
   public int messageSizeInBytes(Message message) {
-    Gson gson = getGsonInstance();
-    String stringifiedMessage = gson.toJson(message);
+    String stringifiedMessage = gsonInstance.toJson(message);
 
-    int sizeInBytes = stringifiedMessage.getBytes(ENCODING).length;
-    return sizeInBytes;
+    return stringifiedMessage.getBytes(ENCODING).length;
   }
 
   private Boolean isBackPressuredAfterSize(int incomingSize) {
@@ -269,7 +259,7 @@ public class AnalyticsClient {
       LinkedList<Message> messages = new LinkedList<>();
       AtomicInteger currentBatchSize = new AtomicInteger();
       boolean batchSizeLimitReached = false;
-      int contextSize = getGsonInstance().toJson(CONTEXT).getBytes(ENCODING).length;
+      int contextSize = gsonInstance.toJson(CONTEXT).getBytes(ENCODING).length;
       try {
         while (!stop) {
           Message message = messageQueue.take();

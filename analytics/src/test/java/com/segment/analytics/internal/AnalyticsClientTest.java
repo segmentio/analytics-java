@@ -16,6 +16,7 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 
+import com.google.gson.Gson;
 import com.segment.analytics.Callback;
 import com.segment.analytics.Log;
 import com.segment.analytics.TestUtils.MessageBuilderTest;
@@ -105,7 +106,8 @@ public class AnalyticsClientTest {
         networkExecutor,
         Collections.singletonList(callback),
         isShutDown,
-        writeKey);
+        writeKey,
+        new Gson());
   }
 
   @Test
@@ -293,7 +295,8 @@ public class AnalyticsClientTest {
             networkExecutor,
             Collections.singletonList(callback),
             isShutDown,
-            writeKey);
+            writeKey,
+            new Gson());
 
     Map<String, String> properties = new HashMap<String, String>();
 
@@ -868,7 +871,8 @@ public class AnalyticsClientTest {
             networkExecutor,
             Collections.singletonList(callback),
             isShutDown,
-            writeKey);
+            writeKey,
+            new Gson());
 
     Map<String, String> properties = new HashMap<String, String>();
     properties.put("property3", generateDataOfSizeSpecialChars(MAX_MSG_SIZE, true));
@@ -909,7 +913,8 @@ public class AnalyticsClientTest {
             networkExecutor,
             Collections.singletonList(callback),
             isShutDown,
-            writeKey);
+            writeKey,
+            new Gson());
 
     Map<String, String> properties = new HashMap<String, String>();
     properties.put("property3", generateDataOfSizeSpecialChars(MAX_MSG_SIZE, true));
@@ -949,7 +954,8 @@ public class AnalyticsClientTest {
             networkExecutor,
             Collections.singletonList(callback),
             isShutDown,
-            writeKey);
+            writeKey,
+            new Gson());
 
     Map<String, String> properties = new HashMap<String, String>();
     properties.put("property3", generateDataOfSizeSpecialChars(1024 * 8, true));
