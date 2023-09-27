@@ -1,3 +1,6 @@
+# Version 3.5.0 (Sept 27, 2023)
+- [New](https://github.com/segmentio/analytics-java/pull/446) Allow GsonBuilder to be passed in and used through Analytics and AnalyticsClient
+
 # Version 3.4.0 (Feb 04, 2023)
 - [Chore] Dependency upgrades
 - [New](https://github.com/segmentio/analytics-java/pull/408) Remove writeKey from header, add writeKey on payload(batch) 
