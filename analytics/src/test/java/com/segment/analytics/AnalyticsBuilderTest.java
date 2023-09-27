@@ -7,6 +7,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
+import com.google.gson.GsonBuilder;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -164,6 +165,34 @@ public class AnalyticsBuilderTest {
   @Test
   public void buildsWithValidInterceptor() {
     Analytics analytics = builder.messageInterceptor(mock(MessageInterceptor.class)).build();
+    assertThat(analytics).isNotNull();
+  }
+
+  @Test
+  public void nullGsonBuilder() {
+    try {
+      builder.gsonBuilder(null);
+      fail("Should fail for null gsonBuilder");
+    } catch (NullPointerException e) {
+      assertThat(e).hasMessage("Null gsonBuilder");
+    }
+  }
+
+  @Test
+  public void duplicateGsonBuilder() {
+    GsonBuilder gsonBuilder = new GsonBuilder();
+    try {
+      builder.gsonBuilder(gsonBuilder).gsonBuilder(gsonBuilder);
+      fail("Should fail for duplicate gsonBuilder");
+    } catch (IllegalStateException e) {
+      assertThat(e).hasMessage("gsonBuilder is already registered.");
+    }
+  }
+
+  @Test
+  public void buildsWithValidGsonBuilder() {
+    GsonBuilder gsonBuilder = new GsonBuilder();
+    Analytics analytics = builder.gsonBuilder(gsonBuilder).build();
     assertThat(analytics).isNotNull();
   }
 

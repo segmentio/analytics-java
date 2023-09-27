@@ -149,6 +149,7 @@ public class Analytics {
     private List<Callback> callbacks;
     private int queueCapacity;
     private boolean forceTlsV1 = false;
+    private GsonBuilder gsonBuilder;
 
     Builder(String writeKey) {
       if (writeKey == null || writeKey.trim().length() == 0) {
@@ -248,6 +249,20 @@ public class Analytics {
       this.queueCapacity = capacity;
       return this;
     }
+
+    public Builder gsonBuilder(GsonBuilder gsonBuilder) {
+      if (gsonBuilder == null) {
+        throw new NullPointerException("Null gsonBuilder");
+      }
+
+      if (this.gsonBuilder != null) {
+        throw new IllegalStateException("gsonBuilder is already registered.");
+      }
+
+      this.gsonBuilder = gsonBuilder;
+      return this;
+    }
+
     /** Set the queueSize at which flushes should be triggered. */
     @Beta
     public Builder flushQueueSize(int flushQueueSize) {
@@ -341,11 +356,15 @@ public class Analytics {
 
     /** Create a {@link Analytics} client. */
     public Analytics build() {
-      Gson gson =
-          new GsonBuilder() //
-              .registerTypeAdapterFactory(new AutoValueAdapterFactory()) //
-              .registerTypeAdapter(Date.class, new ISO8601DateAdapter()) //
-              .create();
+      if (gsonBuilder == null) {
+        gsonBuilder = new GsonBuilder();
+      }
+
+      gsonBuilder
+          .registerTypeAdapterFactory(new AutoValueAdapterFactory())
+          .registerTypeAdapter(Date.class, new ISO8601DateAdapter());
+
+      Gson gson = gsonBuilder.create();
 
       if (endpoint == null) {
         if (uploadURL != null) {
@@ -450,7 +469,8 @@ public class Analytics {
               threadFactory,
               networkExecutor,
               callbacks,
-              writeKey);
+              writeKey,
+              gson);
 
       return new Analytics(analyticsClient, messageTransformers, messageInterceptors, log);
     }
