@@ -3,6 +3,10 @@
 analytics-java
 ==============
 
+### 🎉 Flagship 🎉
+This library is one of Segment’s most popular Flagship libraries. It is actively maintained by Segment, benefitting from new feature releases and ongoing support.
+
+
 analytics-java is a Java client for [Segment](https://segment.com)
 
 <div align="center">
