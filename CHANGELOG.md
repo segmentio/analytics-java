@@ -1,6 +1,7 @@
 # Verion 3.5.1  (Feb 21, 2024)
 - [Chore] Dependency upgrades
 - [New](https://github.com/segmentio/analytics-java/pull/471) BlockingFlush, deregister parties upon message completion
+- [New](https://github.com/segmentio/analytics-java/pull/476) Added wk size to message size calc along with a buffer
 
 # Version 3.5.0 (Sept 27, 2023)
 - [New](https://github.com/segmentio/analytics-java/pull/446) Allow GsonBuilder to be passed in and used through Analytics and AnalyticsClient
