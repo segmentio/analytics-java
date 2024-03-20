@@ -154,7 +154,8 @@ public class AnalyticsClient {
   private Boolean isBackPressuredAfterSize(int incomingSize) {
     int POISON_BYTE_SIZE = messageSizeInBytes(FlushMessage.POISON);
     int sizeAfterAdd = this.currentQueueSizeInBytes + incomingSize + POISON_BYTE_SIZE;
-    return sizeAfterAdd >= Math.min(this.maximumQueueByteSize, BATCH_MAX_SIZE);
+    // Leave a 10% buffer since the unsynchronized enqueue could add multiple at a time
+    return sizeAfterAdd >= Math.min(this.maximumQueueByteSize, BATCH_MAX_SIZE) * 0.9;
   }
 
   public boolean offer(Message message) {
@@ -176,8 +177,6 @@ public class AnalyticsClient {
         // @jorgen25 check if message is below 32kb limit for individual messages, no need to check
         // for extra characters
         if (messageByteSize <= MSG_MAX_SIZE) {
-          //          messageQueue.put(message);
-
           if (isBackPressuredAfterSize(messageByteSize)) {
             this.currentQueueSizeInBytes = messageByteSize;
             messageQueue.put(FlushMessage.POISON);
@@ -443,13 +442,13 @@ public class AnalyticsClient {
      * "userId":"jorgen25","integrations":{"someKey":{"data":"aaaaa"}},"previousId":"foo"},{"type":"alias",
      * "messageId":"57b0ceb4-a1cf-4599-9fba-0a44c7041004","timestamp":"Nov 18, 2021, 2:45:07 PM",
      * "userId":"jorgen25","integrations":{"someKey":{"data":"aaaaa"}},"previousId":"foo"}],
-     * "sentAt":"Nov 18, 2021, 2:45:07
-     * PM","context":{"library":{"name":"analytics-java","version":"3.1.3"}},"sequence":1}
+     * "sentAt":"Nov 18, 2021, 2:45:07 PM","context":{"library":{"name":"analytics-java",
+     * "version":"3.1.3"}},"sequence":1,"writeKey":"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"}
      *
-     * <p>total size of batch : 886
+     * <p>total size of batch : 932
      *
      * <p>BREAKDOWN: {"batch":[MESSAGE1,MESSAGE2,MESSAGE3,MESSAGE4],"sentAt":"MMM dd, yyyy, HH:mm:ss
-     * tt","context":CONTEXT,"sequence":1}
+     * tt","context":CONTEXT,"sequence":1,"writeKey":"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"}
      *
      * <p>so we need to account for: 1 -message size: 189 * 4 = 756 2 -context object size = 55 in
      * this sample -> 756 + 55 = 811 3 -Metadata (This has the sent data/sequence characters) +
@@ -463,12 +462,14 @@ public class AnalyticsClient {
      * <p>so formulae to determine the expected default size of the batch is
      *
      * @return: defaultSize = messages size + context size + metadata size + comma number + sequence
-     *     digits
+     *     digits + writekey + buffer
      * @return
      */
     private static int getBatchDefaultSize(int contextSize, int currentMessageNumber) {
-      // sample data: {"batch":[],"sentAt":"MMM dd, yyyy, HH:mm:ss tt","context":,"sequence":1} - 73
-      int metadataExtraCharsSize = 73;
+      // sample data: {"batch":[],"sentAt":"MMM dd, yyyy, HH:mm:ss tt","context":,"sequence":1,
+      //   "writeKey":"XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"} - 119
+      // Don't need to squeeze everything possible into a batch, adding a buffer
+      int metadataExtraCharsSize = 119 + 1024;
       int commaNumber = currentMessageNumber - 1;
 
       return contextSize
