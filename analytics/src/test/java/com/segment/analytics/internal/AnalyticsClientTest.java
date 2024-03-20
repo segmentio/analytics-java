@@ -875,7 +875,7 @@ public class AnalyticsClientTest {
             new Gson());
 
     Map<String, String> properties = new HashMap<String, String>();
-    properties.put("property3", generateDataOfSizeSpecialChars(((int)(MAX_MSG_SIZE * 0.9)), true));
+    properties.put("property3", generateDataOfSizeSpecialChars(((int) (MAX_MSG_SIZE * 0.9)), true));
 
     for (int i = 0; i < 15; i++) {
       TrackMessage bigMessage =
