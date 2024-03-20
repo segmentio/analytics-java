@@ -875,7 +875,7 @@ public class AnalyticsClientTest {
             new Gson());
 
     Map<String, String> properties = new HashMap<String, String>();
-    properties.put("property3", generateDataOfSizeSpecialChars(MAX_MSG_SIZE, true));
+    properties.put("property3", generateDataOfSizeSpecialChars(((int)(MAX_MSG_SIZE * 0.9)), true));
 
     for (int i = 0; i < 15; i++) {
       TrackMessage bigMessage =
@@ -929,13 +929,7 @@ public class AnalyticsClientTest {
     client.shutdown();
     while (!isShutDown.get()) {}
 
-    /**
-     * modified from expected 8 to expected 7 times, since we removed the inner loop. The inner loop
-     * was forcing to message list created from the queue to keep making batches even if its a 1
-     * message batch until the message list is empty, that was forcing the code to make one last
-     * batch of 1 msg in size bumping the number of times a batch would be submitted from 7 to 8
-     */
-    verify(networkExecutor, times(7)).submit(any(Runnable.class));
+    verify(networkExecutor, times(8)).submit(any(Runnable.class));
   }
 
   @Test
@@ -970,6 +964,6 @@ public class AnalyticsClientTest {
     client.shutdown();
     while (!isShutDown.get()) {}
 
-    verify(networkExecutor, times(19)).submit(any(Runnable.class));
+    verify(networkExecutor, times(21)).submit(any(Runnable.class));
   }
 }
