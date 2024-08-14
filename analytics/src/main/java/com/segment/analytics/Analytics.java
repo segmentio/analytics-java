@@ -13,7 +13,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -45,6 +47,7 @@ public class Analytics {
   private final List<MessageTransformer> messageTransformers;
   private final List<MessageInterceptor> messageInterceptors;
   private final Log log;
+  private Map<String, Object> externalContext;
 
   Analytics(
       AnalyticsClient client,
@@ -55,6 +58,7 @@ public class Analytics {
     this.messageTransformers = messageTransformers;
     this.messageInterceptors = messageInterceptors;
     this.log = log;
+    this.externalContext = null;
   }
 
   /**
@@ -114,7 +118,11 @@ public class Analytics {
         return null;
       }
     }
+
+    Map<String, Object> newContext = this.existExternalContext(builder.build());
+    builder.context(newContext);
     Message message = builder.build();
+
     for (MessageInterceptor messageInterceptor : messageInterceptors) {
       message = messageInterceptor.intercept(message);
       if (message == null) {
@@ -123,6 +131,27 @@ public class Analytics {
       }
     }
     return message;
+  }
+
+  private void addExternalContext(String contextKey, Object contextValue) {
+    this.externalContext = new HashMap<>();
+    this.externalContext.put(contextKey, contextValue);
+  }
+
+  private Map<String, Object> existExternalContext(Message message) {
+
+    // Retrieve the existing context if it exists
+    Map<String, ?> existingContext = message.context();
+    if (existingContext == null) {
+      existingContext = new HashMap<>();
+    }
+
+    // Augment the existing context with new context
+    Map<String, Object> newContext = new HashMap<>(existingContext);
+    if (this.externalContext != null) {
+      newContext.putAll(this.externalContext);
+    }
+    return newContext;
   }
 
   /** Fluent API for creating {@link Analytics} instances. */
