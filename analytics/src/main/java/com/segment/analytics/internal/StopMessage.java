@@ -1,10 +1,10 @@
 package com.segment.analytics.internal;
 
 import com.segment.analytics.messages.Message;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.util.Date;
 import java.util.Map;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 class StopMessage implements Message {
   static final StopMessage STOP = new StopMessage();
