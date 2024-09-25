@@ -2,9 +2,9 @@ package com.segment.analytics.messages;
 
 import com.google.auto.value.AutoValue;
 import com.segment.analytics.gson.AutoGson;
+import jakarta.annotation.Nullable;
 import java.util.Date;
 import java.util.Map;
-import javax.annotation.Nullable;
 
 /**
  * The group API call is how you associate an individual user with a group—be it a company,

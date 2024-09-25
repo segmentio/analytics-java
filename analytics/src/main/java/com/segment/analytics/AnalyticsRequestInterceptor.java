@@ -1,7 +1,7 @@
 package com.segment.analytics;
 
+import jakarta.annotation.Nonnull;
 import java.io.IOException;
-import javax.annotation.Nonnull;
 import okhttp3.Interceptor;
 import okhttp3.Request;
 
