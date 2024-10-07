@@ -39,7 +39,7 @@
     <logging.version>4.10.0</logging.version>
     <guava.version>33.3.0-jre</guava.version>
     <backo.version>1.0.0</backo.version>
-    <spring.boot.version>2.7.5</spring.boot.version>
+    <spring.boot.version>3.3.4</spring.boot.version>
     <docopt.version>0.6.0.20150202</docopt.version>
 
     <!-- Test Dependencies -->
