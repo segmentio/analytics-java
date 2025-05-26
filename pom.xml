@@ -45,7 +45,7 @@
     <!-- Test Dependencies -->
     <junit.version>4.13.2</junit.version>
     <burst.version>1.2.0</burst.version>
-    <mockito.version>4.11.0</mockito.version>
+    <mockito.version>5.18.0</mockito.version>
     <assertj.version>3.24.2</assertj.version>
   </properties>
 
