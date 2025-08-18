@@ -16,6 +16,7 @@
 package com.segment.analytics.gson;
 
 import com.google.gson.JsonParseException;
+import java.time.Instant;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -277,4 +278,10 @@ final class Iso8601Utils {
     }
     return string.length();
   }
+
+    /** Returns {@code date} formatted as yyyy-MM-ddThh:mm:ss.sssZ */
+    static String format(Instant instant) {
+        // Format the instant
+        return String.valueOf(instant.getEpochSecond());
+    }
 }
