@@ -279,9 +279,9 @@ final class Iso8601Utils {
     return string.length();
   }
 
-    /** Returns {@code date} formatted as yyyy-MM-ddThh:mm:ss.sssZ */
-    static String format(Instant instant) {
-        // Format the instant
-        return String.valueOf(instant.getEpochSecond());
-    }
+  /** Returns {@code date} formatted as yyyy-MM-ddThh:mm:ss.sssZ */
+  static String format(Instant instant) {
+    // Format the instant
+    return String.valueOf(instant.getEpochSecond());
+  }
 }
