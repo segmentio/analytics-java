@@ -11,7 +11,7 @@
 
   <groupId>com.segment.analytics.java</groupId>
   <artifactId>analytics-parent</artifactId>
-  <version>3.5.3-SNAPSHOT</version>
+  <version>3.5.2-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Analytics for Java (Parent)</name>
   <description>The hassle-free way to add analytics to your Android app.</description>
