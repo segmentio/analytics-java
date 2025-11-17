@@ -234,9 +234,9 @@ public class AnalyticsClient {
   }
 
   /**
-   * Wait for the looper to complete processing all messages before proceeding with shutdown.
-   * This prevents the race condition where the network executor is shut down before the looper
-   * finishes submitting all batches.
+   * Wait for the looper to complete processing all messages before proceeding with shutdown. This
+   * prevents the race condition where the network executor is shut down before the looper finishes
+   * submitting all batches.
    */
   private void waitForLooperCompletion() {
     if (looperFuture != null) {
@@ -333,8 +333,10 @@ public class AnalyticsClient {
               networkExecutor.submit(
                   BatchUploadTask.create(AnalyticsClient.this, batch, maximumRetries));
             } catch (RejectedExecutionException e) {
-              log.print(ERROR, e, 
-                  "Failed to submit batch %s to network executor during shutdown. Batch will be lost.", 
+              log.print(
+                  ERROR,
+                  e,
+                  "Failed to submit batch %s to network executor during shutdown. Batch will be lost.",
                   batch.sequence());
               // Notify callbacks about the failure
               for (Message msg : batch.batch()) {
