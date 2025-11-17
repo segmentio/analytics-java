@@ -25,7 +25,9 @@ import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -67,6 +69,7 @@ public class AnalyticsClient {
   private final ScheduledExecutorService flushScheduler;
   private final AtomicBoolean isShutDown;
   private final String writeKey;
+  private volatile Future<?> looperFuture;
 
   public static AnalyticsClient create(
       HttpUrl uploadUrl,
@@ -130,7 +133,9 @@ public class AnalyticsClient {
 
     this.currentQueueSizeInBytes = 0;
 
-    if (!isShutDown.get()) looperExecutor.submit(new Looper());
+    if (!isShutDown.get()) {
+      this.looperFuture = looperExecutor.submit(new Looper());
+    }
 
     flushScheduler = Executors.newScheduledThreadPool(1, threadFactory);
     flushScheduler.scheduleAtFixedRate(
@@ -218,11 +223,36 @@ public class AnalyticsClient {
       // we can shutdown the flush scheduler without worrying
       flushScheduler.shutdownNow();
 
+      // Wait for the looper to complete processing before shutting down executors
+      waitForLooperCompletion();
       shutdownAndWait(looperExecutor, "looper");
       shutdownAndWait(networkExecutor, "network");
 
       log.print(
           VERBOSE, "Analytics client shut down in %s ms", (System.currentTimeMillis() - start));
+    }
+  }
+
+  /**
+   * Wait for the looper to complete processing all messages before proceeding with shutdown.
+   * This prevents the race condition where the network executor is shut down before the looper
+   * finishes submitting all batches.
+   */
+  private void waitForLooperCompletion() {
+    if (looperFuture != null) {
+      try {
+        // Wait for the looper to complete processing the STOP message and finish
+        // Use a reasonable timeout to avoid hanging indefinitely
+        looperFuture.get(5, TimeUnit.SECONDS);
+        log.print(VERBOSE, "Looper completed successfully.");
+      } catch (Exception e) {
+        log.print(ERROR, e, "Error waiting for looper to complete: %s", e.getMessage());
+        // Cancel the looper if it's taking too long or if there's an error
+        if (!looperFuture.isDone()) {
+          looperFuture.cancel(true);
+          log.print(VERBOSE, "Looper was cancelled due to timeout or error.");
+        }
+      }
     }
   }
 
@@ -299,8 +329,20 @@ public class AnalyticsClient {
                 "Batching %s message(s) into batch %s.",
                 batch.batch().size(),
                 batch.sequence());
-            networkExecutor.submit(
-                BatchUploadTask.create(AnalyticsClient.this, batch, maximumRetries));
+            try {
+              networkExecutor.submit(
+                  BatchUploadTask.create(AnalyticsClient.this, batch, maximumRetries));
+            } catch (RejectedExecutionException e) {
+              log.print(ERROR, e, 
+                  "Failed to submit batch %s to network executor during shutdown. Batch will be lost.", 
+                  batch.sequence());
+              // Notify callbacks about the failure
+              for (Message msg : batch.batch()) {
+                for (Callback callback : callbacks) {
+                  callback.failure(msg, e);
+                }
+              }
+            }
 
             currentBatchSize.set(0);
             messages.clear();
