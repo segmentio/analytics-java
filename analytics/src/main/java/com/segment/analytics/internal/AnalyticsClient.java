@@ -34,7 +34,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import okhttp3.HttpUrl;
-import org.springframework.util.StringUtils;
 import retrofit2.Call;
 import retrofit2.Response;
 
