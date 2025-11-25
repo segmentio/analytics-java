@@ -234,8 +234,7 @@ public class AnalyticsClient {
   }
 
   /**
-   * Wait for the looper to complete processing all messages before proceeding with shutdown. This
-   * prevents the race condition where the network executor is shut down before the looper finishes
+   * Wait for the looper to complete processing all messages before proceedin with shutdown. This prevents the race condition where the network executor is shut down before the looper finishes
    * submitting all batches.
    */
   private void waitForLooperCompletion() {
@@ -257,18 +256,38 @@ public class AnalyticsClient {
   }
 
   public void shutdownAndWait(ExecutorService executor, String name) {
+    boolean isLooperExecutor = name != null && name.equalsIgnoreCase("looper");
     try {
       executor.shutdown();
-      final boolean executorTerminated = executor.awaitTermination(1, TimeUnit.SECONDS);
+      boolean terminated = executor.awaitTermination(1, TimeUnit.MILLISECONDS);
+      if (terminated) {
+        log.print(VERBOSE, "%s executor terminated normally.", name);
+        return;
+      }
+      if (isLooperExecutor) {
+        // not terminated within timeout -> force shutdown
+        log.print(VERBOSE, "%s did not terminate in %d ms; requesting shutdownNow().", name, 1);
+        List<Runnable> dropped = executor.shutdownNow(); // interrupts running tasks
+        log.print(VERBOSE, "%s shutdownNow returned %d queued tasks that never started.", name, dropped.size());
 
-      log.print(
-          VERBOSE,
-          "%s executor %s.",
-          name,
-          executorTerminated ? "terminated normally" : "timed out");
+        // optional short wait to give interrupted tasks a chance to exit
+        boolean terminatedAfterForce = executor.awaitTermination(1, TimeUnit.MILLISECONDS);
+        log.print(VERBOSE, "%s executor %s after shutdownNow().", name,
+            terminatedAfterForce ? "terminated" : "still running (did not terminate)");
+
+        if (!terminatedAfterForce) {
+          // final warning — investigate tasks that ignore interrupts
+          log.print(ERROR, "%s executor still did not terminate; tasks may be ignoring interrupts.", name);
+        }
+      }
     } catch (InterruptedException e) {
+      // Preserve interrupt status and attempt forceful shutdown
       log.print(ERROR, e, "Interrupted while stopping %s executor.", name);
       Thread.currentThread().interrupt();
+      if (isLooperExecutor) {
+        List<Runnable> dropped = executor.shutdownNow();
+        log.print(VERBOSE, "%s shutdownNow invoked after interrupt; %d tasks returned.", name, dropped.size());
+      }
     }
   }
 
