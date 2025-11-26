@@ -260,7 +260,7 @@ public class AnalyticsClient {
     boolean isLooperExecutor = name != null && name.equalsIgnoreCase("looper");
     try {
       executor.shutdown();
-      boolean terminated = executor.awaitTermination(1, TimeUnit.MILLISECONDS);
+      boolean terminated = executor.awaitTermination(1, TimeUnit.SECONDS);
       if (terminated) {
         log.print(VERBOSE, "%s executor terminated normally.", name);
         return;
@@ -276,7 +276,7 @@ public class AnalyticsClient {
             dropped.size());
 
         // optional short wait to give interrupted tasks a chance to exit
-        boolean terminatedAfterForce = executor.awaitTermination(1, TimeUnit.MILLISECONDS);
+        boolean terminatedAfterForce = executor.awaitTermination(1, TimeUnit.SECONDS);
         log.print(
             VERBOSE,
             "%s executor %s after shutdownNow().",
