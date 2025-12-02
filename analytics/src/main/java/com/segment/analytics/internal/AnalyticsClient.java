@@ -267,9 +267,13 @@ public class AnalyticsClient {
         log.print(VERBOSE, "%s executor terminated normally.", name);
         return;
       }
-      if (isLooperExecutor) { // Handle looper - network could be passed in and should finish on its own
+      if (isLooperExecutor) { // Handle looper - network should finish on its own
         // not terminated within timeout -> force shutdown
-        log.print(VERBOSE, "%s did not terminate in %d seconds; requesting shutdownNow().", name, TERMINATION_TIMEOUT_S);
+        log.print(
+            VERBOSE,
+            "%s did not terminate in %d seconds; requesting shutdownNow().",
+            name,
+            TERMINATION_TIMEOUT_S);
         List<Runnable> dropped = executor.shutdownNow(); // interrupts running tasks
         log.print(
             VERBOSE,
@@ -278,7 +282,8 @@ public class AnalyticsClient {
             dropped.size());
 
         // optional short wait to give interrupted tasks a chance to exit
-        boolean terminatedAfterForce = executor.awaitTermination(TERMINATION_TIMEOUT_S, TimeUnit.SECONDS);
+        boolean terminatedAfterForce =
+            executor.awaitTermination(TERMINATION_TIMEOUT_S, TimeUnit.SECONDS);
         log.print(
             VERBOSE,
             "%s executor %s after shutdownNow().",
