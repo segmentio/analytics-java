@@ -44,6 +44,8 @@ public class AnalyticsClient {
   private static final Charset ENCODING = StandardCharsets.UTF_8;
   private Gson gsonInstance;
   private static final String instanceId = UUID.randomUUID().toString();
+  private static final int WAIT_FOR_THREAD_COMPLETE_MS = 5000;
+  private static final int TERMINATION_TIMEOUT_MS = 1000;
 
   static {
     Map<String, String> library = new LinkedHashMap<>();
@@ -243,10 +245,10 @@ public class AnalyticsClient {
       try {
         // Wait for the looper to complete processing the STOP message and finish
         // Use a reasonable timeout to avoid hanging indefinitely
-        looperFuture.get(5, TimeUnit.SECONDS);
+        looperFuture.get(WAIT_FOR_THREAD_COMPLETE_MS, TimeUnit.MILLISECONDS);
         log.print(VERBOSE, "Looper completed successfully.");
       } catch (Exception e) {
-        log.print(ERROR, e, "Error waiting for looper to complete: %s", e.getMessage());
+        log.print(ERROR, e, "Error waiting for looper to complete.");
         // Cancel the looper if it's taking too long or if there's an error
         if (!looperFuture.isDone()) {
           looperFuture.cancel(true);
@@ -260,14 +262,14 @@ public class AnalyticsClient {
     boolean isLooperExecutor = name != null && name.equalsIgnoreCase("looper");
     try {
       executor.shutdown();
-      boolean terminated = executor.awaitTermination(1, TimeUnit.SECONDS);
+      boolean terminated = executor.awaitTermination(TERMINATION_TIMEOUT_MS, TimeUnit.MILLISECONDS);
       if (terminated) {
         log.print(VERBOSE, "%s executor terminated normally.", name);
         return;
       }
-      if (isLooperExecutor) {
+      if (isLooperExecutor) { // Handle looper - network could be passed in and should finish on its own
         // not terminated within timeout -> force shutdown
-        log.print(VERBOSE, "%s did not terminate in %d ms; requesting shutdownNow().", name, 1);
+        log.print(VERBOSE, "%s did not terminate in %d ms; requesting shutdownNow().", name, TERMINATION_TIMEOUT_MS);
         List<Runnable> dropped = executor.shutdownNow(); // interrupts running tasks
         log.print(
             VERBOSE,
@@ -276,7 +278,7 @@ public class AnalyticsClient {
             dropped.size());
 
         // optional short wait to give interrupted tasks a chance to exit
-        boolean terminatedAfterForce = executor.awaitTermination(1, TimeUnit.SECONDS);
+        boolean terminatedAfterForce = executor.awaitTermination(TERMINATION_TIMEOUT_MS, TimeUnit.MILLISECONDS);
         log.print(
             VERBOSE,
             "%s executor %s after shutdownNow().",
