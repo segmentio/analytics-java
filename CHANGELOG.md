@@ -1,4 +1,7 @@
-# Verion 3.5.1  (Feb 21, 2024)
+# Version 3.5.2 (May 12, 2025)
+- [Chore] Depenency upgrades
+
+# Version 3.5.1 (Feb 21, 2024)
 - [Chore] Dependency upgrades
 - [New](https://github.com/segmentio/analytics-java/pull/471) BlockingFlush, deregister parties upon message completion
 - [New](https://github.com/segmentio/analytics-java/pull/476) Added wk size to message size calc along with a buffer
