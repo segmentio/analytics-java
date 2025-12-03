@@ -4,11 +4,13 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.segment.analytics.gson.AutoValueAdapterFactory;
 import com.segment.analytics.gson.ISO8601DateAdapter;
+import com.segment.analytics.gson.ISO8601InstantAdapter;
 import com.segment.analytics.http.SegmentService;
 import com.segment.analytics.internal.AnalyticsClient;
 import com.segment.analytics.internal.AnalyticsVersion;
 import com.segment.analytics.messages.Message;
 import com.segment.analytics.messages.MessageBuilder;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -362,6 +364,7 @@ public class Analytics {
 
       gsonBuilder
           .registerTypeAdapterFactory(new AutoValueAdapterFactory())
+          .registerTypeAdapter(Instant.class, new ISO8601InstantAdapter())
           .registerTypeAdapter(Date.class, new ISO8601DateAdapter());
 
       Gson gson = gsonBuilder.create();
