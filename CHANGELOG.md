@@ -1,3 +1,7 @@
+# Version 3.5.3 (Dec 3, 2025)
+- [New](https://github.com/segmentio/analytics-java/pull/526) Improved shutdown process
+- [New](https://github.com/segmentio/analytics-java/pull/517) Support (de)serializing Instant objects to support newer java versions
+
 # Version 3.5.2 (May 12, 2025)
 - [Chore] Depenency upgrades
 
