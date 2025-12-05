@@ -11,7 +11,7 @@
 
   <groupId>com.segment.analytics.java</groupId>
   <artifactId>analytics-parent</artifactId>
-  <version>3.5.3</version>
+  <version>3.5.4-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Analytics for Java (Parent)</name>
   <description>The hassle-free way to add analytics to your Android app.</description>
@@ -67,6 +67,18 @@
       <url>http://opensource.org/licenses/MIT</url>
     </license>
   </licenses>
+
+  <distributionManagement>
+    <snapshotRepository>
+        <id>ossrh</id>
+        <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+    </snapshotRepository>
+    <repository>
+        <id>ossrh</id>
+        <url>https://ossrh-staging-api.central.sonatype.com/service/local/</url>
+    </repository>
+  </distributionManagement>
+
 
   <dependencyManagement>
     <dependencies>
@@ -243,7 +255,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-release-plugin</artifactId>
-        <version>2.5.3</version>
+        <version>3.3.0</version>
         <configuration>
           <autoVersionSubmodules>true</autoVersionSubmodules>
           <checkModificationExcludes>
