@@ -3,15 +3,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <groupId>org.sonatype.oss</groupId>
-    <artifactId>oss-parent</artifactId>
-    <version>7</version>
-  </parent>
-
   <groupId>com.segment.analytics.java</groupId>
   <artifactId>analytics-parent</artifactId>
-  <version>3.5.5-SNAPSHOT</version>
+  <version>3.5.4</version>
   <packaging>pom</packaging>
   <name>Analytics for Java (Parent)</name>
   <description>The hassle-free way to add analytics to your Android app.</description>
@@ -42,6 +36,9 @@
     <spring.boot.version>2.7.5</spring.boot.version>
     <docopt.version>0.6.0.20150202</docopt.version>
 
+    <!-- Disable legacy maven-deploy-plugin based deploys; publishing is handled via central-publishing-maven-plugin -->
+    <maven.deploy.skip>true</maven.deploy.skip>
+
     <!-- Test Dependencies -->
     <junit.version>4.13.2</junit.version>
     <burst.version>1.2.0</burst.version>
@@ -53,7 +50,7 @@
     <url>https://github.com/segmentio/analytics-java/</url>
     <connection>scm:git:https://github.com/segmentio/analytics-java.git</connection>
     <developerConnection>scm:git:git@github.com:segmentio/analytics-java.git</developerConnection>
-    <tag>analytics-parent-3.5.3</tag>
+    <tag>analytics-parent-3.5.4</tag>
   </scm>
 
   <issueManagement>
@@ -67,18 +64,6 @@
       <url>http://opensource.org/licenses/MIT</url>
     </license>
   </licenses>
-
-  <distributionManagement>
-    <snapshotRepository>
-        <id>ossrh</id>
-        <url>https://central.sonatype.com/repository/maven-snapshots/</url>
-    </snapshotRepository>
-    <repository>
-        <id>ossrh</id>
-        <url>https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/</url>
-    </repository>
-  </distributionManagement>
-
 
   <dependencyManagement>
     <dependencies>
@@ -253,15 +238,20 @@
 
     <plugins>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-release-plugin</artifactId>
-        <version>3.3.0</version>
+        <groupId>org.sonatype.central</groupId>
+        <artifactId>central-publishing-maven-plugin</artifactId>
+        <version>0.9.0</version>
+        <extensions>true</extensions>
         <configuration>
-          <autoVersionSubmodules>true</autoVersionSubmodules>
-          <checkModificationExcludes>
-            <checkModificationExclude>pom.xml</checkModificationExclude>
-            <checkModificationExclude>.buildscript/settings.xml</checkModificationExclude>
-          </checkModificationExcludes>      
+          <publishingServerId>central</publishingServerId>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <version>3.0.0</version>
+        <configuration>
+          <skip>true</skip>
         </configuration>
       </plugin>
       <plugin>
