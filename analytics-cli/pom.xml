@@ -6,12 +6,12 @@
   <parent>
     <artifactId>analytics-parent</artifactId>
     <groupId>com.segment.analytics.java</groupId>
-    <version>3.5.4</version>
+    <version>3.5.5-SNAPSHOT</version>
   </parent>
 
   <groupId>com.segment.analytics.java</groupId>
   <artifactId>analytics-cli</artifactId>
-  <version>3.5.4</version>
+  <version>3.5.5-SNAPSHOT</version>
   <name>Analytics Java CLI</name>
 
   <description>Command-line interface for Segment Analytics for Java.</description>

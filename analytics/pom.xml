@@ -6,12 +6,12 @@
   <parent>
     <groupId>com.segment.analytics.java</groupId>
     <artifactId>analytics-parent</artifactId>
-    <version>3.5.4</version>
+    <version>3.5.5-SNAPSHOT</version>
   </parent>
 
   <groupId>com.segment.analytics.java</groupId>
   <artifactId>analytics</artifactId>
-  <version>3.5.4</version>
+  <version>3.5.5-SNAPSHOT</version>
   <name>Analytics for Java</name>
 
   <description>The hassle-free way to add analytics to your Java app.</description>

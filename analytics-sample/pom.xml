@@ -6,12 +6,12 @@
   <parent>
     <artifactId>analytics-parent</artifactId>
     <groupId>com.segment.analytics.java</groupId>
-    <version>3.5.4</version>
+    <version>3.5.5-SNAPSHOT</version>
   </parent>
 
   <groupId>com.segment.analytics.java</groupId>
   <artifactId>analytics-sample</artifactId>
-  <version>3.5.4</version>
+  <version>3.5.5-SNAPSHOT</version>
   <name>Analytics Sample</name>
 
   <description>Sample application demonstrating Segment Analytics for Java.</description>
