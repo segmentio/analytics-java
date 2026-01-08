@@ -9,8 +9,36 @@
     <version>3.5.5-SNAPSHOT</version>
   </parent>
 
+  <groupId>com.segment.analytics.java</groupId>
   <artifactId>analytics</artifactId>
+  <version>3.5.5-SNAPSHOT</version>
   <name>Analytics for Java</name>
+
+  <description>The hassle-free way to add analytics to your Java app.</description>
+  <url>https://github.com/segmentio/analytics-java</url>
+
+  <licenses>
+    <license>
+      <name>The MIT License (MIT)</name>
+      <url>http://opensource.org/licenses/MIT</url>
+    </license>
+  </licenses>
+
+  <scm>
+    <url>https://github.com/segmentio/analytics-java/</url>
+    <connection>scm:git:https://github.com/segmentio/analytics-java.git</connection>
+    <developerConnection>scm:git:git@github.com:segmentio/analytics-java.git</developerConnection>
+    <tag>analytics-parent-3.5.4</tag>
+  </scm>
+
+  <developers>
+    <developer>
+      <id>segment</id>
+      <name>Segment</name>
+      <organization>Segment</organization>
+      <organizationUrl>https://segment.com</organizationUrl>
+    </developer>
+  </developers>
 
   <dependencies>
     <dependency>
@@ -21,51 +49,62 @@
     <dependency>
       <groupId>com.squareup.okhttp3</groupId>
       <artifactId>okhttp</artifactId>
+      <version>${okhttp.version}</version>
     </dependency>
     <dependency>
       <groupId>com.squareup.okhttp3</groupId>
       <artifactId>logging-interceptor</artifactId>
+      <version>${logging.version}</version>
     </dependency>
     <dependency>
       <groupId>com.squareup.retrofit2</groupId>
       <artifactId>converter-gson</artifactId>
+      <version>2.9.0</version>
     </dependency>
     <dependency>
       <groupId>com.squareup.retrofit2</groupId>
       <artifactId>retrofit-mock</artifactId>
+      <version>${retrofit.version}</version>
     </dependency>
     <dependency>
       <groupId>com.google.code.findbugs</groupId>
       <artifactId>findbugs</artifactId>
+      <version>${findbugs.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.segment.backo</groupId>
       <artifactId>backo</artifactId>
+      <version>${backo.version}</version>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
+      <version>${junit.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.squareup.burst</groupId>
       <artifactId>burst-junit4</artifactId>
+      <version>${burst.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.squareup.burst</groupId>
       <artifactId>burst</artifactId>
+      <version>${burst.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
+      <version>${assertj.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
+      <version>${mockito.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
