@@ -6,12 +6,12 @@
   <parent>
     <groupId>com.segment.analytics.java</groupId>
     <artifactId>analytics-parent</artifactId>
-    <version>3.5.4-SNAPSHOT</version>
+    <version>3.5.4</version>
   </parent>
 
   <groupId>com.segment.analytics.java</groupId>
   <artifactId>analytics-spring-boot-starter</artifactId>
-  <version>${project.parent.version}</version>
+  <version>3.5.4</version>
   <name>Spring Boot starter for Segment Analytics for Java</name>
 
   <description>Spring Boot auto-configuration for Segment Analytics for Java.</description>
