@@ -9,35 +9,69 @@
     <version>3.5.4</version>
   </parent>
 
+  <groupId>com.segment.analytics.java</groupId>
   <artifactId>analytics-core</artifactId>
+  <version>3.5.5-SNAPSHOT</version>
   <name>Analytics for Java (Core)</name>
+
+  <description>Core runtime for Segment Analytics for Java.</description>
+  <url>https://github.com/segmentio/analytics-java</url>
+
+  <licenses>
+    <license>
+      <name>The MIT License (MIT)</name>
+      <url>http://opensource.org/licenses/MIT</url>
+    </license>
+  </licenses>
+
+  <scm>
+    <url>https://github.com/segmentio/analytics-java/</url>
+    <connection>scm:git:https://github.com/segmentio/analytics-java.git</connection>
+    <developerConnection>scm:git:git@github.com:segmentio/analytics-java.git</developerConnection>
+    <tag>analytics-parent-3.5.4</tag>
+  </scm>
+
+  <developers>
+    <developer>
+      <id>segment</id>
+      <name>Segment</name>
+      <organization>Segment</organization>
+      <organizationUrl>https://segment.com</organizationUrl>
+    </developer>
+  </developers>
 
   <dependencies>
     <dependency>
       <groupId>com.squareup.retrofit2</groupId>
       <artifactId>retrofit</artifactId>
+      <version>${retrofit.version}</version>
     </dependency>
     <dependency>
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
+      <version>${gson.version}</version>
     </dependency>
     <dependency>
       <groupId>com.google.code.findbugs</groupId>
       <artifactId>findbugs</artifactId>
+      <version>${findbugs.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.google.auto.value</groupId>
       <artifactId>auto-value</artifactId>
+      <version>${auto.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>com.google.auto.value</groupId>
       <artifactId>auto-value-annotations</artifactId>
+      <version>${auto.version}</version>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
+      <version>${guava.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -52,28 +86,39 @@
     </dependency>
 
     <dependency>
+      <groupId>javax.annotation</groupId>
+      <artifactId>javax.annotation-api</artifactId>
+      <version>1.3.2</version>
+    </dependency>
+
+    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
+      <version>${junit.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.squareup.burst</groupId>
       <artifactId>burst-junit4</artifactId>
+      <version>${burst.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.squareup.burst</groupId>
       <artifactId>burst</artifactId>
+      <version>${burst.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
+      <version>${assertj.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-core</artifactId>
+      <version>${mockito.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

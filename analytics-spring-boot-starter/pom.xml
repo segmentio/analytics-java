@@ -9,8 +9,36 @@
     <version>3.5.4</version>
   </parent>
 
+  <groupId>com.segment.analytics.java</groupId>
   <artifactId>analytics-spring-boot-starter</artifactId>
+  <version>3.5.5-SNAPSHOT</version>
   <name>Spring Boot starter for Segment Analytics for Java</name>
+
+  <description>Spring Boot auto-configuration for Segment Analytics for Java.</description>
+  <url>https://github.com/segmentio/analytics-java</url>
+
+  <licenses>
+    <license>
+      <name>The MIT License (MIT)</name>
+      <url>http://opensource.org/licenses/MIT</url>
+    </license>
+  </licenses>
+
+  <scm>
+    <url>https://github.com/segmentio/analytics-java/</url>
+    <connection>scm:git:https://github.com/segmentio/analytics-java.git</connection>
+    <developerConnection>scm:git:git@github.com:segmentio/analytics-java.git</developerConnection>
+    <tag>analytics-parent-3.5.4</tag>
+  </scm>
+
+  <developers>
+    <developer>
+      <id>segment</id>
+      <name>Segment</name>
+      <organization>Segment</organization>
+      <organizationUrl>https://segment.com</organizationUrl>
+    </developer>
+  </developers>
 
   <properties />
 
