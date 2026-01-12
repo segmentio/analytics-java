@@ -6,16 +6,45 @@
   <parent>
     <artifactId>analytics-parent</artifactId>
     <groupId>com.segment.analytics.java</groupId>
-    <version>3.5.3-SNAPSHOT</version>
+    <version>3.5.5-SNAPSHOT</version>
   </parent>
 
+  <groupId>com.segment.analytics.java</groupId>
   <artifactId>analytics-cli</artifactId>
+  <version>3.5.5-SNAPSHOT</version>
   <name>Analytics Java CLI</name>
+
+  <description>Command-line interface for Segment Analytics for Java.</description>
+  <url>https://github.com/segmentio/analytics-java</url>
+
+  <licenses>
+    <license>
+      <name>The MIT License (MIT)</name>
+      <url>http://opensource.org/licenses/MIT</url>
+    </license>
+  </licenses>
+
+  <scm>
+    <url>https://github.com/segmentio/analytics-java/</url>
+    <connection>scm:git:https://github.com/segmentio/analytics-java.git</connection>
+    <developerConnection>scm:git:git@github.com:segmentio/analytics-java.git</developerConnection>
+    <tag>analytics-parent-3.5.4</tag>
+  </scm>
+
+  <developers>
+    <developer>
+      <id>segment</id>
+      <name>Segment</name>
+      <organization>Segment</organization>
+      <organizationUrl>https://segment.com</organizationUrl>
+    </developer>
+  </developers>
 
   <dependencies>
     <dependency>
       <groupId>org.jetbrains.kotlin</groupId>
       <artifactId>kotlin-stdlib</artifactId>
+      <version>${kotlin.version}</version>
     </dependency>
     <dependency>
       <groupId>com.segment.analytics.java</groupId>
@@ -25,6 +54,7 @@
     <dependency>
       <groupId>com.offbytwo</groupId>
       <artifactId>docopt</artifactId>
+      <version>${docopt.version}</version>
     </dependency>
   </dependencies>
 
