@@ -467,8 +467,12 @@ public class AnalyticsClient {
       client.log.print(VERBOSE, "Uploading batch %s.", batch.sequence());
 
       try {
-        Integer headerRetryCount = attempt <= 1 ? null : Integer.valueOf(attempt - 1);
-        Call<UploadResponse> call = client.service.upload(headerRetryCount, client.uploadUrl, batch);
+        Call<UploadResponse> call;
+        if (attempt <= 1) {
+          call = client.service.upload(client.uploadUrl, batch);
+        } else {
+          call = client.service.uploadWithRetryCount(attempt - 1, client.uploadUrl, batch);
+        }
         Response<UploadResponse> response = call.execute();
 
         if (response.isSuccessful()) {
@@ -484,17 +488,24 @@ public class AnalyticsClient {
         }
 
         int status = response.code();
-        String retryAfterHeader = response.headers().get("Retry-After");
-        Long retryAfterSeconds = parseRetryAfterSeconds(retryAfterHeader);
 
-        if (retryAfterSeconds != null && isStatusRetryAfterEligible(status)) {
+        if (isStatusRetryAfterEligible(status)) {
+          String retryAfterHeader = response.headers().get("Retry-After");
+          Long retryAfterSeconds = parseRetryAfterSeconds(retryAfterHeader);
+          if (retryAfterSeconds != null) {
+            client.log.print(
+                DEBUG,
+                "Could not upload batch %s due to status %s with Retry-After %s seconds. Retrying after delay.",
+                batch.sequence(),
+                status,
+                retryAfterSeconds);
+            return new UploadResult(RetryStrategy.RETRY_AFTER, retryAfterSeconds);
+          }
           client.log.print(
               DEBUG,
-              "Could not upload batch %s due to status %s with Retry-After %s seconds. Retrying after delay.",
+              "Status %s did not have a valid Retry-After header.",
               batch.sequence(),
-              status,
-              retryAfterSeconds);
-          return new UploadResult(RetryStrategy.RETRY_AFTER, retryAfterSeconds);
+              status);
         }
 
         if (isStatusRetryWithBackoff(status)) {
