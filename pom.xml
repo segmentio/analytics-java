@@ -26,6 +26,7 @@
     <module>analytics-sample</module>
     <module>analytics-cli</module>
     <module>analytics-spring-boot-starter</module>
+    <module>e2e-cli</module>
   </modules>
 
   <properties>
