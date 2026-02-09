@@ -65,6 +65,8 @@ jobs:
         working-directory: sdk-e2e-tests
         env:
           CLI_COMMAND: java -jar ${{ github.workspace }}/sdk/${{ steps.find-jar.outputs.jar_path }}
+          E2E_TEST_SUITES: basic,retry
+          # E2E_TEST_SKIP: exponential-backoff  # skip specific test files if needed
         run: npm test
 
       - name: Upload test results
