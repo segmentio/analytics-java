@@ -397,7 +397,8 @@ public class Analytics {
         maximumQueueSizeInBytes = MESSAGE_QUEUE_MAX_BYTE_SIZE;
       }
       if (maximumFlushAttempts == 0) {
-        maximumFlushAttempts = 3;
+        // Adjusted upward to accomodate shorter max retry backoff.
+        maximumFlushAttempts = 1000;
       }
       if (messageTransformers == null) {
         messageTransformers = Collections.emptyList();
@@ -435,7 +436,7 @@ public class Analytics {
       OkHttpClient.Builder builder =
           client
               .newBuilder()
-              .addInterceptor(new AnalyticsRequestInterceptor(userAgent))
+              .addInterceptor(new AnalyticsRequestInterceptor(writeKey, userAgent))
               .addInterceptor(interceptor);
 
       if (forceTlsV1) {

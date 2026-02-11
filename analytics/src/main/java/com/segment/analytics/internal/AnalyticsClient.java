@@ -46,6 +46,8 @@ public class AnalyticsClient {
   private static final String instanceId = UUID.randomUUID().toString();
   private static final int WAIT_FOR_THREAD_COMPLETE_S = 5;
   private static final int TERMINATION_TIMEOUT_S = 1;
+  private static final long MAX_RETRY_AFTER_SECONDS = 300L;
+
 
   static {
     Map<String, String> library = new LinkedHashMap<>();
@@ -409,8 +411,8 @@ public class AnalyticsClient {
   static class BatchUploadTask implements Runnable {
     private static final Backo BACKO =
         Backo.builder() //
-            .base(TimeUnit.SECONDS, 15) //
-            .cap(TimeUnit.HOURS, 1) //
+            .base(TimeUnit.MILLISECONDS, 100) //
+            .cap(TimeUnit.MINUTES, 1) //
             .jitter(1) //
             .build();
 
@@ -468,11 +470,7 @@ public class AnalyticsClient {
 
       try {
         Call<UploadResponse> call;
-        if (attempt <= 1) {
-          call = client.service.upload(client.uploadUrl, batch);
-        } else {
-          call = client.service.uploadWithRetryCount(attempt - 1, client.uploadUrl, batch);
-        }
+        call = client.service.upload(attempt - 1, client.uploadUrl, batch);
         Response<UploadResponse> response = call.execute();
 
         if (response.isSuccessful()) {
@@ -554,6 +552,9 @@ public class AnalyticsClient {
         long seconds = Long.parseLong(headerValue);
         if (seconds <= 0L) {
           return null;
+        }
+        if (seconds > MAX_RETRY_AFTER_SECONDS) {
+          return MAX_RETRY_AFTER_SECONDS;
         }
         return seconds;
       } catch (NumberFormatException ignored) {
