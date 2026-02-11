@@ -656,6 +656,54 @@ public class AnalyticsClientTest {
   }
 
   @Test
+  public void retryAfterHeaderRespectsShortDelay() {
+    AnalyticsClient client = newClient();
+    TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
+    Batch batch = batchFor(trackMessage);
+
+    // Test with a short Retry-After delay (2 seconds) to verify the mechanism works
+    // The cap at 300 seconds is verified by code inspection at AnalyticsClient.java:556-558
+    Response<UploadResponse> rateLimitedWithShortDelay = errorWithRetryAfter(429, "2");
+    Response<UploadResponse> successResponse = Response.success(200, response);
+
+    when(segmentService.upload(anyInt(), isNull(), eq(batch)))
+        .thenReturn(Calls.response(rateLimitedWithShortDelay))
+        .thenReturn(Calls.response(successResponse));
+
+    long startTime = System.currentTimeMillis();
+    BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch, DEFAULT_RETRIES);
+    batchUploadTask.run();
+    long endTime = System.currentTimeMillis();
+
+    // Should wait approximately 2 seconds
+    long elapsedMs = endTime - startTime;
+    assertThat(elapsedMs).isGreaterThanOrEqualTo(2000L).isLessThan(3000L);
+
+    verify(segmentService, times(2)).upload(anyInt(), isNull(), eq(batch));
+    verify(callback).success(trackMessage);
+  }
+
+  @Test
+  public void batchDoesNotRetryFor413PayloadTooLarge() {
+    AnalyticsClient client = newClient();
+    TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
+    Batch batch = batchFor(trackMessage);
+
+    // 413 Payload Too Large should not be retried
+    Response<UploadResponse> payloadTooLargeResponse =
+        Response.error(413, ResponseBody.create(null, "Payload Too Large"));
+    when(segmentService.upload(anyInt(), isNull(), eq(batch)))
+        .thenReturn(Calls.response(payloadTooLargeResponse));
+
+    BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch, DEFAULT_RETRIES);
+    batchUploadTask.run();
+
+    // Verify we only tried to upload once (no retries)
+    verify(segmentService, times(1)).upload(anyInt(), isNull(), eq(batch));
+    verify(callback).failure(eq(trackMessage), any(IOException.class));
+  }
+
+  @Test
   public void flushWhenNotShutDown() throws InterruptedException {
     AnalyticsClient client = newClient();
 

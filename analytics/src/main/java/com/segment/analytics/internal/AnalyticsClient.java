@@ -614,7 +614,7 @@ public class AnalyticsClient {
 
     private static boolean isStatusRetryWithBackoff(int status) {
       // Explicitly retry these client errors
-      if (status == 408 || status == 410 || status == 413 || status == 429 || status == 460) {
+      if (status == 408 || status == 410 || status == 429 || status == 460) {
         return true;
       }
 
