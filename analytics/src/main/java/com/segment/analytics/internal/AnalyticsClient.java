@@ -500,9 +500,9 @@ public class AnalyticsClient {
           }
           client.log.print(
               DEBUG,
-              "Status %s did not have a valid Retry-After header.",
-              batch.sequence(),
-              status);
+              "Status %s did not have a valid Retry-After header for batch %s.",
+              status,
+              batch.sequence());
         }
 
         if (isStatusRetryWithBackoff(status)) {
