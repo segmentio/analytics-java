@@ -4,11 +4,11 @@ import static com.segment.analytics.internal.FlushMessage.POISON;
 import static com.segment.analytics.internal.StopMessage.STOP;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
@@ -369,7 +369,8 @@ public class AnalyticsClientTest {
         Collections.<String, Object>emptyMap(), Collections.singletonList(message), writeKey);
   }
 
-  private static Response<UploadResponse> errorWithRetryAfter(int status, String retryAfterSeconds) {
+  private static Response<UploadResponse> errorWithRetryAfter(
+      int status, String retryAfterSeconds) {
     okhttp3.Response rawResponse =
         new okhttp3.Response.Builder()
             .code(status)
@@ -485,7 +486,8 @@ public class AnalyticsClientTest {
     // Throw a HTTP error that should not be retried.
     Response<UploadResponse> failResponse =
         Response.error(404, ResponseBody.create(null, "Not Found"));
-    when(segmentService.upload(anyInt(), isNull(), eq(batch))).thenReturn(Calls.response(failResponse));
+    when(segmentService.upload(anyInt(), isNull(), eq(batch)))
+        .thenReturn(Calls.response(failResponse));
 
     BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch, DEFAULT_RETRIES);
     batchUploadTask.run();
@@ -503,7 +505,8 @@ public class AnalyticsClientTest {
 
     Response<UploadResponse> failResponse =
         Response.error(501, ResponseBody.create(null, "Not Implemented"));
-    when(segmentService.upload(anyInt(), isNull(), eq(batch))).thenReturn(Calls.response(failResponse));
+    when(segmentService.upload(anyInt(), isNull(), eq(batch)))
+        .thenReturn(Calls.response(failResponse));
 
     BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch, DEFAULT_RETRIES);
     batchUploadTask.run();

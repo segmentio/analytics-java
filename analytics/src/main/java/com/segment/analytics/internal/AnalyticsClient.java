@@ -48,7 +48,6 @@ public class AnalyticsClient {
   private static final int TERMINATION_TIMEOUT_S = 1;
   private static final long MAX_RETRY_AFTER_SECONDS = 300L;
 
-
   static {
     Map<String, String> library = new LinkedHashMap<>();
     library.put("name", "analytics-java");
