@@ -54,21 +54,12 @@ jobs:
           JAR_PATH=$(find e2e-cli/target -name "e2e-cli-*-jar-with-dependencies.jar" | head -1)
           echo "jar_path=$JAR_PATH" >> $GITHUB_OUTPUT
 
-      - name: Install sdk-e2e-tests dependencies
-        working-directory: sdk-e2e-tests
-        run: npm ci
-
-      - name: Build sdk-e2e-tests
-        working-directory: sdk-e2e-tests
-        run: npm run build
-
       - name: Run E2E tests
         working-directory: sdk-e2e-tests
-        env:
-          CLI_COMMAND: java -jar ${{ github.workspace }}/sdk/${{ steps.find-jar.outputs.jar_path }}
-          E2E_TEST_SUITES: basic,retry
-          # E2E_TEST_SKIP: exponential-backoff  # skip specific test files if needed
-        run: npm test
+        run: |
+          ./scripts/run-tests.sh \
+            --sdk-dir "${{ github.workspace }}/sdk/e2e-cli" \
+            --cli "java -jar ${{ github.workspace }}/sdk/${{ steps.find-jar.outputs.jar_path }}"
 
       - name: Upload test results
         if: always()
