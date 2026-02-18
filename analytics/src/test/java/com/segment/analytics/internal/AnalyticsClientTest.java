@@ -619,7 +619,7 @@ public class AnalyticsClientTest {
     batchUploadTask.run();
 
     // DEFAULT_RETRIES == maxRetries
-    // tries 11(one normal run + 10 retries)
+    // tries 4 times (one normal run + 3 retries)
     verify(segmentService, times(4)).upload(anyInt(), isNull(), eq(batch));
     verify(callback)
         .failure(
@@ -634,7 +634,7 @@ public class AnalyticsClientTest {
   }
 
   @Test
-  public void xRetryCountHeaderOnlyAppearsOnRetries() {
+  public void xRetryCountHeaderIncrementsWithEachAttempt() {
     AnalyticsClient client = newClient();
     TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
     Batch batch = batchFor(trackMessage);

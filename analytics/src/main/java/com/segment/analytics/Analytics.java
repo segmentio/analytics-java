@@ -397,7 +397,7 @@ public class Analytics {
         maximumQueueSizeInBytes = MESSAGE_QUEUE_MAX_BYTE_SIZE;
       }
       if (maximumFlushAttempts == 0) {
-        // Adjusted upward to accomodate shorter max retry backoff.
+        // Adjusted upward to accommodate shorter max retry backoff.
         maximumFlushAttempts = 1000;
       }
       if (messageTransformers == null) {
