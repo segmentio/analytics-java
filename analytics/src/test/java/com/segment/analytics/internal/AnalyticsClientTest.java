@@ -4,8 +4,10 @@ import static com.segment.analytics.internal.FlushMessage.POISON;
 import static com.segment.analytics.internal.StopMessage.STOP;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
@@ -367,6 +369,20 @@ public class AnalyticsClientTest {
         Collections.<String, Object>emptyMap(), Collections.singletonList(message), writeKey);
   }
 
+  private static Response<UploadResponse> errorWithRetryAfter(
+      int status, String retryAfterSeconds) {
+    okhttp3.Response rawResponse =
+        new okhttp3.Response.Builder()
+            .code(status)
+            .protocol(okhttp3.Protocol.HTTP_1_1)
+            .request(new okhttp3.Request.Builder().url("http://localhost/" /* unused */).build())
+            .message("Error")
+            .addHeader("Retry-After", retryAfterSeconds)
+            .build();
+
+    return Response.error(ResponseBody.create(null, "Error"), rawResponse);
+  }
+
   @Test
   public void batchRetriesForNetworkErrors() {
     AnalyticsClient client = newClient();
@@ -377,7 +393,7 @@ public class AnalyticsClientTest {
     Response<UploadResponse> failureResponse = Response.error(429, ResponseBody.create(null, ""));
 
     // Throw a network error 3 times.
-    when(segmentService.upload(null, batch))
+    when(segmentService.upload(anyInt(), isNull(), eq(batch)))
         .thenReturn(Calls.response(failureResponse))
         .thenReturn(Calls.response(failureResponse))
         .thenReturn(Calls.response(failureResponse))
@@ -387,7 +403,7 @@ public class AnalyticsClientTest {
     batchUploadTask.run();
 
     // Verify that we tried to upload 4 times, 3 failed and 1 succeeded.
-    verify(segmentService, times(4)).upload(null, batch);
+    verify(segmentService, times(4)).upload(anyInt(), isNull(), eq(batch));
     verify(callback).success(trackMessage);
   }
 
@@ -402,7 +418,7 @@ public class AnalyticsClientTest {
     Response<UploadResponse> successResponse = Response.success(200, response);
     Response<UploadResponse> failResponse =
         Response.error(500, ResponseBody.create(null, "Server Error"));
-    when(segmentService.upload(null, batch))
+    when(segmentService.upload(anyInt(), isNull(), eq(batch)))
         .thenReturn(Calls.response(failResponse))
         .thenReturn(Calls.response(failResponse))
         .thenReturn(Calls.response(failResponse))
@@ -412,7 +428,7 @@ public class AnalyticsClientTest {
     batchUploadTask.run();
 
     // Verify that we tried to upload 4 times, 3 failed and 1 succeeded.
-    verify(segmentService, times(4)).upload(null, batch);
+    verify(segmentService, times(4)).upload(anyInt(), isNull(), eq(batch));
     verify(callback).success(trackMessage);
   }
 
@@ -426,7 +442,7 @@ public class AnalyticsClientTest {
     Response<UploadResponse> successResponse = Response.success(200, response);
     Response<UploadResponse> failResponse =
         Response.error(429, ResponseBody.create(null, "Rate Limited"));
-    when(segmentService.upload(null, batch))
+    when(segmentService.upload(anyInt(), isNull(), eq(batch)))
         .thenReturn(Calls.response(failResponse))
         .thenReturn(Calls.response(failResponse))
         .thenReturn(Calls.response(failResponse))
@@ -436,7 +452,28 @@ public class AnalyticsClientTest {
     batchUploadTask.run();
 
     // Verify that we tried to upload 4 times, 3 failed and 1 succeeded.
-    verify(segmentService, times(4)).upload(null, batch);
+    verify(segmentService, times(4)).upload(anyInt(), isNull(), eq(batch));
+    verify(callback).success(trackMessage);
+  }
+
+  @Test
+  public void batchRetriesForRetryableClientErrors() {
+    AnalyticsClient client = newClient();
+    TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
+    Batch batch = batchFor(trackMessage);
+
+    Response<UploadResponse> successResponse = Response.success(200, response);
+    Response<UploadResponse> failResponse =
+        Response.error(408, ResponseBody.create(null, "Request Timeout"));
+
+    when(segmentService.upload(anyInt(), isNull(), eq(batch)))
+        .thenReturn(Calls.response(failResponse))
+        .thenReturn(Calls.response(successResponse));
+
+    BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch, DEFAULT_RETRIES);
+    batchUploadTask.run();
+
+    verify(segmentService, times(2)).upload(anyInt(), isNull(), eq(batch));
     verify(callback).success(trackMessage);
   }
 
@@ -449,13 +486,32 @@ public class AnalyticsClientTest {
     // Throw a HTTP error that should not be retried.
     Response<UploadResponse> failResponse =
         Response.error(404, ResponseBody.create(null, "Not Found"));
-    when(segmentService.upload(null, batch)).thenReturn(Calls.response(failResponse));
+    when(segmentService.upload(anyInt(), isNull(), eq(batch)))
+        .thenReturn(Calls.response(failResponse));
 
     BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch, DEFAULT_RETRIES);
     batchUploadTask.run();
 
     // Verify we only tried to upload once.
-    verify(segmentService).upload(null, batch);
+    verify(segmentService).upload(anyInt(), isNull(), eq(batch));
+    verify(callback).failure(eq(trackMessage), any(IOException.class));
+  }
+
+  @Test
+  public void batchDoesNotRetryForNonRetryable5xxErrors() {
+    AnalyticsClient client = newClient();
+    TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
+    Batch batch = batchFor(trackMessage);
+
+    Response<UploadResponse> failResponse =
+        Response.error(501, ResponseBody.create(null, "Not Implemented"));
+    when(segmentService.upload(anyInt(), isNull(), eq(batch)))
+        .thenReturn(Calls.response(failResponse));
+
+    BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch, DEFAULT_RETRIES);
+    batchUploadTask.run();
+
+    verify(segmentService).upload(anyInt(), isNull(), eq(batch));
     verify(callback).failure(eq(trackMessage), any(IOException.class));
   }
 
@@ -466,13 +522,13 @@ public class AnalyticsClientTest {
     Batch batch = batchFor(trackMessage);
 
     Call<UploadResponse> networkFailure = Calls.failure(new RuntimeException());
-    when(segmentService.upload(null, batch)).thenReturn(networkFailure);
+    when(segmentService.upload(anyInt(), isNull(), eq(batch))).thenReturn(networkFailure);
 
     BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch, DEFAULT_RETRIES);
     batchUploadTask.run();
 
     // Verify we only tried to upload once.
-    verify(segmentService).upload(null, batch);
+    verify(segmentService).upload(anyInt(), isNull(), eq(batch));
     verify(callback).failure(eq(trackMessage), any(RuntimeException.class));
   }
 
@@ -482,7 +538,7 @@ public class AnalyticsClientTest {
     TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
     Batch batch = batchFor(trackMessage);
 
-    when(segmentService.upload(null, batch))
+    when(segmentService.upload(anyInt(), isNull(), eq(batch)))
         .thenAnswer(
             new Answer<Call<UploadResponse>>() {
               public Call<UploadResponse> answer(InvocationOnMock invocation) {
@@ -497,7 +553,7 @@ public class AnalyticsClientTest {
 
     // DEFAULT_RETRIES == maxRetries
     // tries 11(one normal run + 10 retries) even though default is 50 in AnalyticsClient.java
-    verify(segmentService, times(11)).upload(null, batch);
+    verify(segmentService, times(11)).upload(anyInt(), isNull(), eq(batch));
     verify(callback)
         .failure(
             eq(trackMessage),
@@ -511,12 +567,45 @@ public class AnalyticsClientTest {
   }
 
   @Test
+  public void retryAfterDoesNotCountAgainstMaxRetries() {
+    AnalyticsClient client = newClient();
+    TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
+    Batch batch = batchFor(trackMessage);
+
+    Response<UploadResponse> rateLimited = errorWithRetryAfter(429, "1");
+    Response<UploadResponse> serverError =
+        Response.error(500, ResponseBody.create(null, "Server Error"));
+
+    when(segmentService.upload(anyInt(), isNull(), eq(batch)))
+        .thenReturn(Calls.response(rateLimited))
+        .thenReturn(Calls.response(rateLimited))
+        .thenReturn(Calls.response(serverError))
+        .thenReturn(Calls.response(serverError));
+
+    BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch, 1);
+    batchUploadTask.run();
+
+    // 2 Retry-After attempts + 2 backoff attempts (maxRetries = 1 => 2 backoff attempts)
+    verify(segmentService, times(4)).upload(anyInt(), isNull(), eq(batch));
+    verify(callback)
+        .failure(
+            eq(trackMessage),
+            argThat(
+                new ArgumentMatcher<IOException>() {
+                  @Override
+                  public boolean matches(IOException exception) {
+                    return exception.getMessage().equals("4 retries exhausted");
+                  }
+                }));
+  }
+
+  @Test
   public void hasDefaultRetriesSetTo3() {
     AnalyticsClient client = newClient();
     TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
     Batch batch = batchFor(trackMessage);
 
-    when(segmentService.upload(null, batch))
+    when(segmentService.upload(anyInt(), isNull(), eq(batch)))
         .thenAnswer(
             new Answer<Call<UploadResponse>>() {
               public Call<UploadResponse> answer(InvocationOnMock invocation) {
@@ -530,8 +619,8 @@ public class AnalyticsClientTest {
     batchUploadTask.run();
 
     // DEFAULT_RETRIES == maxRetries
-    // tries 11(one normal run + 10 retries)
-    verify(segmentService, times(4)).upload(null, batch);
+    // tries 4 times (one normal run + 3 retries)
+    verify(segmentService, times(4)).upload(anyInt(), isNull(), eq(batch));
     verify(callback)
         .failure(
             eq(trackMessage),
@@ -542,6 +631,79 @@ public class AnalyticsClientTest {
                     return exception.getMessage().equals("4 retries exhausted");
                   }
                 }));
+  }
+
+  @Test
+  public void xRetryCountHeaderIncrementsWithEachAttempt() {
+    AnalyticsClient client = newClient();
+    TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
+    Batch batch = batchFor(trackMessage);
+
+    Response<UploadResponse> successResponse = Response.success(200, response);
+    Response<UploadResponse> failResponse =
+        Response.error(500, ResponseBody.create(null, "Server Error"));
+
+    when(segmentService.upload(anyInt(), isNull(), eq(batch)))
+        .thenReturn(Calls.response(failResponse))
+        .thenReturn(Calls.response(failResponse))
+        .thenReturn(Calls.response(successResponse));
+
+    BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch, DEFAULT_RETRIES);
+    batchUploadTask.run();
+
+    ArgumentCaptor<Integer> retryCountCaptor = ArgumentCaptor.forClass(Integer.class);
+    verify(segmentService, times(3)).upload(retryCountCaptor.capture(), isNull(), eq(batch));
+
+    assertThat(retryCountCaptor.getAllValues()).containsExactly(0, 1, 2);
+    verify(callback).success(trackMessage);
+  }
+
+  @Test
+  public void retryAfterHeaderRespectsShortDelay() {
+    AnalyticsClient client = newClient();
+    TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
+    Batch batch = batchFor(trackMessage);
+
+    // Test with a short Retry-After delay (2 seconds) to verify the mechanism works
+    // The cap at 300 seconds is verified by code inspection at AnalyticsClient.java:556-558
+    Response<UploadResponse> rateLimitedWithShortDelay = errorWithRetryAfter(429, "2");
+    Response<UploadResponse> successResponse = Response.success(200, response);
+
+    when(segmentService.upload(anyInt(), isNull(), eq(batch)))
+        .thenReturn(Calls.response(rateLimitedWithShortDelay))
+        .thenReturn(Calls.response(successResponse));
+
+    long startTime = System.currentTimeMillis();
+    BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch, DEFAULT_RETRIES);
+    batchUploadTask.run();
+    long endTime = System.currentTimeMillis();
+
+    // Should wait approximately 2 seconds
+    long elapsedMs = endTime - startTime;
+    assertThat(elapsedMs).isGreaterThanOrEqualTo(2000L).isLessThan(3000L);
+
+    verify(segmentService, times(2)).upload(anyInt(), isNull(), eq(batch));
+    verify(callback).success(trackMessage);
+  }
+
+  @Test
+  public void batchDoesNotRetryFor413PayloadTooLarge() {
+    AnalyticsClient client = newClient();
+    TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
+    Batch batch = batchFor(trackMessage);
+
+    // 413 Payload Too Large should not be retried
+    Response<UploadResponse> payloadTooLargeResponse =
+        Response.error(413, ResponseBody.create(null, "Payload Too Large"));
+    when(segmentService.upload(anyInt(), isNull(), eq(batch)))
+        .thenReturn(Calls.response(payloadTooLargeResponse));
+
+    BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch, DEFAULT_RETRIES);
+    batchUploadTask.run();
+
+    // Verify we only tried to upload once (no retries)
+    verify(segmentService, times(1)).upload(anyInt(), isNull(), eq(batch));
+    verify(callback).failure(eq(trackMessage), any(IOException.class));
   }
 
   @Test
@@ -636,7 +798,7 @@ public class AnalyticsClientTest {
     TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
     Batch batch = batchFor(trackMessage);
 
-    when(segmentService.upload(null, batch))
+    when(segmentService.upload(anyInt(), isNull(), eq(batch)))
         .thenAnswer(
             new Answer<Call<UploadResponse>>() {
               public Call<UploadResponse> answer(InvocationOnMock invocation) {
@@ -650,7 +812,7 @@ public class AnalyticsClientTest {
     batchUploadTask.run();
 
     // runs once but never retries
-    verify(segmentService, times(1)).upload(null, batch);
+    verify(segmentService, times(1)).upload(anyInt(), isNull(), eq(batch));
     verify(callback)
         .failure(
             eq(trackMessage),

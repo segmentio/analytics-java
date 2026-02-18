@@ -46,6 +46,7 @@ public class AnalyticsClient {
   private static final String instanceId = UUID.randomUUID().toString();
   private static final int WAIT_FOR_THREAD_COMPLETE_S = 5;
   private static final int TERMINATION_TIMEOUT_S = 1;
+  private static final long MAX_RETRY_AFTER_SECONDS = 300L;
 
   static {
     Map<String, String> library = new LinkedHashMap<>();
@@ -409,8 +410,8 @@ public class AnalyticsClient {
   static class BatchUploadTask implements Runnable {
     private static final Backo BACKO =
         Backo.builder() //
-            .base(TimeUnit.SECONDS, 15) //
-            .cap(TimeUnit.HOURS, 1) //
+            .base(TimeUnit.MILLISECONDS, 100) //
+            .cap(TimeUnit.MINUTES, 1) //
             .jitter(1) //
             .build();
 
@@ -438,12 +439,37 @@ public class AnalyticsClient {
       }
     }
 
-    /** Returns {@code true} to indicate a batch should be retried. {@code false} otherwise. */
-    boolean upload() {
+    private enum RetryStrategy {
+      NONE,
+      BACKOFF,
+      RETRY_AFTER
+    }
+
+    private static final class UploadResult {
+      final RetryStrategy strategy;
+      final long retryAfterSeconds;
+
+      UploadResult(RetryStrategy strategy) {
+        this(strategy, 0L);
+      }
+
+      UploadResult(RetryStrategy strategy, long retryAfterSeconds) {
+        this.strategy = strategy;
+        this.retryAfterSeconds = retryAfterSeconds;
+      }
+    }
+
+    /**
+     * Perform a single upload attempt.
+     *
+     * @param attempt overall number of attempts so far (1-based)
+     */
+    UploadResult upload(int attempt) {
       client.log.print(VERBOSE, "Uploading batch %s.", batch.sequence());
 
       try {
-        Call<UploadResponse> call = client.service.upload(client.uploadUrl, batch);
+        Call<UploadResponse> call;
+        call = client.service.upload(attempt - 1, client.uploadUrl, batch);
         Response<UploadResponse> response = call.execute();
 
         if (response.isSuccessful()) {
@@ -455,59 +481,148 @@ public class AnalyticsClient {
             }
           }
 
-          return false;
+          return new UploadResult(RetryStrategy.NONE);
         }
 
         int status = response.code();
-        if (is5xx(status)) {
+
+        if (isStatusRetryAfterEligible(status)) {
+          String retryAfterHeader = response.headers().get("Retry-After");
+          Long retryAfterSeconds = parseRetryAfterSeconds(retryAfterHeader);
+          if (retryAfterSeconds != null) {
+            client.log.print(
+                DEBUG,
+                "Could not upload batch %s due to status %s with Retry-After %s seconds. Retrying after delay.",
+                batch.sequence(),
+                status,
+                retryAfterSeconds);
+            return new UploadResult(RetryStrategy.RETRY_AFTER, retryAfterSeconds);
+          }
           client.log.print(
-              DEBUG, "Could not upload batch %s due to server error. Retrying.", batch.sequence());
-          return true;
-        } else if (status == 429) {
-          client.log.print(
-              DEBUG, "Could not upload batch %s due to rate limiting. Retrying.", batch.sequence());
-          return true;
+              DEBUG,
+              "Status %s did not have a valid Retry-After header for batch %s.",
+              status,
+              batch.sequence());
         }
 
-        client.log.print(DEBUG, "Could not upload batch %s. Giving up.", batch.sequence());
+        if (isStatusRetryWithBackoff(status)) {
+          client.log.print(
+              DEBUG,
+              "Could not upload batch %s due to retryable status %s. Retrying with backoff.",
+              batch.sequence(),
+              status);
+          return new UploadResult(RetryStrategy.BACKOFF);
+        }
+
+        client.log.print(
+            DEBUG,
+            "Could not upload batch %s due to non-retryable status %s. Giving up.",
+            batch.sequence(),
+            status);
         notifyCallbacksWithException(batch, new IOException(response.errorBody().string()));
 
-        return false;
+        return new UploadResult(RetryStrategy.NONE);
       } catch (IOException error) {
         client.log.print(DEBUG, error, "Could not upload batch %s. Retrying.", batch.sequence());
 
-        return true;
+        return new UploadResult(RetryStrategy.BACKOFF);
       } catch (Exception exception) {
         client.log.print(DEBUG, "Could not upload batch %s. Giving up.", batch.sequence());
 
         notifyCallbacksWithException(batch, exception);
 
-        return false;
+        return new UploadResult(RetryStrategy.NONE);
+      }
+    }
+
+    private static boolean isStatusRetryAfterEligible(int status) {
+      return status == 429 || status == 408 || status == 503;
+    }
+
+    private static Long parseRetryAfterSeconds(String headerValue) {
+      if (headerValue == null) {
+        return null;
+      }
+      headerValue = headerValue.trim();
+      if (headerValue.isEmpty()) {
+        return null;
+      }
+      try {
+        long seconds = Long.parseLong(headerValue);
+        if (seconds <= 0L) {
+          return null;
+        }
+        if (seconds > MAX_RETRY_AFTER_SECONDS) {
+          return MAX_RETRY_AFTER_SECONDS;
+        }
+        return seconds;
+      } catch (NumberFormatException ignored) {
+        return null;
       }
     }
 
     @Override
     public void run() {
-      int attempt = 0;
-      for (; attempt <= maxRetries; attempt++) {
-        boolean retry = upload();
-        if (!retry) return;
+      int totalAttempts = 0; // counts every HTTP attempt (for header and error message)
+      int backoffAttempts = 0; // counts attempts that consume backoff-based retries
+      int maxBackoffAttempts = maxRetries + 1; // preserve existing semantics
+
+      while (true) {
+        totalAttempts++;
+        UploadResult result = upload(totalAttempts);
+
+        if (result.strategy == RetryStrategy.NONE) {
+          return;
+        }
+
+        if (result.strategy == RetryStrategy.RETRY_AFTER) {
+          try {
+            TimeUnit.SECONDS.sleep(result.retryAfterSeconds);
+          } catch (InterruptedException e) {
+            client.log.print(
+                DEBUG,
+                "Thread interrupted while waiting for Retry-After for batch %s.",
+                batch.sequence());
+            Thread.currentThread().interrupt();
+            return;
+          }
+          // Do not count Retry-After based retries against maxRetries.
+          continue;
+        }
+
+        // BACKOFF strategy
+        backoffAttempts++;
+        if (backoffAttempts >= maxBackoffAttempts) {
+          break;
+        }
+
         try {
-          backo.sleep(attempt);
+          backo.sleep(backoffAttempts - 1);
         } catch (InterruptedException e) {
           client.log.print(
               DEBUG, "Thread interrupted while backing off for batch %s.", batch.sequence());
+          Thread.currentThread().interrupt();
           return;
         }
       }
 
       client.log.print(ERROR, "Could not upload batch %s. Retries exhausted.", batch.sequence());
       notifyCallbacksWithException(
-          batch, new IOException(Integer.toString(attempt) + " retries exhausted"));
+          batch, new IOException(Integer.toString(totalAttempts) + " retries exhausted"));
     }
 
-    private static boolean is5xx(int status) {
-      return status >= 500 && status < 600;
+    private static boolean isStatusRetryWithBackoff(int status) {
+      // Explicitly retry these client errors
+      if (status == 408 || status == 410 || status == 429 || status == 460) {
+        return true;
+      }
+
+      // Retry all other 5xx errors except 501, 505, and 511
+      if (status >= 500 && status < 600) {
+        return status != 501 && status != 505 && status != 511;
+      }
+
+      return false;
     }
   }
 
