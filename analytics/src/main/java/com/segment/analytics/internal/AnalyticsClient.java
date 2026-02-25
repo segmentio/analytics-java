@@ -229,7 +229,7 @@ public class AnalyticsClient {
     }
   }
 
-  void setRateLimitState(long retryAfterSeconds) {
+  synchronized void setRateLimitState(long retryAfterSeconds) {
     long now = System.currentTimeMillis();
     if (rateLimitStartTime == 0) {
       rateLimitStartTime = now;
@@ -238,13 +238,13 @@ public class AnalyticsClient {
     rateLimited = true;
   }
 
-  void clearRateLimitState() {
+  synchronized void clearRateLimitState() {
     rateLimited = false;
     rateLimitWaitUntil = 0;
     rateLimitStartTime = 0;
   }
 
-  boolean isRateLimited() {
+  synchronized boolean isRateLimited() {
     if (!rateLimited) return false;
     if (System.currentTimeMillis() >= rateLimitWaitUntil) {
       rateLimited = false;
@@ -702,7 +702,10 @@ public class AnalyticsClient {
     }
 
     private static boolean isStatusRetryWithBackoff(int status) {
-      // Explicitly retry these client errors
+      // Explicitly retry these client errors.
+      // 429 is also handled earlier via isStatusRetryAfterEligible (RATE_LIMITED strategy);
+      // including it here is defensive in case call-site ordering changes.
+      // 460 is a non-standard, Segment-specific status code for transient retryable failures.
       if (status == 408 || status == 410 || status == 429 || status == 460) {
         return true;
       }

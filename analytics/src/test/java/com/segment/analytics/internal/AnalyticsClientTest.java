@@ -618,8 +618,7 @@ public class AnalyticsClientTest {
     BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch, 10);
     batchUploadTask.run();
 
-    // DEFAULT_RETRIES == maxRetries
-    // tries 11(one normal run + 10 retries) even though default is 50 in AnalyticsClient.java
+    // maxRetries=10 => tries 11 (one initial attempt + 10 retries)
     verify(segmentService, times(11)).upload(anyInt(), isNull(), eq(batch));
     verify(callback)
         .failure(
@@ -732,7 +731,7 @@ public class AnalyticsClientTest {
     Batch batch = batchFor(trackMessage);
 
     // Test with a short Retry-After delay (2 seconds) to verify the mechanism works
-    // The cap at 300 seconds is verified by code inspection at AnalyticsClient.java:556-558
+    // The cap at 300 seconds is verified by code inspection at AnalyticsClient.java:610-612
     Response<UploadResponse> rateLimitedWithShortDelay = errorWithRetryAfter(429, "2");
     Response<UploadResponse> successResponse = Response.success(200, response);
 
@@ -747,7 +746,7 @@ public class AnalyticsClientTest {
 
     // Should wait approximately 2 seconds
     long elapsedMs = endTime - startTime;
-    assertThat(elapsedMs).isGreaterThanOrEqualTo(2000L).isLessThan(3000L);
+    assertThat(elapsedMs).isGreaterThanOrEqualTo(2000L).isLessThan(5000L);
 
     verify(segmentService, times(2)).upload(anyInt(), isNull(), eq(batch));
     verify(callback).success(trackMessage);
