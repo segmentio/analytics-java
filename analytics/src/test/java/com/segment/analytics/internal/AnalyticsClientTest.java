@@ -94,7 +94,14 @@ public class AnalyticsClientTest {
 
   // Defers loading the client until tests can initialize all required
   // dependencies.
+  private static final long DEFAULT_MAX_TOTAL_BACKOFF_DURATION_MS = 43200 * 1000L; // 12 hours
+  private static final long DEFAULT_MAX_RATE_LIMIT_DURATION_MS = 43200 * 1000L; // 12 hours
+
   AnalyticsClient newClient() {
+    return newClient(DEFAULT_MAX_TOTAL_BACKOFF_DURATION_MS, DEFAULT_MAX_RATE_LIMIT_DURATION_MS);
+  }
+
+  AnalyticsClient newClient(long maxTotalBackoffDurationMs, long maxRateLimitDurationMs) {
     return new AnalyticsClient(
         messageQueue,
         null,
@@ -109,7 +116,9 @@ public class AnalyticsClientTest {
         Collections.singletonList(callback),
         isShutDown,
         writeKey,
-        new Gson());
+        new Gson(),
+        maxTotalBackoffDurationMs,
+        maxRateLimitDurationMs);
   }
 
   @Test
@@ -298,7 +307,9 @@ public class AnalyticsClientTest {
             Collections.singletonList(callback),
             isShutDown,
             writeKey,
-            new Gson());
+            new Gson(),
+            DEFAULT_MAX_TOTAL_BACKOFF_DURATION_MS,
+            DEFAULT_MAX_RATE_LIMIT_DURATION_MS);
 
     Map<String, String> properties = new HashMap<String, String>();
 
@@ -1034,7 +1045,9 @@ public class AnalyticsClientTest {
             Collections.singletonList(callback),
             isShutDown,
             writeKey,
-            new Gson());
+            new Gson(),
+            DEFAULT_MAX_TOTAL_BACKOFF_DURATION_MS,
+            DEFAULT_MAX_RATE_LIMIT_DURATION_MS);
 
     Map<String, String> properties = new HashMap<String, String>();
     properties.put("property3", generateDataOfSizeSpecialChars(((int) (MAX_MSG_SIZE * 0.9)), true));
@@ -1076,7 +1089,9 @@ public class AnalyticsClientTest {
             Collections.singletonList(callback),
             isShutDown,
             writeKey,
-            new Gson());
+            new Gson(),
+            DEFAULT_MAX_TOTAL_BACKOFF_DURATION_MS,
+            DEFAULT_MAX_RATE_LIMIT_DURATION_MS);
 
     Map<String, String> properties = new HashMap<String, String>();
     properties.put("property3", generateDataOfSizeSpecialChars(MAX_MSG_SIZE, true));
@@ -1111,7 +1126,9 @@ public class AnalyticsClientTest {
             Collections.singletonList(callback),
             isShutDown,
             writeKey,
-            new Gson());
+            new Gson(),
+            DEFAULT_MAX_TOTAL_BACKOFF_DURATION_MS,
+            DEFAULT_MAX_RATE_LIMIT_DURATION_MS);
 
     Map<String, String> properties = new HashMap<String, String>();
     properties.put("property3", generateDataOfSizeSpecialChars(1024 * 8, true));
@@ -1127,5 +1144,104 @@ public class AnalyticsClientTest {
     while (!isShutDown.get()) {}
 
     verify(networkExecutor, times(21)).submit(any(Runnable.class));
+  }
+
+  @Test
+  public void rateLimitStateClearedOnSuccess() {
+    AnalyticsClient client = newClient();
+    TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
+    Batch batch = batchFor(trackMessage);
+
+    Response<UploadResponse> rateLimited = errorWithRetryAfter(429, "1");
+    Response<UploadResponse> successResponse = Response.success(200, response);
+
+    when(segmentService.upload(anyInt(), isNull(), eq(batch)))
+        .thenReturn(Calls.response(rateLimited))
+        .thenReturn(Calls.response(successResponse));
+
+    BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch, DEFAULT_RETRIES);
+    batchUploadTask.run();
+
+    // After 429 -> 200 success, rate-limit state should be cleared
+    assertThat(client.isRateLimited()).isFalse();
+    verify(segmentService, times(2)).upload(anyInt(), isNull(), eq(batch));
+    verify(callback).success(trackMessage);
+  }
+
+  @Test
+  public void maxTotalBackoffDurationDropsBatch() {
+    // Use a very short maxTotalBackoffDuration (1ms) so it expires quickly
+    AnalyticsClient client = newClient(1L, DEFAULT_MAX_RATE_LIMIT_DURATION_MS);
+    TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
+    Batch batch = batchFor(trackMessage);
+
+    final int highMaxRetries = 1000;
+    // Return repeated 500s — should hit maxTotalBackoffDuration before maxRetries
+    when(segmentService.upload(anyInt(), isNull(), eq(batch)))
+        .thenAnswer(
+            new Answer<Call<UploadResponse>>() {
+              public Call<UploadResponse> answer(InvocationOnMock invocation) {
+                Response<UploadResponse> failResponse =
+                    Response.error(500, ResponseBody.create(null, "Server Error"));
+                return Calls.response(failResponse);
+              }
+            });
+
+    BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch, highMaxRetries);
+    batchUploadTask.run();
+
+    // Should have been dropped well before reaching 1001 attempts (maxRetries=1000).
+    // Exact count depends on timing; verify it didn't exhaust all retries.
+    ArgumentCaptor<Integer> retryCountCaptor = ArgumentCaptor.forClass(Integer.class);
+    verify(segmentService, org.mockito.Mockito.atLeast(2))
+        .upload(retryCountCaptor.capture(), isNull(), eq(batch));
+    assertThat(retryCountCaptor.getAllValues().size()).isLessThan(highMaxRetries + 1);
+    verify(callback).failure(eq(trackMessage), any(IOException.class));
+  }
+
+  @Test
+  public void maxRateLimitDurationDropsBatch() {
+    // Use a very short maxRateLimitDuration (1ms) so it expires immediately
+    AnalyticsClient client = newClient(DEFAULT_MAX_TOTAL_BACKOFF_DURATION_MS, 1L);
+    TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
+    Batch batch = batchFor(trackMessage);
+
+    // Return repeated 429 with Retry-After
+    Response<UploadResponse> rateLimited = errorWithRetryAfter(429, "1");
+    when(segmentService.upload(anyInt(), isNull(), eq(batch)))
+        .thenReturn(Calls.response(rateLimited))
+        .thenReturn(Calls.response(rateLimited));
+
+    BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch, DEFAULT_RETRIES);
+    batchUploadTask.run();
+
+    // After the first 429 sets rate-limit state, the second should exceed maxRateLimitDuration
+    // and the batch should be dropped
+    verify(callback).failure(eq(trackMessage), any(IOException.class));
+  }
+
+  @Test
+  public void rateLimitStateSetOn429() {
+    AnalyticsClient client = newClient();
+    TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
+    Batch batch = batchFor(trackMessage);
+
+    Response<UploadResponse> rateLimited = errorWithRetryAfter(429, "1");
+    Response<UploadResponse> successResponse = Response.success(200, response);
+
+    when(segmentService.upload(anyInt(), isNull(), eq(batch)))
+        .thenReturn(Calls.response(rateLimited))
+        .thenReturn(Calls.response(successResponse));
+
+    // Verify rate-limit state is initially not set
+    assertThat(client.isRateLimited()).isFalse();
+
+    BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch, DEFAULT_RETRIES);
+    batchUploadTask.run();
+
+    // After success, rate-limit should be cleared
+    assertThat(client.isRateLimited()).isFalse();
+    verify(segmentService, times(2)).upload(anyInt(), isNull(), eq(batch));
+    verify(callback).success(trackMessage);
   }
 }

@@ -46,7 +46,7 @@ public class AnalyticsClient {
   private static final String instanceId = UUID.randomUUID().toString();
   private static final int WAIT_FOR_THREAD_COMPLETE_S = 5;
   private static final int TERMINATION_TIMEOUT_S = 1;
-  private static final long MAX_RETRY_AFTER_SECONDS = 300L;
+  private static final long MAX_RATE_LIMITED_SECONDS = 300L;
 
   static {
     Map<String, String> library = new LinkedHashMap<>();
@@ -72,7 +72,12 @@ public class AnalyticsClient {
   private final ScheduledExecutorService flushScheduler;
   private final AtomicBoolean isShutDown;
   private final String writeKey;
+  final long maxTotalBackoffDurationMs;
+  final long maxRateLimitDurationMs;
   private volatile Future<?> looperFuture;
+  private volatile boolean rateLimited;
+  private volatile long rateLimitWaitUntil;
+  private volatile long rateLimitStartTime;
 
   public static AnalyticsClient create(
       HttpUrl uploadUrl,
@@ -87,7 +92,9 @@ public class AnalyticsClient {
       ExecutorService networkExecutor,
       List<Callback> callbacks,
       String writeKey,
-      Gson gsonInstance) {
+      Gson gsonInstance,
+      long maxTotalBackoffDurationMs,
+      long maxRateLimitDurationMs) {
     return new AnalyticsClient(
         new LinkedBlockingQueue<Message>(queueCapacity),
         uploadUrl,
@@ -102,7 +109,9 @@ public class AnalyticsClient {
         callbacks,
         new AtomicBoolean(false),
         writeKey,
-        gsonInstance);
+        gsonInstance,
+        maxTotalBackoffDurationMs,
+        maxRateLimitDurationMs);
   }
 
   public AnalyticsClient(
@@ -119,7 +128,9 @@ public class AnalyticsClient {
       List<Callback> callbacks,
       AtomicBoolean isShutDown,
       String writeKey,
-      Gson gsonInstance) {
+      Gson gsonInstance,
+      long maxTotalBackoffDurationMs,
+      long maxRateLimitDurationMs) {
     this.messageQueue = messageQueue;
     this.uploadUrl = uploadUrl;
     this.service = service;
@@ -133,6 +144,8 @@ public class AnalyticsClient {
     this.isShutDown = isShutDown;
     this.writeKey = writeKey;
     this.gsonInstance = gsonInstance;
+    this.maxTotalBackoffDurationMs = maxTotalBackoffDurationMs;
+    this.maxRateLimitDurationMs = maxRateLimitDurationMs;
 
     this.currentQueueSizeInBytes = 0;
 
@@ -214,6 +227,30 @@ public class AnalyticsClient {
     if (!isShutDown.get()) {
       enqueue(FlushMessage.POISON);
     }
+  }
+
+  void setRateLimitState(long retryAfterSeconds) {
+    long now = System.currentTimeMillis();
+    if (rateLimitStartTime == 0) {
+      rateLimitStartTime = now;
+    }
+    rateLimitWaitUntil = now + (retryAfterSeconds * 1000);
+    rateLimited = true;
+  }
+
+  void clearRateLimitState() {
+    rateLimited = false;
+    rateLimitWaitUntil = 0;
+    rateLimitStartTime = 0;
+  }
+
+  boolean isRateLimited() {
+    if (!rateLimited) return false;
+    if (System.currentTimeMillis() >= rateLimitWaitUntil) {
+      rateLimited = false;
+      return false;
+    }
+    return true;
   }
 
   public void shutdown() {
@@ -365,38 +402,45 @@ public class AnalyticsClient {
           Boolean isOverflow = messages.size() >= size;
 
           if (!messages.isEmpty() && (isOverflow || isBlockingSignal || batchSizeLimitReached)) {
-            Batch batch = Batch.create(CONTEXT, new ArrayList<>(messages), writeKey);
-            log.print(
-                VERBOSE,
-                "Batching %s message(s) into batch %s.",
-                batch.batch().size(),
-                batch.sequence());
-            try {
-              networkExecutor.submit(
-                  BatchUploadTask.create(AnalyticsClient.this, batch, maximumRetries));
-            } catch (RejectedExecutionException e) {
+            // Skip submission if rate-limited (unless this is a StopMessage — always flush on
+            // shutdown)
+            if (isRateLimited() && message != StopMessage.STOP) {
+              log.print(DEBUG, "Rate-limited. Deferring batch submission.");
+              // Don't clear messages — they'll be picked up on the next flush trigger
+            } else {
+              Batch batch = Batch.create(CONTEXT, new ArrayList<>(messages), writeKey);
               log.print(
-                  ERROR,
-                  e,
-                  "Failed to submit batch %s to network executor during shutdown. Batch will be lost.",
+                  VERBOSE,
+                  "Batching %s message(s) into batch %s.",
+                  batch.batch().size(),
                   batch.sequence());
-              // Notify callbacks about the failure
-              for (Message msg : batch.batch()) {
-                for (Callback callback : callbacks) {
-                  callback.failure(msg, e);
+              try {
+                networkExecutor.submit(
+                    BatchUploadTask.create(AnalyticsClient.this, batch, maximumRetries));
+              } catch (RejectedExecutionException e) {
+                log.print(
+                    ERROR,
+                    e,
+                    "Failed to submit batch %s to network executor during shutdown. Batch will be lost.",
+                    batch.sequence());
+                // Notify callbacks about the failure
+                for (Message msg : batch.batch()) {
+                  for (Callback callback : callbacks) {
+                    callback.failure(msg, e);
+                  }
                 }
               }
-            }
 
-            currentBatchSize.set(0);
-            messages.clear();
-            if (batchSizeLimitReached) {
-              // If this is true that means the last message that would make us go over the limit
-              // was not added,
-              // add it to the now cleared messages list so its not lost
-              messages.add(message);
+              currentBatchSize.set(0);
+              messages.clear();
+              if (batchSizeLimitReached) {
+                // If this is true that means the last message that would make us go over the limit
+                // was not added,
+                // add it to the now cleared messages list so its not lost
+                messages.add(message);
+              }
+              batchSizeLimitReached = false;
             }
-            batchSizeLimitReached = false;
           }
         }
       } catch (InterruptedException e) {
@@ -442,7 +486,7 @@ public class AnalyticsClient {
     private enum RetryStrategy {
       NONE,
       BACKOFF,
-      RETRY_AFTER
+      RATE_LIMITED
     }
 
     private static final class UploadResult {
@@ -496,13 +540,14 @@ public class AnalyticsClient {
                 batch.sequence(),
                 status,
                 retryAfterSeconds);
-            return new UploadResult(RetryStrategy.RETRY_AFTER, retryAfterSeconds);
+            return new UploadResult(RetryStrategy.RATE_LIMITED, retryAfterSeconds);
           }
           client.log.print(
               DEBUG,
-              "Status %s did not have a valid Retry-After header for batch %s.",
+              "Status %s did not have a valid Retry-After header for batch %s. Using backoff.",
               status,
               batch.sequence());
+          return new UploadResult(RetryStrategy.RATE_LIMITED, 0);
         }
 
         if (isStatusRetryWithBackoff(status)) {
@@ -536,7 +581,7 @@ public class AnalyticsClient {
     }
 
     private static boolean isStatusRetryAfterEligible(int status) {
-      return status == 429 || status == 408 || status == 503;
+      return status == 429;
     }
 
     private static Long parseRetryAfterSeconds(String headerValue) {
@@ -552,8 +597,8 @@ public class AnalyticsClient {
         if (seconds <= 0L) {
           return null;
         }
-        if (seconds > MAX_RETRY_AFTER_SECONDS) {
-          return MAX_RETRY_AFTER_SECONDS;
+        if (seconds > MAX_RATE_LIMITED_SECONDS) {
+          return MAX_RATE_LIMITED_SECONDS;
         }
         return seconds;
       } catch (NumberFormatException ignored) {
@@ -566,31 +611,66 @@ public class AnalyticsClient {
       int totalAttempts = 0; // counts every HTTP attempt (for header and error message)
       int backoffAttempts = 0; // counts attempts that consume backoff-based retries
       int maxBackoffAttempts = maxRetries + 1; // preserve existing semantics
+      long firstFailureTime = 0;
 
       while (true) {
         totalAttempts++;
         UploadResult result = upload(totalAttempts);
 
         if (result.strategy == RetryStrategy.NONE) {
+          client.clearRateLimitState();
           return;
         }
 
-        if (result.strategy == RetryStrategy.RETRY_AFTER) {
-          try {
-            TimeUnit.SECONDS.sleep(result.retryAfterSeconds);
-          } catch (InterruptedException e) {
-            client.log.print(
-                DEBUG,
-                "Thread interrupted while waiting for Retry-After for batch %s.",
-                batch.sequence());
-            Thread.currentThread().interrupt();
-            return;
+        if (result.strategy == RetryStrategy.RATE_LIMITED) {
+          // Set global rate-limit state (blocks Looper from submitting more)
+          client.setRateLimitState(result.retryAfterSeconds);
+
+          // Check maxRateLimitDuration
+          if (client.rateLimitStartTime > 0
+              && System.currentTimeMillis() - client.rateLimitStartTime
+                  > client.maxRateLimitDurationMs) {
+            client.clearRateLimitState();
+            break;
           }
-          // Do not count Retry-After based retries against maxRetries.
+
+          // Sleep for Retry-After then retry this batch
+          if (result.retryAfterSeconds > 0) {
+            try {
+              TimeUnit.SECONDS.sleep(result.retryAfterSeconds);
+            } catch (InterruptedException e) {
+              client.log.print(
+                  DEBUG,
+                  "Thread interrupted while waiting for Retry-After for batch %s.",
+                  batch.sequence());
+              Thread.currentThread().interrupt();
+              return;
+            }
+          } else {
+            // No valid Retry-After header — use backoff-style wait
+            backoffAttempts++;
+            if (backoffAttempts >= maxBackoffAttempts) {
+              break;
+            }
+            try {
+              backo.sleep(backoffAttempts - 1);
+            } catch (InterruptedException e) {
+              client.log.print(
+                  DEBUG, "Thread interrupted while backing off for batch %s.", batch.sequence());
+              Thread.currentThread().interrupt();
+              return;
+            }
+          }
+          // Retry-After with valid header does not count against maxRetries.
           continue;
         }
 
         // BACKOFF strategy
+        if (firstFailureTime == 0) firstFailureTime = System.currentTimeMillis();
+        if (System.currentTimeMillis() - firstFailureTime > client.maxTotalBackoffDurationMs) {
+          break;
+        }
+
         backoffAttempts++;
         if (backoffAttempts >= maxBackoffAttempts) {
           break;
