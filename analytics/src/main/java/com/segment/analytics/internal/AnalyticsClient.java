@@ -407,6 +407,16 @@ public class AnalyticsClient {
             if (isRateLimited() && message != StopMessage.STOP) {
               log.print(DEBUG, "Rate-limited. Deferring batch submission.");
               // Don't clear messages — they'll be picked up on the next flush trigger
+              if (batchSizeLimitReached) {
+                // Preserve overflow message while deferring submission due to rate limiting.
+                // This message was consumed from the queue but not added to the current batch.
+                if (!messageQueue.offer(message)) {
+                  log.print(
+                      ERROR,
+                      "Failed to preserve overflow message while rate-limited; message may be dropped.");
+                }
+                batchSizeLimitReached = false;
+              }
             } else {
               Batch batch = Batch.create(CONTEXT, new ArrayList<>(messages), writeKey);
               log.print(

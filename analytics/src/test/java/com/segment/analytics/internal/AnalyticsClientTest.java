@@ -11,6 +11,7 @@ import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -149,6 +150,62 @@ public class AnalyticsClientTest {
     client.flush();
 
     verify(messageQueue).put(FlushMessage.POISON);
+  }
+
+  @Test
+  public void rateLimitedDeferralPreservesOverflowMessage() throws InterruptedException {
+    // Use a real queue with real messages. Two large messages trigger batchSizeLimitReached
+    // on the second one. StopMessage ends the Looper (bypasses rate-limit on shutdown).
+    LinkedBlockingQueue<Message> localQueue = new LinkedBlockingQueue<>();
+
+    // Create messages large enough that the second exceeds BATCH_MAX_SIZE (512000 bytes).
+    // ~300KB each: first fits, second triggers batchSizeLimitReached.
+    String largePayload = new String(new char[300000]).replace('\0', 'x');
+    Map<String, Object> largeProps = new java.util.HashMap<>();
+    largeProps.put("data", largePayload);
+
+    TrackMessage firstMessage =
+        TrackMessage.builder("first").userId("user").properties(largeProps).build();
+    TrackMessage overflowMessage =
+        TrackMessage.builder("overflow").userId("user").properties(largeProps).build();
+
+    localQueue.put(firstMessage);
+    localQueue.put(overflowMessage);
+    localQueue.put(StopMessage.STOP);
+
+    // Pass isShutDown=true to prevent the constructor from auto-starting a Looper
+    // (which would race with our manually-created Looper and consume queue messages).
+    AnalyticsClient client =
+        new AnalyticsClient(
+            localQueue,
+            null,
+            segmentService,
+            50,
+            TimeUnit.HOURS.toMillis(1),
+            0,
+            MAX_BATCH_SIZE,
+            log,
+            threadFactory,
+            networkExecutor,
+            Collections.singletonList(callback),
+            new AtomicBoolean(true),
+            writeKey,
+            new Gson(),
+            DEFAULT_MAX_TOTAL_BACKOFF_DURATION_MS,
+            DEFAULT_MAX_RATE_LIMIT_DURATION_MS);
+
+    // Set rate-limited state so the Looper defers batch submission
+    client.setRateLimitState(60);
+
+    AnalyticsClient.Looper looper = client.new Looper();
+    looper.run();
+
+    // After: msg1 added to messages, msg2 triggers batchSizeLimitReached,
+    // rate-limited deferral offers msg2 back to queue, StopMessage bypasses
+    // rate-limit and submits batch with msg1. msg2 remains in queue.
+    assertThat(localQueue).contains(overflowMessage);
+    // Batch with msg1 was submitted on StopMessage (shutdown always flushes)
+    verify(networkExecutor).submit(any(Runnable.class));
   }
 
   /** Wait until the queue is drained. */
