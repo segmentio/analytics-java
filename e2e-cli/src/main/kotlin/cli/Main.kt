@@ -5,10 +5,8 @@ import com.google.gson.reflect.TypeToken
 import com.segment.analytics.Analytics
 import com.segment.analytics.Callback
 import com.segment.analytics.messages.*
-import java.text.SimpleDateFormat
+import java.time.Instant
 import java.util.Date
-import java.util.Locale
-import java.util.TimeZone
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -187,14 +185,5 @@ fun sendEvent(analytics: Analytics, event: Map<String, Any>) {
 }
 
 private fun parseTimestamp(iso: String): Date {
-    val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
-    format.timeZone = TimeZone.getTimeZone("UTC")
-    return try {
-        format.parse(iso)!!
-    } catch (_: Exception) {
-        // Fallback: try without millis
-        val fallback = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US)
-        fallback.timeZone = TimeZone.getTimeZone("UTC")
-        fallback.parse(iso)!!
-    }
+    return Date.from(Instant.parse(iso))
 }
