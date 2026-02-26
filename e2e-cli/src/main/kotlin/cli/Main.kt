@@ -5,6 +5,8 @@ import com.google.gson.reflect.TypeToken
 import com.segment.analytics.Analytics
 import com.segment.analytics.Callback
 import com.segment.analytics.messages.*
+import java.time.Instant
+import java.util.Date
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -107,14 +109,20 @@ fun sendEvent(analytics: Analytics, event: Map<String, Any>) {
     val userId = event["userId"] as? String ?: ""
     val anonymousId = event["anonymousId"] as? String
     val messageId = event["messageId"] as? String
+    val timestamp = event["timestamp"] as? String
     @Suppress("UNCHECKED_CAST")
     val traits = event["traits"] as? Map<String, Any> ?: emptyMap()
     @Suppress("UNCHECKED_CAST")
     val properties = event["properties"] as? Map<String, Any> ?: emptyMap()
     val eventName = event["event"] as? String
     val name = event["name"] as? String
+    val category = event["category"] as? String
     val groupId = event["groupId"] as? String
     val previousId = event["previousId"] as? String
+    @Suppress("UNCHECKED_CAST")
+    val context = event["context"] as? Map<String, Any>
+    @Suppress("UNCHECKED_CAST")
+    val integrations = event["integrations"] as? Map<String, Any>
 
     val messageBuilder: MessageBuilder<*, *> = when (type) {
         "identify" -> {
@@ -154,6 +162,28 @@ fun sendEvent(analytics: Analytics, event: Map<String, Any>) {
     if (anonymousId != null) {
         messageBuilder.anonymousId(anonymousId)
     }
+    if (messageId != null) {
+        messageBuilder.messageId(messageId)
+    }
+    if (timestamp != null) {
+        messageBuilder.timestamp(parseTimestamp(timestamp))
+    }
+    if (context != null) {
+        messageBuilder.context(context)
+    }
+    if (integrations != null) {
+        for ((key, value) in integrations) {
+            when (value) {
+                is Boolean -> messageBuilder.enableIntegration(key, value)
+                is Map<*, *> -> @Suppress("UNCHECKED_CAST")
+                    messageBuilder.integrationOptions(key, value as Map<String, Any>)
+            }
+        }
+    }
 
     analytics.enqueue(messageBuilder)
+}
+
+private fun parseTimestamp(iso: String): Date {
+    return Date.from(Instant.parse(iso))
 }
