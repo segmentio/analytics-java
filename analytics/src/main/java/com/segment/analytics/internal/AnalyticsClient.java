@@ -247,7 +247,7 @@ public class AnalyticsClient {
   synchronized boolean isRateLimited() {
     if (!rateLimited) return false;
     if (System.currentTimeMillis() >= rateLimitWaitUntil) {
-      rateLimited = false;
+      clearRateLimitState();
       return false;
     }
     return true;
@@ -646,6 +646,11 @@ public class AnalyticsClient {
 
           // Sleep for Retry-After then retry this batch
           if (result.retryAfterSeconds > 0) {
+            // Defensive guard: if backoff retries have already been exhausted,
+            // do not continue looping in the Retry-After path.
+            if (backoffAttempts >= maxBackoffAttempts) {
+              break;
+            }
             try {
               TimeUnit.SECONDS.sleep(result.retryAfterSeconds);
             } catch (InterruptedException e) {
@@ -653,6 +658,7 @@ public class AnalyticsClient {
                   DEBUG,
                   "Thread interrupted while waiting for Retry-After for batch %s.",
                   batch.sequence());
+              client.clearRateLimitState();
               Thread.currentThread().interrupt();
               return;
             }
@@ -667,6 +673,7 @@ public class AnalyticsClient {
             } catch (InterruptedException e) {
               client.log.print(
                   DEBUG, "Thread interrupted while backing off for batch %s.", batch.sequence());
+              client.clearRateLimitState();
               Thread.currentThread().interrupt();
               return;
             }
@@ -691,11 +698,13 @@ public class AnalyticsClient {
         } catch (InterruptedException e) {
           client.log.print(
               DEBUG, "Thread interrupted while backing off for batch %s.", batch.sequence());
+          client.clearRateLimitState();
           Thread.currentThread().interrupt();
           return;
         }
       }
 
+      client.clearRateLimitState();
       client.log.print(ERROR, "Could not upload batch %s. Retries exhausted.", batch.sequence());
       notifyCallbacksWithException(
           batch, new IOException(Integer.toString(totalAttempts) + " retries exhausted"));
