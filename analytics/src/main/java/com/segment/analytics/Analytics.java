@@ -152,6 +152,8 @@ public class Analytics {
     private int queueCapacity;
     private boolean forceTlsV1 = false;
     private GsonBuilder gsonBuilder;
+    private long maxTotalBackoffDurationMs;
+    private long maxRateLimitDurationMs;
 
     Builder(String writeKey) {
       if (writeKey == null || writeKey.trim().length() == 0) {
@@ -356,6 +358,32 @@ public class Analytics {
       return this;
     }
 
+    /**
+     * Set the maximum total duration for backoff-based retries before giving up on a batch. Default
+     * is 12 hours.
+     */
+    public Builder maxTotalBackoffDuration(long duration, TimeUnit unit) {
+      long seconds = unit.toSeconds(duration);
+      if (seconds < 1) {
+        throw new IllegalArgumentException("maxTotalBackoffDuration must be at least 1 second.");
+      }
+      this.maxTotalBackoffDurationMs = unit.toMillis(duration);
+      return this;
+    }
+
+    /**
+     * Set the maximum total duration for rate-limit (429) retries before giving up on a batch.
+     * Default is 12 hours.
+     */
+    public Builder maxRateLimitDuration(long duration, TimeUnit unit) {
+      long seconds = unit.toSeconds(duration);
+      if (seconds < 1) {
+        throw new IllegalArgumentException("maxRateLimitDuration must be at least 1 second.");
+      }
+      this.maxRateLimitDurationMs = unit.toMillis(duration);
+      return this;
+    }
+
     /** Create a {@link Analytics} client. */
     public Analytics build() {
       if (gsonBuilder == null) {
@@ -397,7 +425,8 @@ public class Analytics {
         maximumQueueSizeInBytes = MESSAGE_QUEUE_MAX_BYTE_SIZE;
       }
       if (maximumFlushAttempts == 0) {
-        maximumFlushAttempts = 3;
+        // Adjusted upward to accommodate shorter max retry backoff.
+        maximumFlushAttempts = 1000;
       }
       if (messageTransformers == null) {
         messageTransformers = Collections.emptyList();
@@ -420,6 +449,12 @@ public class Analytics {
       } else {
         callbacks = Collections.unmodifiableList(callbacks);
       }
+      if (maxTotalBackoffDurationMs == 0) {
+        maxTotalBackoffDurationMs = 43200 * 1000L; // 12 hours
+      }
+      if (maxRateLimitDurationMs == 0) {
+        maxRateLimitDurationMs = 43200 * 1000L; // 12 hours
+      }
 
       HttpLoggingInterceptor interceptor =
           new HttpLoggingInterceptor(
@@ -435,7 +470,7 @@ public class Analytics {
       OkHttpClient.Builder builder =
           client
               .newBuilder()
-              .addInterceptor(new AnalyticsRequestInterceptor(userAgent))
+              .addInterceptor(new AnalyticsRequestInterceptor(writeKey, userAgent))
               .addInterceptor(interceptor);
 
       if (forceTlsV1) {
@@ -473,7 +508,9 @@ public class Analytics {
               networkExecutor,
               callbacks,
               writeKey,
-              gson);
+              gson,
+              maxTotalBackoffDurationMs,
+              maxRateLimitDurationMs);
 
       return new Analytics(analyticsClient, messageTransformers, messageInterceptors, log);
     }
