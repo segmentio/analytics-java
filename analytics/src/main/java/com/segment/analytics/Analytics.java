@@ -425,8 +425,7 @@ public class Analytics {
         maximumQueueSizeInBytes = MESSAGE_QUEUE_MAX_BYTE_SIZE;
       }
       if (maximumFlushAttempts == 0) {
-        // Adjusted upward to accommodate shorter max retry backoff.
-        maximumFlushAttempts = 1000;
+        maximumFlushAttempts = 10;
       }
       if (messageTransformers == null) {
         messageTransformers = Collections.emptyList();

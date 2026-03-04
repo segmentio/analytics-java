@@ -464,7 +464,7 @@ public class AnalyticsClient {
   static class BatchUploadTask implements Runnable {
     private static final Backo BACKO =
         Backo.builder() //
-            .base(TimeUnit.MILLISECONDS, 100) //
+            .base(TimeUnit.MILLISECONDS, 500) //
             .cap(TimeUnit.MINUTES, 1) //
             .jitter(1) //
             .build();
