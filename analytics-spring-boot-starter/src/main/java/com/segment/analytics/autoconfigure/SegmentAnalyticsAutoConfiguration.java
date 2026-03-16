@@ -19,7 +19,7 @@ public class SegmentAnalyticsAutoConfiguration {
 
   @Autowired private SegmentProperties properties;
 
-  @Bean
+  @Bean(destroyMethod = "flush")
   public Analytics segmentAnalytics() {
     return Analytics.builder(properties.getWriteKey()).build();
   }
