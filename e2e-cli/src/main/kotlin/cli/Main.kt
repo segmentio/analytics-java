@@ -53,6 +53,7 @@ fun main(args: Array<String>) {
 
         val flushAt = input.config?.flushAt ?: 20
         val flushIntervalMs = input.config?.flushInterval ?: 10000L
+        val maxRetries = input.config?.maxRetries ?: 1000
 
         val flushLatch = CountDownLatch(1)
         val hasError = AtomicBoolean(false)
@@ -62,6 +63,7 @@ fun main(args: Array<String>) {
             .endpoint(input.apiHost)
             .flushQueueSize(flushAt)
             .flushInterval(maxOf(flushIntervalMs, 1000L), TimeUnit.MILLISECONDS)
+            .retries(maxRetries)
             .callback(object : Callback {
                 override fun success(message: Message?) {
                     // Event sent successfully
