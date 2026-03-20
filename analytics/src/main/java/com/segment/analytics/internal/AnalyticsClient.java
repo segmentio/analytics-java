@@ -523,7 +523,7 @@ public class AnalyticsClient {
 
       try {
         Call<UploadResponse> call;
-        call = client.service.upload(attempt - 1, client.uploadUrl, batch);
+        call = client.service.upload(attempt > 1 ? attempt - 1 : null, client.uploadUrl, batch);
         Response<UploadResponse> response = call.execute();
 
         if (response.isSuccessful()) {

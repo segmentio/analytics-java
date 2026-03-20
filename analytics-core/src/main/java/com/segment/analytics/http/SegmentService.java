@@ -12,5 +12,5 @@ import retrofit2.http.Url;
 public interface SegmentService {
   @POST
   Call<UploadResponse> upload(
-      @Header("X-Retry-Count") int retryCount, @Url HttpUrl uploadUrl, @Body Batch batch);
+      @Header("X-Retry-Count") Integer retryCount, @Url HttpUrl uploadUrl, @Body Batch batch);
 }
