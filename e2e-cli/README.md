@@ -4,15 +4,41 @@ E2E test CLI for the [analytics-java](https://github.com/segmentio/analytics-jav
 
 Built with Kotlin (JVM) and packaged as a fat jar via Maven.
 
-## Setup
+## Running E2E tests
+
+### With devbox (recommended)
 
 ```bash
-mvn package -pl e2e-cli -am
+# From repo root — activates Java 11 and Maven automatically
+devbox shell
+
+# Then from e2e-cli dir:
+./run-e2e.sh
 ```
 
-## Usage
+### Without devbox
+
+Requires Java 11+, Maven, and Node.js 18+.
 
 ```bash
+./run-e2e.sh
+```
+
+The script auto-detects `java` and `mvn` on PATH. If they're not on PATH but devbox has been initialized, it falls back to the devbox nix profile binaries automatically.
+
+### Override sdk-e2e-tests location
+
+```bash
+E2E_TESTS_DIR=../my-e2e-tests ./run-e2e.sh
+```
+
+## Manual CLI usage
+
+```bash
+# Build first (from repo root)
+mvn package -pl e2e-cli -am -DskipTests
+
+# Run
 java -jar e2e-cli/target/e2e-cli-*-jar-with-dependencies.jar --input '{"writeKey":"...", ...}'
 ```
 
