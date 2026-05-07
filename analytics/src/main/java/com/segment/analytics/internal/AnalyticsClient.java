@@ -46,6 +46,7 @@ public class AnalyticsClient {
   private static final String instanceId = UUID.randomUUID().toString();
   private static final int WAIT_FOR_THREAD_COMPLETE_S = 5;
   private static final int TERMINATION_TIMEOUT_S = 1;
+  private static final int NETWORK_TERMINATION_TIMEOUT_S = 30;
   private static final long MAX_RATE_LIMITED_SECONDS = 300L;
 
   static {
@@ -298,9 +299,11 @@ public class AnalyticsClient {
 
   public void shutdownAndWait(ExecutorService executor, String name) {
     boolean isLooperExecutor = name != null && name.equalsIgnoreCase("looper");
+    boolean isNetworkExecutor = name != null && name.equalsIgnoreCase("network");
+    int timeoutSeconds = isNetworkExecutor ? NETWORK_TERMINATION_TIMEOUT_S : TERMINATION_TIMEOUT_S;
     try {
       executor.shutdown();
-      boolean terminated = executor.awaitTermination(TERMINATION_TIMEOUT_S, TimeUnit.SECONDS);
+      boolean terminated = executor.awaitTermination(timeoutSeconds, TimeUnit.SECONDS);
       if (terminated) {
         log.print(VERBOSE, "%s executor terminated normally.", name);
         return;
