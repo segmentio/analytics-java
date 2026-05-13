@@ -4,7 +4,6 @@ import static com.segment.analytics.internal.FlushMessage.POISON;
 import static com.segment.analytics.internal.StopMessage.STOP;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
@@ -646,7 +645,8 @@ public class AnalyticsClientTest {
     Batch batch = batchFor(trackMessage);
 
     Call<UploadResponse> networkFailure = Calls.failure(new RuntimeException());
-    when(segmentService.upload(nullable(Integer.class), isNull(), eq(batch))).thenReturn(networkFailure);
+    when(segmentService.upload(nullable(Integer.class), isNull(), eq(batch)))
+        .thenReturn(networkFailure);
 
     BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch, DEFAULT_RETRIES);
     batchUploadTask.run();
@@ -1416,7 +1416,7 @@ public class AnalyticsClientTest {
 
   @Test
   public void retryableClientErrors410And460() {
-    for (int status : new int[]{410, 460}) {
+    for (int status : new int[] {410, 460}) {
       AnalyticsClient client = newClient();
       TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
       Batch batch = batchFor(trackMessage);
@@ -1438,7 +1438,7 @@ public class AnalyticsClientTest {
 
   @Test
   public void nonRetryable5xxErrors505And511() {
-    for (int status : new int[]{505, 511}) {
+    for (int status : new int[] {505, 511}) {
       AnalyticsClient client = newClient();
       TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
       Batch batch = batchFor(trackMessage);
@@ -1458,7 +1458,7 @@ public class AnalyticsClientTest {
 
   @Test
   public void nonRetryable4xxErrors400And401And403() {
-    for (int status : new int[]{400, 401, 403}) {
+    for (int status : new int[] {400, 401, 403}) {
       AnalyticsClient client = newClient();
       TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
       Batch batch = batchFor(trackMessage);
