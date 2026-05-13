@@ -38,6 +38,9 @@ data class CLIInput(
 
 private val gson = Gson()
 
+// Large enough that the test harness timeout governs termination, not retry exhaustion.
+private const val DEFAULT_MAX_RETRIES = 1000
+
 fun main(args: Array<String>) {
     var output = CLIOutput(success = false, error = "Unknown error")
 
@@ -53,7 +56,7 @@ fun main(args: Array<String>) {
 
         val flushAt = input.config?.flushAt ?: 20
         val flushIntervalMs = input.config?.flushInterval ?: 10000L
-        val maxRetries = input.config?.maxRetries ?: 1000
+        val maxRetries = input.config?.maxRetries ?: DEFAULT_MAX_RETRIES
 
         val flushLatch = CountDownLatch(1)
         val hasError = AtomicBoolean(false)

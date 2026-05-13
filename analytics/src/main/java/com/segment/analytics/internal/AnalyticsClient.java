@@ -46,7 +46,7 @@ public class AnalyticsClient {
   private static final String instanceId = UUID.randomUUID().toString();
   private static final int WAIT_FOR_THREAD_COMPLETE_S = 5;
   private static final int TERMINATION_TIMEOUT_S = 1;
-  private static final int NETWORK_TERMINATION_TIMEOUT_S = 30;
+  private static final int NETWORK_TERMINATION_TIMEOUT_S = 75; // base Retry-After cap is 60s + headroom
   private static final long MAX_RATE_LIMITED_SECONDS = 300L;
 
   static {
@@ -237,6 +237,17 @@ public class AnalyticsClient {
     }
     rateLimitWaitUntil = now + (retryAfterSeconds * 1000);
     rateLimited = true;
+  }
+
+  /**
+   * Sets rate-limit state and atomically checks whether maxRateLimitDuration has been exceeded.
+   * Returns true if the duration has been exceeded and the batch should be dropped.
+   */
+  synchronized boolean setRateLimitStateAndCheckDuration(
+      long retryAfterSeconds, long maxRateLimitDurationMs) {
+    setRateLimitState(retryAfterSeconds);
+    return rateLimitStartTime > 0
+        && System.currentTimeMillis() - rateLimitStartTime > maxRateLimitDurationMs;
   }
 
   synchronized void clearRateLimitState() {
@@ -460,6 +471,19 @@ public class AnalyticsClient {
         log.print(DEBUG, "Looper interrupted while polling for messages.");
         Thread.currentThread().interrupt();
       }
+      // Any messages still held in the local buffer were deferred due to rate-limiting and
+      // never flushed. Fire failure callbacks so callers are not silently left waiting.
+      if (!messages.isEmpty()) {
+        IOException stalledError =
+            new IOException(
+                messages.size() + " message(s) dropped: rate-limited when Looper stopped");
+        log.print(ERROR, stalledError.getMessage());
+        for (Message msg : messages) {
+          for (Callback callback : callbacks) {
+            callback.failure(msg, stalledError);
+          }
+        }
+      }
       log.print(VERBOSE, "Looper stopped");
     }
   }
@@ -555,12 +579,21 @@ public class AnalyticsClient {
                 retryAfterSeconds);
             return new UploadResult(RetryStrategy.RATE_LIMITED, retryAfterSeconds);
           }
-          client.log.print(
-              DEBUG,
-              "Status %s did not have a valid Retry-After header for batch %s. Using backoff.",
-              status,
-              batch.sequence());
-          return new UploadResult(RetryStrategy.RATE_LIMITED, 0);
+          if (retryAfterHeader != null && !retryAfterHeader.trim().isEmpty()) {
+            client.log.print(
+                DEBUG,
+                "Status %s returned unparseable Retry-After header \"%s\" for batch %s (HTTP-date format not supported). Using backoff.",
+                status,
+                retryAfterHeader,
+                batch.sequence());
+          } else {
+            client.log.print(
+                DEBUG,
+                "Status %s did not have a valid Retry-After header for batch %s. Using backoff.",
+                status,
+                batch.sequence());
+          }
+          return new UploadResult(RetryStrategy.BACKOFF);
         }
 
         if (isStatusRetryWithBackoff(status)) {
@@ -636,52 +669,32 @@ public class AnalyticsClient {
         }
 
         if (result.strategy == RetryStrategy.RATE_LIMITED) {
-          // Set global rate-limit state (blocks Looper from submitting more)
-          client.setRateLimitState(result.retryAfterSeconds);
-
-          // Check maxRateLimitDuration
-          if (client.rateLimitStartTime > 0
-              && System.currentTimeMillis() - client.rateLimitStartTime
-                  > client.maxRateLimitDurationMs) {
+          // Atomically set rate-limit state and check whether maxRateLimitDuration is exceeded.
+          boolean durationExceeded =
+              client.setRateLimitStateAndCheckDuration(
+                  result.retryAfterSeconds, client.maxRateLimitDurationMs);
+          if (durationExceeded) {
             client.clearRateLimitState();
             break;
           }
 
-          // Sleep for Retry-After then retry this batch
-          if (result.retryAfterSeconds > 0) {
-            // Defensive guard: if backoff retries have already been exhausted,
-            // do not continue looping in the Retry-After path.
-            if (backoffAttempts >= maxBackoffAttempts) {
-              break;
-            }
-            try {
-              TimeUnit.SECONDS.sleep(result.retryAfterSeconds);
-            } catch (InterruptedException e) {
-              client.log.print(
-                  DEBUG,
-                  "Thread interrupted while waiting for Retry-After for batch %s.",
-                  batch.sequence());
-              client.clearRateLimitState();
-              Thread.currentThread().interrupt();
-              return;
-            }
-          } else {
-            // No valid Retry-After header — use backoff-style wait
-            backoffAttempts++;
-            if (backoffAttempts >= maxBackoffAttempts) {
-              break;
-            }
-            try {
-              backo.sleep(backoffAttempts - 1);
-            } catch (InterruptedException e) {
-              client.log.print(
-                  DEBUG, "Thread interrupted while backing off for batch %s.", batch.sequence());
-              client.clearRateLimitState();
-              Thread.currentThread().interrupt();
-              return;
-            }
+          // If maxRetries=0 the user wants no retries at all; respect that for Retry-After too.
+          if (maxBackoffAttempts <= 1) {
+            break;
           }
-          // Retry-After with valid header does not count against maxRetries.
+
+          try {
+            TimeUnit.SECONDS.sleep(result.retryAfterSeconds);
+          } catch (InterruptedException e) {
+            client.log.print(
+                DEBUG,
+                "Thread interrupted while waiting for Retry-After for batch %s.",
+                batch.sequence());
+            client.clearRateLimitState();
+            Thread.currentThread().interrupt();
+            return;
+          }
+          // Retry-After does not count against maxRetries.
           continue;
         }
 
@@ -701,7 +714,6 @@ public class AnalyticsClient {
         } catch (InterruptedException e) {
           client.log.print(
               DEBUG, "Thread interrupted while backing off for batch %s.", batch.sequence());
-          client.clearRateLimitState();
           Thread.currentThread().interrupt();
           return;
         }
@@ -714,11 +726,10 @@ public class AnalyticsClient {
     }
 
     private static boolean isStatusRetryWithBackoff(int status) {
-      // Explicitly retry these client errors.
-      // 429 is also handled earlier via isStatusRetryAfterEligible (RATE_LIMITED strategy);
-      // including it here is defensive in case call-site ordering changes.
       // 460 is a non-standard, Segment-specific status code for transient retryable failures.
-      if (status == 408 || status == 410 || status == 429 || status == 460) {
+      // 429 is handled by isStatusRetryAfterEligible before this method is reached, so it is
+      // intentionally excluded here to avoid routing it through BACKOFF instead of RATE_LIMITED.
+      if (status == 408 || status == 410 || status == 460) {
         return true;
       }
 

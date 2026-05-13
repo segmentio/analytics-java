@@ -5,6 +5,7 @@ import static com.segment.analytics.internal.StopMessage.STOP;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
@@ -140,7 +141,7 @@ public class AnalyticsClientTest {
     client.shutdown();
 
     verify(networkExecutor).shutdown();
-    verify(networkExecutor).awaitTermination(1, TimeUnit.SECONDS);
+    verify(networkExecutor).awaitTermination(75, TimeUnit.SECONDS);
   }
 
   @Test
@@ -206,6 +207,61 @@ public class AnalyticsClientTest {
     assertThat(localQueue).contains(overflowMessage);
     // Batch with msg1 was submitted on StopMessage (shutdown always flushes)
     verify(networkExecutor).submit(any(Runnable.class));
+  }
+
+  @Test
+  public void rateLimitedDeferralRecoversOnNextFlush() throws InterruptedException {
+    // Use a custom queue that clears rate-limit state when the second POISON is taken,
+    // simulating rate-limit expiry between two flush triggers within a single looper run.
+    final AnalyticsClient[] clientHolder = new AnalyticsClient[1];
+    final int[] poisonCount = {0};
+
+    LinkedBlockingQueue<Message> localQueue =
+        new LinkedBlockingQueue<Message>() {
+          @Override
+          public Message take() throws InterruptedException {
+            Message msg = super.take();
+            if (msg == FlushMessage.POISON && ++poisonCount[0] == 2) {
+              // Second POISON: clear rate limit to simulate expiry before looper checks it
+              if (clientHolder[0] != null) clientHolder[0].clearRateLimitState();
+            }
+            return msg;
+          }
+        };
+
+    TrackMessage message = TrackMessage.builder("event").userId("user").build();
+    localQueue.put(message);
+    localQueue.put(FlushMessage.POISON); // first flush — rate-limited, defers
+    localQueue.put(FlushMessage.POISON); // second flush — rate limit cleared, submits
+    localQueue.put(StopMessage.STOP);
+
+    AnalyticsClient client =
+        new AnalyticsClient(
+            localQueue,
+            null,
+            segmentService,
+            50,
+            TimeUnit.HOURS.toMillis(1),
+            0,
+            MAX_BATCH_SIZE,
+            log,
+            threadFactory,
+            networkExecutor,
+            Collections.singletonList(callback),
+            new AtomicBoolean(true),
+            writeKey,
+            new Gson(),
+            DEFAULT_MAX_TOTAL_BACKOFF_DURATION_MS,
+            DEFAULT_MAX_RATE_LIMIT_DURATION_MS);
+
+    clientHolder[0] = client;
+    client.setRateLimitState(60); // rate-limited for 60s at looper start
+
+    AnalyticsClient.Looper looper = client.new Looper();
+    looper.run();
+
+    // First POISON deferred, second POISON submitted after rate limit cleared
+    verify(networkExecutor, times(1)).submit(any(Runnable.class));
   }
 
   /** Wait until the queue is drained. */
@@ -841,7 +897,7 @@ public class AnalyticsClientTest {
 
     verify(messageQueue).put(STOP);
     verify(networkExecutor).shutdown();
-    verify(networkExecutor).awaitTermination(1, TimeUnit.SECONDS);
+    verify(networkExecutor).awaitTermination(75, TimeUnit.SECONDS);
     verifyNoMoreInteractions(networkExecutor);
   }
 
@@ -855,7 +911,7 @@ public class AnalyticsClientTest {
 
     verify(messageQueue).put(STOP);
     verify(networkExecutor).shutdown();
-    verify(networkExecutor).awaitTermination(1, TimeUnit.SECONDS);
+    verify(networkExecutor).awaitTermination(75, TimeUnit.SECONDS);
     verify(networkExecutor).submit(any(AnalyticsClient.BatchUploadTask.class));
   }
 
@@ -1278,26 +1334,145 @@ public class AnalyticsClientTest {
 
   @Test
   public void rateLimitStateSetOn429() {
-    AnalyticsClient client = newClient();
+    AnalyticsClient client = spy(newClient());
     TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
     Batch batch = batchFor(trackMessage);
 
     Response<UploadResponse> rateLimited = errorWithRetryAfter(429, "1");
     Response<UploadResponse> successResponse = Response.success(200, response);
 
+    assertThat(client.isRateLimited()).isFalse();
+
     when(segmentService.upload(nullable(Integer.class), isNull(), eq(batch)))
         .thenReturn(Calls.response(rateLimited))
         .thenReturn(Calls.response(successResponse));
 
-    // Verify rate-limit state is initially not set
+    BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch, DEFAULT_RETRIES);
+    batchUploadTask.run();
+
+    // Verify setRateLimitStateAndCheckDuration was called (state was actually set on 429)
+    verify(client).setRateLimitStateAndCheckDuration(eq(1L), anyLong());
     assertThat(client.isRateLimited()).isFalse();
+    verify(segmentService, times(2)).upload(nullable(Integer.class), isNull(), eq(batch));
+    verify(callback).success(trackMessage);
+  }
+
+  @Test
+  public void isRateLimitedAutoExpiryClears() {
+    AnalyticsClient client = newClient();
+
+    client.setRateLimitState(0); // waitUntil = now + 0 = now (already expired)
+    assertThat(client.isRateLimited()).isFalse(); // should auto-clear and return false
+    // Calling again confirms state was actually cleared (not just returning false)
+    assertThat(client.isRateLimited()).isFalse();
+  }
+
+  @Test
+  public void retryAfterZeroMaxRetriesExitsAfterOneAttempt() {
+    AnalyticsClient client = newClient();
+    TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
+    Batch batch = batchFor(trackMessage);
+
+    Response<UploadResponse> rateLimited = errorWithRetryAfter(429, "1");
+    when(segmentService.upload(nullable(Integer.class), isNull(), eq(batch)))
+        .thenReturn(Calls.response(rateLimited));
+
+    // maxRetries=0 => maxBackoffAttempts=1 => should exit after first 429 without sleeping
+    BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch, 0);
+    long start = System.currentTimeMillis();
+    batchUploadTask.run();
+    long elapsed = System.currentTimeMillis() - start;
+
+    verify(segmentService, times(1)).upload(nullable(Integer.class), isNull(), eq(batch));
+    verify(callback).failure(eq(trackMessage), any(IOException.class));
+    // Should not have slept the 1-second Retry-After
+    assertThat(elapsed).isLessThan(1000L);
+  }
+
+  @Test
+  public void parseRetryAfterIgnoresHttpDateFormat() {
+    AnalyticsClient client = newClient();
+    TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
+    Batch batch = batchFor(trackMessage);
+
+    // RFC 7231 HTTP-date format — should not be parsed, should fall back to BACKOFF
+    Response<UploadResponse> rateLimitedHttpDate =
+        errorWithRetryAfter(429, "Wed, 21 Oct 2099 07:28:00 GMT");
+    Response<UploadResponse> successResponse = Response.success(200, response);
+
+    when(segmentService.upload(nullable(Integer.class), isNull(), eq(batch)))
+        .thenReturn(Calls.response(rateLimitedHttpDate))
+        .thenReturn(Calls.response(successResponse));
 
     BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch, DEFAULT_RETRIES);
     batchUploadTask.run();
 
-    // After success, rate-limit should be cleared
-    assertThat(client.isRateLimited()).isFalse();
+    // Should have retried via BACKOFF (not slept for a date-based delay) and succeeded
     verify(segmentService, times(2)).upload(nullable(Integer.class), isNull(), eq(batch));
     verify(callback).success(trackMessage);
+    // Rate-limit state should never have been set (BACKOFF path doesn't set it)
+    assertThat(client.isRateLimited()).isFalse();
+  }
+
+  @Test
+  public void retryableClientErrors410And460() {
+    for (int status : new int[]{410, 460}) {
+      AnalyticsClient client = newClient();
+      TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
+      Batch batch = batchFor(trackMessage);
+
+      Response<UploadResponse> failResponse =
+          Response.error(status, ResponseBody.create(null, "Error"));
+      Response<UploadResponse> successResponse = Response.success(200, response);
+
+      when(segmentService.upload(nullable(Integer.class), isNull(), eq(batch)))
+          .thenReturn(Calls.response(failResponse))
+          .thenReturn(Calls.response(successResponse));
+
+      new BatchUploadTask(client, BACKO, batch, DEFAULT_RETRIES).run();
+
+      verify(segmentService, times(2)).upload(nullable(Integer.class), isNull(), eq(batch));
+      verify(callback).success(trackMessage);
+    }
+  }
+
+  @Test
+  public void nonRetryable5xxErrors505And511() {
+    for (int status : new int[]{505, 511}) {
+      AnalyticsClient client = newClient();
+      TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
+      Batch batch = batchFor(trackMessage);
+
+      Response<UploadResponse> failResponse =
+          Response.error(status, ResponseBody.create(null, "Error"));
+
+      when(segmentService.upload(nullable(Integer.class), isNull(), eq(batch)))
+          .thenReturn(Calls.response(failResponse));
+
+      new BatchUploadTask(client, BACKO, batch, DEFAULT_RETRIES).run();
+
+      verify(segmentService, times(1)).upload(nullable(Integer.class), isNull(), eq(batch));
+      verify(callback).failure(eq(trackMessage), any(IOException.class));
+    }
+  }
+
+  @Test
+  public void nonRetryable4xxErrors400And401And403() {
+    for (int status : new int[]{400, 401, 403}) {
+      AnalyticsClient client = newClient();
+      TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
+      Batch batch = batchFor(trackMessage);
+
+      Response<UploadResponse> failResponse =
+          Response.error(status, ResponseBody.create(null, "Error"));
+
+      when(segmentService.upload(nullable(Integer.class), isNull(), eq(batch)))
+          .thenReturn(Calls.response(failResponse));
+
+      new BatchUploadTask(client, BACKO, batch, DEFAULT_RETRIES).run();
+
+      verify(segmentService, times(1)).upload(nullable(Integer.class), isNull(), eq(batch));
+      verify(callback).failure(eq(trackMessage), any(IOException.class));
+    }
   }
 }
