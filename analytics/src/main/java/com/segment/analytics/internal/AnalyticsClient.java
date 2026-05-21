@@ -46,7 +46,8 @@ public class AnalyticsClient {
   private static final String instanceId = UUID.randomUUID().toString();
   private static final int WAIT_FOR_THREAD_COMPLETE_S = 5;
   private static final int TERMINATION_TIMEOUT_S = 1;
-  private static final int NETWORK_TERMINATION_TIMEOUT_S = 75; // base Retry-After cap is 60s + headroom
+  private static final int NETWORK_TERMINATION_TIMEOUT_S =
+      75; // base Retry-After cap is 60s + headroom
   private static final long MAX_RATE_LIMITED_SECONDS = 300L;
 
   static {
@@ -181,7 +182,31 @@ public class AnalyticsClient {
   }
 
   public boolean offer(Message message) {
-    return messageQueue.offer(message);
+    if (isShutDown.get()) {
+      log.print(ERROR, "Attempt to offer a message when shutdown has been called %s.", message);
+      return false;
+    }
+
+    int messageByteSize = messageSizeInBytes(message);
+    if (messageByteSize > MSG_MAX_SIZE) {
+      log.print(ERROR, "Message was above individual limit. MessageId: %s", message.messageId());
+      return false;
+    }
+
+    if (isBackPressuredAfterSize(messageByteSize)) {
+      messageQueue.offer(FlushMessage.POISON);
+      if (!messageQueue.offer(message)) {
+        return false;
+      }
+      this.currentQueueSizeInBytes = messageByteSize;
+      log.print(VERBOSE, "Maximum storage size has been hit Flushing...");
+    } else {
+      if (!messageQueue.offer(message)) {
+        return false;
+      }
+      this.currentQueueSizeInBytes += messageByteSize;
+    }
+    return true;
   }
 
   public void enqueue(Message message) {
