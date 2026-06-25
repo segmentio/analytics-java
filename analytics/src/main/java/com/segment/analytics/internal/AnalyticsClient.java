@@ -15,6 +15,11 @@ import com.segment.backo.Backo;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -592,7 +597,7 @@ public class AnalyticsClient {
 
         int status = response.code();
 
-        if (isStatusRetryAfterEligible(status)) {
+        if (isStatusRetryWithBackoff(status)) {
           String retryAfterHeader = response.headers().get("Retry-After");
           Long retryAfterSeconds = parseRetryAfterSeconds(retryAfterHeader);
           if (retryAfterSeconds != null) {
@@ -607,7 +612,7 @@ public class AnalyticsClient {
           if (retryAfterHeader != null && !retryAfterHeader.trim().isEmpty()) {
             client.log.print(
                 DEBUG,
-                "Status %s returned unparseable Retry-After header \"%s\" for batch %s (HTTP-date format not supported). Using backoff.",
+                "Status %s returned unparseable Retry-After header \"%s\" for batch %s. Using backoff.",
                 status,
                 retryAfterHeader,
                 batch.sequence());
@@ -618,15 +623,6 @@ public class AnalyticsClient {
                 status,
                 batch.sequence());
           }
-          return new UploadResult(RetryStrategy.BACKOFF);
-        }
-
-        if (isStatusRetryWithBackoff(status)) {
-          client.log.print(
-              DEBUG,
-              "Could not upload batch %s due to retryable status %s. Retrying with backoff.",
-              batch.sequence(),
-              status);
           return new UploadResult(RetryStrategy.BACKOFF);
         }
 
@@ -651,10 +647,6 @@ public class AnalyticsClient {
       }
     }
 
-    private static boolean isStatusRetryAfterEligible(int status) {
-      return status == 429;
-    }
-
     private static Long parseRetryAfterSeconds(String headerValue) {
       if (headerValue == null) {
         return null;
@@ -668,11 +660,19 @@ public class AnalyticsClient {
         if (seconds <= 0L) {
           return null;
         }
-        if (seconds > MAX_RATE_LIMITED_SECONDS) {
-          return MAX_RATE_LIMITED_SECONDS;
-        }
-        return seconds;
+        return Math.min(seconds, MAX_RATE_LIMITED_SECONDS);
       } catch (NumberFormatException ignored) {
+        // Try HTTP-date format (RFC 7231 §7.1.1.1)
+      }
+      try {
+        ZonedDateTime target =
+            ZonedDateTime.parse(headerValue, DateTimeFormatter.RFC_1123_DATE_TIME);
+        long seconds = Duration.between(Instant.now(), target.toInstant()).getSeconds();
+        if (seconds <= 0L) {
+          return null;
+        }
+        return Math.min(seconds, MAX_RATE_LIMITED_SECONDS);
+      } catch (DateTimeParseException ignored) {
         return null;
       }
     }
@@ -752,9 +752,7 @@ public class AnalyticsClient {
 
     private static boolean isStatusRetryWithBackoff(int status) {
       // 460 is a non-standard, Segment-specific status code for transient retryable failures.
-      // 429 is handled by isStatusRetryAfterEligible before this method is reached, so it is
-      // intentionally excluded here to avoid routing it through BACKOFF instead of RATE_LIMITED.
-      if (status == 408 || status == 410 || status == 460) {
+      if (status == 408 || status == 410 || status == 429 || status == 460) {
         return true;
       }
 

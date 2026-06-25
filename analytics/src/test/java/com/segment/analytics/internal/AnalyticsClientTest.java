@@ -9,6 +9,7 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.timeout;
@@ -1390,14 +1391,43 @@ public class AnalyticsClientTest {
   }
 
   @Test
-  public void parseRetryAfterIgnoresHttpDateFormat() {
+  public void parseRetryAfterParsesHttpDateInFuture() {
     AnalyticsClient client = newClient();
     TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
     Batch batch = batchFor(trackMessage);
 
-    // RFC 7231 HTTP-date format — should not be parsed, should fall back to BACKOFF
+    // RFC 7231 HTTP-date format — 2 seconds in the future
+    java.time.ZonedDateTime futureDate =
+        java.time.ZonedDateTime.now(java.time.ZoneOffset.UTC).plusSeconds(2);
+    String httpDate = futureDate.format(java.time.format.DateTimeFormatter.RFC_1123_DATE_TIME);
+
+    Response<UploadResponse> rateLimitedHttpDate = errorWithRetryAfter(429, httpDate);
+    Response<UploadResponse> successResponse = Response.success(200, response);
+
+    // maxRetries=1 => maxBackoffAttempts=2. We return two rate-limited responses then success.
+    // RATE_LIMITED retries don't count against maxRetries, so all 3 attempts complete.
+    // If it fell through to BACKOFF, the 2nd failure would exhaust retries and fail.
+    when(segmentService.upload(nullable(Integer.class), isNull(), eq(batch)))
+        .thenReturn(Calls.response(rateLimitedHttpDate))
+        .thenReturn(Calls.response(rateLimitedHttpDate))
+        .thenReturn(Calls.response(successResponse));
+
+    BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch, 1);
+    batchUploadTask.run();
+
+    verify(segmentService, times(3)).upload(nullable(Integer.class), isNull(), eq(batch));
+    verify(callback).success(trackMessage);
+  }
+
+  @Test
+  public void parseRetryAfterHttpDateInPastReturnsNull() {
+    AnalyticsClient client = newClient();
+    TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
+    Batch batch = batchFor(trackMessage);
+
+    // RFC 7231 HTTP-date format — in the past
     Response<UploadResponse> rateLimitedHttpDate =
-        errorWithRetryAfter(429, "Wed, 21 Oct 2099 07:28:00 GMT");
+        errorWithRetryAfter(429, "Wed, 21 Oct 2015 07:28:00 GMT");
     Response<UploadResponse> successResponse = Response.success(200, response);
 
     when(segmentService.upload(nullable(Integer.class), isNull(), eq(batch)))
@@ -1407,10 +1437,33 @@ public class AnalyticsClientTest {
     BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch, DEFAULT_RETRIES);
     batchUploadTask.run();
 
-    // Should have retried via BACKOFF (not slept for a date-based delay) and succeeded
+    // Date in the past returns null, so falls back to BACKOFF strategy
     verify(segmentService, times(2)).upload(nullable(Integer.class), isNull(), eq(batch));
     verify(callback).success(trackMessage);
     // Rate-limit state should never have been set (BACKOFF path doesn't set it)
+    assertThat(client.isRateLimited()).isFalse();
+  }
+
+  @Test
+  public void parseRetryAfterMalformedStringFallsBackToBackoff() {
+    AnalyticsClient client = newClient();
+    TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
+    Batch batch = batchFor(trackMessage);
+
+    Response<UploadResponse> malformedRetryAfter = errorWithRetryAfter(429, "not-a-date-or-number");
+    Response<UploadResponse> successResponse = Response.success(200, response);
+
+    when(segmentService.upload(nullable(Integer.class), isNull(), eq(batch)))
+        .thenReturn(Calls.response(malformedRetryAfter))
+        .thenReturn(Calls.response(successResponse));
+
+    BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch, DEFAULT_RETRIES);
+    batchUploadTask.run();
+
+    // Unparseable header falls back to BACKOFF; task retries and succeeds
+    verify(segmentService, times(2)).upload(nullable(Integer.class), isNull(), eq(batch));
+    verify(callback).success(trackMessage);
+    // BACKOFF path never sets rate-limit state
     assertThat(client.isRateLimited()).isFalse();
   }
 
@@ -1457,6 +1510,51 @@ public class AnalyticsClientTest {
   }
 
   @Test
+  public void offerReturnsFalseWhenQueueFull() {
+    AnalyticsClient client = newClient();
+    TrackMessage first = TrackMessage.builder("first").userId("bar").build();
+    TrackMessage second = TrackMessage.builder("second").userId("bar").build();
+
+    // Stub the spy before the calls — doReturn avoids the eager real-method invocation
+    doReturn(false).when(messageQueue).offer(eq(second));
+
+    assertThat(client.offer(first)).isTrue();
+    assertThat(client.offer(second)).isFalse();
+    // No callback — caller is responsible for dead-lettering on false return
+    verify(callback, never()).failure(any(Message.class), any(Throwable.class));
+  }
+
+  @Test
+  public void offerTriggersFlushWhenByteBudgetExceeded() {
+    // 1-byte byte budget forces isBackPressuredAfterSize to trigger immediately
+    AnalyticsClient client =
+        new AnalyticsClient(
+            messageQueue,
+            null,
+            segmentService,
+            50,
+            TimeUnit.HOURS.toMillis(1),
+            0,
+            1,
+            log,
+            threadFactory,
+            networkExecutor,
+            Collections.singletonList(callback),
+            isShutDown,
+            writeKey,
+            new Gson(),
+            DEFAULT_MAX_TOTAL_BACKOFF_DURATION_MS,
+            DEFAULT_MAX_RATE_LIMIT_DURATION_MS);
+
+    TrackMessage message = TrackMessage.builder("foo").userId("bar").build();
+    boolean result = client.offer(message);
+
+    assertThat(result).isTrue();
+    // offer() must have inserted POISON into the queue to trigger a flush
+    verify(messageQueue).offer(eq(FlushMessage.POISON));
+  }
+
+  @Test
   public void nonRetryable4xxErrors400And401And403() {
     for (int status : new int[] {400, 401, 403}) {
       AnalyticsClient client = newClient();
@@ -1474,5 +1572,56 @@ public class AnalyticsClientTest {
       verify(segmentService, times(1)).upload(nullable(Integer.class), isNull(), eq(batch));
       verify(callback).failure(eq(trackMessage), any(IOException.class));
     }
+  }
+
+  @Test
+  public void retryAfterOn529UsesRateLimitedPath() {
+    // 529 with Retry-After should use RATE_LIMITED strategy (does NOT count against maxRetries).
+    AnalyticsClient client = newClient();
+    TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
+    Batch batch = batchFor(trackMessage);
+
+    Response<UploadResponse> successResponse = Response.success(200, response);
+
+    // maxRetries=1 => maxBackoffAttempts=2; but RATE_LIMITED does not consume backoff attempts,
+    // so the task keeps retrying until maxRateLimitDuration is exceeded or success.
+    // We return 529 twice then success to prove it doesn't exhaust maxRetries.
+    when(segmentService.upload(nullable(Integer.class), isNull(), eq(batch)))
+        .thenReturn(Calls.response(errorWithRetryAfter(529, "1")))
+        .thenReturn(Calls.response(errorWithRetryAfter(529, "1")))
+        .thenReturn(Calls.response(successResponse));
+
+    BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch, 1);
+    batchUploadTask.run();
+
+    // 3 attempts: 2 rate-limited retries (not counted) + 1 success
+    verify(segmentService, times(3)).upload(nullable(Integer.class), isNull(), eq(batch));
+    verify(callback).success(trackMessage);
+    // Rate-limit state is cleared on success
+    assertThat(client.isRateLimited()).isFalse();
+  }
+
+  @Test
+  public void retryAfterOn503UsesRateLimitedPath() {
+    // 503 with Retry-After should use RATE_LIMITED strategy (does NOT count against maxRetries).
+    AnalyticsClient client = newClient();
+    TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
+    Batch batch = batchFor(trackMessage);
+
+    Response<UploadResponse> serviceUnavailable = errorWithRetryAfter(503, "1");
+    Response<UploadResponse> successResponse = Response.success(200, response);
+
+    when(segmentService.upload(nullable(Integer.class), isNull(), eq(batch)))
+        .thenReturn(Calls.response(serviceUnavailable))
+        .thenReturn(Calls.response(successResponse));
+
+    BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch, DEFAULT_RETRIES);
+    batchUploadTask.run();
+
+    // Should have retried via RATE_LIMITED and succeeded on the second attempt
+    verify(segmentService, times(2)).upload(nullable(Integer.class), isNull(), eq(batch));
+    verify(callback).success(trackMessage);
+    // Rate-limit state is cleared on success
+    assertThat(client.isRateLimited()).isFalse();
   }
 }
