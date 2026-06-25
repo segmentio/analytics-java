@@ -43,6 +43,8 @@ import retrofit2.Call;
 import retrofit2.Response;
 
 public class AnalyticsClient {
+  public static final ThreadLocal<Integer> RETRY_COUNT = new ThreadLocal<>();
+
   private static final Map<String, ?> CONTEXT;
   private static final int BATCH_MAX_SIZE = 1024 * 500;
   private static final int MSG_MAX_SIZE = 1024 * 32;
@@ -198,17 +200,14 @@ public class AnalyticsClient {
       return false;
     }
 
+    if (!messageQueue.offer(message)) {
+      return false;
+    }
     if (isBackPressuredAfterSize(messageByteSize)) {
-      messageQueue.offer(FlushMessage.POISON);
-      if (!messageQueue.offer(message)) {
-        return false;
-      }
       this.currentQueueSizeInBytes = messageByteSize;
+      messageQueue.offer(FlushMessage.POISON);
       log.print(VERBOSE, "Maximum storage size has been hit Flushing...");
     } else {
-      if (!messageQueue.offer(message)) {
-        return false;
-      }
       this.currentQueueSizeInBytes += messageByteSize;
     }
     return true;
@@ -579,8 +578,12 @@ public class AnalyticsClient {
       client.log.print(VERBOSE, "Uploading batch %s.", batch.sequence());
 
       try {
-        Call<UploadResponse> call;
-        call = client.service.upload(attempt > 1 ? attempt - 1 : null, client.uploadUrl, batch);
+        if (attempt > 1) {
+          RETRY_COUNT.set(attempt - 1);
+        } else {
+          RETRY_COUNT.remove();
+        }
+        Call<UploadResponse> call = client.service.upload(client.uploadUrl, batch);
         Response<UploadResponse> response = call.execute();
 
         if (response.isSuccessful()) {

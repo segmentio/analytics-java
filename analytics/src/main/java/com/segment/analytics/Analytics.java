@@ -299,7 +299,10 @@ public class Analytics {
       return this;
     }
 
-    /** Set how many retries should happen before getting exhausted */
+    /**
+     * Set how many retries should happen before getting exhausted. Default is 10 retries with
+     * exponential backoff starting at 500ms (capped at 1 minute per attempt).
+     */
     public Builder retries(int maximumRetries) {
       if (maximumRetries < 1) {
         throw new IllegalArgumentException("retries must be at least 1");
