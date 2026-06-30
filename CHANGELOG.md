@@ -1,3 +1,16 @@
+# Version 3.5.5 (June 30, 2026)
+- [New](https://github.com/segmentio/analytics-java/pull/531) Unified HTTP response handling and retry behavior
+  - Retryable statuses (429, 408, 410, 460, 5xx except 501/505/511) check Retry-After header first, fall back to exponential backoff
+  - Retry-After supports numeric seconds and RFC 7231 HTTP-date format, capped at 300s
+  - Rate-limited retries do not count against maxRetries
+  - Looper defers batch submission while rate-limited
+  - Default backoff: 500ms base, 1min cap, 10 retries
+  - New Builder options: `maxTotalBackoffDuration()`, `maxRateLimitDuration()` (default 12h each)
+- [New](https://github.com/segmentio/analytics-java/pull/531) `offer()` non-blocking alternative to `enqueue()` with byte-size validation and backpressure handling
+- [New](https://github.com/segmentio/analytics-java/pull/531) X-Retry-Count header sent on retries
+- [New](https://github.com/segmentio/analytics-java/pull/531) Authorization header (Basic auth) added to all requests
+- [Fix](https://github.com/segmentio/analytics-java/pull/531) Network executor shutdown now waits 75s for in-flight uploads to complete
+
 # Version 3.5.4 (Dec 5, 2025)
 - Updating release for new sonatype repository
 
