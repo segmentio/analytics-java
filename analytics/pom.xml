@@ -6,12 +6,12 @@
   <parent>
     <groupId>com.segment.analytics.java</groupId>
     <artifactId>analytics-parent</artifactId>
-    <version>3.5.5-SNAPSHOT</version>
+    <version>3.5.5</version>
   </parent>
 
   <groupId>com.segment.analytics.java</groupId>
   <artifactId>analytics</artifactId>
-  <version>3.5.5-SNAPSHOT</version>
+  <version>3.5.5</version>
   <name>Analytics for Java</name>
 
   <description>The hassle-free way to add analytics to your Java app.</description>
@@ -28,7 +28,7 @@
     <url>https://github.com/segmentio/analytics-java/</url>
     <connection>scm:git:https://github.com/segmentio/analytics-java.git</connection>
     <developerConnection>scm:git:git@github.com:segmentio/analytics-java.git</developerConnection>
-    <tag>analytics-parent-3.5.4</tag>
+    <tag>analytics-parent-3.5.5</tag>
   </scm>
 
   <developers>
