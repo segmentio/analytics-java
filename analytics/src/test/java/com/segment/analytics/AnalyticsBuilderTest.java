@@ -460,4 +460,50 @@ public class AnalyticsBuilderTest {
     Analytics analytics = builder.queueCapacity(10).build();
     assertThat(analytics).isNotNull();
   }
+
+  @Test
+  public void invalidMaxTotalBackoffDuration() {
+    try {
+      builder.maxTotalBackoffDuration(0, TimeUnit.SECONDS);
+      fail("Should fail for maxTotalBackoffDuration < 1 second");
+    } catch (IllegalArgumentException e) {
+      assertThat(e).hasMessage("maxTotalBackoffDuration must be at least 1 second.");
+    }
+
+    try {
+      builder.maxTotalBackoffDuration(500, TimeUnit.MILLISECONDS);
+      fail("Should fail for maxTotalBackoffDuration < 1 second");
+    } catch (IllegalArgumentException e) {
+      assertThat(e).hasMessage("maxTotalBackoffDuration must be at least 1 second.");
+    }
+  }
+
+  @Test
+  public void buildsWithValidMaxTotalBackoffDuration() {
+    Analytics analytics = builder.maxTotalBackoffDuration(1, TimeUnit.SECONDS).build();
+    assertThat(analytics).isNotNull();
+  }
+
+  @Test
+  public void invalidMaxRateLimitDuration() {
+    try {
+      builder.maxRateLimitDuration(0, TimeUnit.SECONDS);
+      fail("Should fail for maxRateLimitDuration < 1 second");
+    } catch (IllegalArgumentException e) {
+      assertThat(e).hasMessage("maxRateLimitDuration must be at least 1 second.");
+    }
+
+    try {
+      builder.maxRateLimitDuration(500, TimeUnit.MILLISECONDS);
+      fail("Should fail for maxRateLimitDuration < 1 second");
+    } catch (IllegalArgumentException e) {
+      assertThat(e).hasMessage("maxRateLimitDuration must be at least 1 second.");
+    }
+  }
+
+  @Test
+  public void buildsWithValidMaxRateLimitDuration() {
+    Analytics analytics = builder.maxRateLimitDuration(1, TimeUnit.SECONDS).build();
+    assertThat(analytics).isNotNull();
+  }
 }
