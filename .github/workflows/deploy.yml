@@ -1,0 +1,74 @@
+name: Deploy to Maven Central
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  ARTIFACTORY_URL: ${{ vars.ARTIFACTORY_URL }}
+
+jobs:
+  test:
+    name: Pre-deploy tests
+    runs-on: ubuntu-x64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+          cache: maven
+
+      - name: Artifactory OIDC
+        uses: ./.github/actions/artifactory-oidc
+        with:
+          artifactory_url: ${{ vars.ARTIFACTORY_URL }}
+
+      - name: Run tests
+        run: mvn -B test
+
+  deploy:
+    name: Deploy to Maven Central
+    runs-on: ubuntu-x64
+    needs: [test]
+    environment: maven-central
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Set up JDK 11
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4
+        with:
+          distribution: 'temurin'
+          java-version: '11'
+          cache: maven
+          server-id: central
+          server-username: CI_DEPLOY_USERNAME
+          server-password: CI_DEPLOY_PASSWORD
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-passphrase: GPG_PASSPHRASE
+
+      - name: Artifactory OIDC
+        uses: ./.github/actions/artifactory-oidc
+        with:
+          artifactory_url: ${{ vars.ARTIFACTORY_URL }}
+
+      - name: Deploy to Maven Central
+        env:
+          CI_DEPLOY_USERNAME: ${{ secrets.CI_DEPLOY_USERNAME }}
+          CI_DEPLOY_PASSWORD: ${{ secrets.CI_DEPLOY_PASSWORD }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          mvn -B deploy \
+            -DskipTests \
+            -Dgpg.passphrase="$GPG_PASSPHRASE" \
+            -P release

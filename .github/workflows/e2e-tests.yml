@@ -1,18 +1,12 @@
-# E2E Tests for analytics-java
-# Copy this file to: analytics-java/.github/workflows/e2e-tests.yml
-#
-# This workflow:
-# 1. Checks out the SDK and sdk-e2e-tests repos
-# 2. Builds the SDK and e2e-cli
-# 3. Runs the e2e test suite
-
 name: E2E Tests
 
 on:
   push:
-    branches: [main, master]
+    branches: [master]
   pull_request:
-    branches: [main, master]
+    branches: [master]
+  schedule:
+    - cron: '0 6 * * 1-5'
   workflow_dispatch:
     inputs:
       e2e_tests_ref:
@@ -20,47 +14,59 @@ on:
         required: false
         default: 'main'
 
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  ARTIFACTORY_URL: ${{ vars.ARTIFACTORY_URL }}
+
 jobs:
   e2e-tests:
-    # Skip on fork PRs where repo secrets aren't available
-    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
-    runs-on: ubuntu-latest
+    name: E2E Test Suite
+    if: ${{ github.event_name != 'pull_request' || !github.event.pull_request.head.repo.fork }}
+    runs-on: ubuntu-x64
 
     steps:
       - name: Checkout SDK
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           path: sdk
 
       - name: Checkout sdk-e2e-tests
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
           repository: segmentio/sdk-e2e-tests
           ref: ${{ inputs.e2e_tests_ref || 'main' }}
-          token: ${{ secrets.E2E_TESTS_TOKEN }}
           path: sdk-e2e-tests
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
+      - name: Set up JDK 11
+        uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4
         with:
           distribution: 'temurin'
           java-version: '11'
+          cache: maven
+
+      - name: Artifactory OIDC
+        uses: ./sdk/.github/actions/artifactory-oidc
+        with:
+          artifactory_url: ${{ vars.ARTIFACTORY_URL }}
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@39370e3970a6d050c480ffad4ff0ed4d3fdee5af # v4
         with:
           node-version: '20'
 
       - name: Build Java SDK and e2e-cli
         working-directory: sdk
-        run: mvn package -pl e2e-cli -am -DskipTests
+        run: mvn -B package -pl e2e-cli -am -DskipTests
 
       - name: Find e2e-cli jar
         id: find-jar
         working-directory: sdk
         run: |
           JAR_PATH=$(find e2e-cli/target -name "e2e-cli-*-jar-with-dependencies.jar" | head -1)
-          echo "jar_path=$JAR_PATH" >> $GITHUB_OUTPUT
+          echo "jar_path=$JAR_PATH" >> "$GITHUB_OUTPUT"
 
       - name: Run E2E tests
         working-directory: sdk-e2e-tests
@@ -71,7 +77,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: e2e-test-results
           path: sdk-e2e-tests/test-results/

@@ -1,0 +1,71 @@
+name: 'Artifactory OIDC Authentication'
+description: 'Exchange GitHub OIDC token for Artifactory credentials and configure Maven settings.xml'
+
+inputs:
+  artifactory_url:
+    description: 'Artifactory base URL (e.g. https://segment.jfrog.io)'
+    required: true
+
+outputs:
+  token:
+    description: 'Artifactory access token'
+    value: ${{ steps.exchange.outputs.token }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Get OIDC token
+      id: oidc
+      shell: bash
+      run: |
+        OIDC_TOKEN=$(curl -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+          "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=jfrog-github" | jq -r '.value')
+        echo "::add-mask::$OIDC_TOKEN"
+        echo "oidc_token=$OIDC_TOKEN" >> "$GITHUB_OUTPUT"
+
+    - name: Exchange OIDC token for Artifactory token
+      id: exchange
+      shell: bash
+      env:
+        ARTIFACTORY_URL: ${{ inputs.artifactory_url }}
+      run: |
+        HOST=$(echo "$ARTIFACTORY_URL" | sed 's|https://||')
+        ART_TOKEN=$(curl -s -X POST \
+          "$ARTIFACTORY_URL/access/api/v1/oidc/token" \
+          -H "Content-Type: application/json" \
+          -d "{\"grant_type\": \"urn:ietf:params:oauth:grant-type:token-exchange\", \"subject_token\": \"${{ steps.oidc.outputs.oidc_token }}\", \"subject_token_type\": \"urn:ietf:params:oauth:token-type:id_token\", \"provider_name\": \"github\"}" \
+          | jq -r '.access_token')
+        echo "::add-mask::$ART_TOKEN"
+        echo "token=$ART_TOKEN" >> "$GITHUB_OUTPUT"
+        echo "host=$HOST" >> "$GITHUB_OUTPUT"
+
+    - name: Write Maven settings.xml
+      shell: bash
+      env:
+        ART_TOKEN: ${{ steps.exchange.outputs.token }}
+        ART_HOST: ${{ steps.exchange.outputs.host }}
+        ARTIFACTORY_URL: ${{ inputs.artifactory_url }}
+      run: |
+        mkdir -p ~/.m2
+        cat > ~/.m2/settings.xml << 'EOF'
+        <settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
+                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 https://maven.apache.org/xsd/settings-1.2.0.xsd">
+          <mirrors>
+            <mirror>
+              <id>artifactory</id>
+              <mirrorOf>central</mirrorOf>
+              <url>__ARTIFACTORY_URL__/artifactory/virtual-maven-thirdparty</url>
+            </mirror>
+          </mirrors>
+          <servers>
+            <server>
+              <id>artifactory</id>
+              <username>_</username>
+              <password>__ART_TOKEN__</password>
+            </server>
+          </servers>
+        </settings>
+        EOF
+        sed -i "s|__ARTIFACTORY_URL__|${ARTIFACTORY_URL}|g" ~/.m2/settings.xml
+        sed -i "s|__ART_TOKEN__|${ART_TOKEN}|g" ~/.m2/settings.xml
