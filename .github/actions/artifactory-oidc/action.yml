@@ -13,7 +13,7 @@ inputs:
   maven-repo:
     description: "Artifactory virtual Maven repository name"
     required: false
-    default: "virtual-maven-thirdparty"
+    default: "virtual-maven-twilio"
 
 runs:
   using: "composite"
@@ -72,7 +72,7 @@ runs:
           <mirrors>
             <mirror>
               <id>artifactory</id>
-              <mirrorOf>central</mirrorOf>
+              <mirrorOf>*</mirrorOf>
               <url>https://${HOST}/artifactory/${MAVEN_REPO}</url>
             </mirror>
           </mirrors>
@@ -83,6 +83,22 @@ runs:
               <password>${ART_TOKEN}</password>
             </server>
           </servers>
+          <profiles>
+            <profile>
+              <id>artifactory</id>
+              <pluginRepositories>
+                <pluginRepository>
+                  <id>artifactory</id>
+                  <url>https://${HOST}/artifactory/${MAVEN_REPO}</url>
+                  <releases><enabled>true</enabled></releases>
+                  <snapshots><enabled>false</enabled></snapshots>
+                </pluginRepository>
+              </pluginRepositories>
+            </profile>
+          </profiles>
+          <activeProfiles>
+            <activeProfile>artifactory</activeProfile>
+          </activeProfiles>
         </settings>
         EOF
         echo "Configured Maven to resolve through Artifactory (${MAVEN_REPO})"
