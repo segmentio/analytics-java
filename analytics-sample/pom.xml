@@ -6,12 +6,12 @@
   <parent>
     <artifactId>analytics-parent</artifactId>
     <groupId>com.segment.analytics.java</groupId>
-    <version>3.5.5-SNAPSHOT</version>
+    <version>3.5.6-SNAPSHOT</version>
   </parent>
 
   <groupId>com.segment.analytics.java</groupId>
   <artifactId>analytics-sample</artifactId>
-  <version>3.5.5-SNAPSHOT</version>
+  <version>3.5.6-SNAPSHOT</version>
   <name>Analytics Sample</name>
 
   <description>Sample application demonstrating Segment Analytics for Java.</description>
@@ -28,7 +28,7 @@
     <url>https://github.com/segmentio/analytics-java/</url>
     <connection>scm:git:https://github.com/segmentio/analytics-java.git</connection>
     <developerConnection>scm:git:git@github.com:segmentio/analytics-java.git</developerConnection>
-    <tag>analytics-parent-3.5.4</tag>
+    <tag>analytics-parent-3.5.5</tag>
   </scm>
 
   <developers>
