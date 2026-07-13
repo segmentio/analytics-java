@@ -13,7 +13,7 @@ inputs:
   maven-repo:
     description: "Artifactory virtual Maven repository name"
     required: false
-    default: "virtual-maven-twilio"
+    default: "virtual-maven-thirdparty"
 
 runs:
   using: "composite"
