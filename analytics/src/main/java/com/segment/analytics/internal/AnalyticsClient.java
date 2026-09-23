@@ -368,6 +368,17 @@ public class AnalyticsClient {
           name,
           dropped.size());
 
+      // These were submitted and never ran, so their callbacks are still owed. Before
+      // the network executor was force-stopped they always eventually ran; now they
+      // can be discarded here, and counting them in a log line is not the same as
+      // telling the caller the messages did not go.
+      for (Runnable task : dropped) {
+        if (task instanceof BatchUploadTask) {
+          ((BatchUploadTask) task)
+              .notifyDropped(new IOException("Dropped at shutdown without being attempted"));
+        }
+      }
+
       // optional short wait to give interrupted tasks a chance to exit
       boolean terminatedAfterForce =
           executor.awaitTermination(TERMINATION_TIMEOUT_S, TimeUnit.SECONDS);
@@ -544,6 +555,11 @@ public class AnalyticsClient {
       this.batch = batch;
       this.backo = backo;
       this.maxRetries = maxRetries;
+    }
+
+    /** Reports a batch that was discarded from the queue without ever being attempted. */
+    void notifyDropped(Exception exception) {
+      notifyCallbacksWithException(batch, exception);
     }
 
     private void notifyCallbacksWithException(Batch batch, Exception exception) {
@@ -725,6 +741,11 @@ public class AnalyticsClient {
                 batch.sequence());
             client.clearRateLimitState();
             Thread.currentThread().interrupt();
+            // Every other exit from this loop reports the batch. This one is now
+            // reachable — shutdown interrupts the network executor rather than
+            // leaving it running — so without this a batch interrupted mid-wait
+            // would disappear with no callback at all.
+            notifyCallbacksWithException(batch, new IOException("Interrupted during shutdown", e));
             return;
           }
           // Retry-After does not count against maxRetries.
@@ -748,6 +769,7 @@ public class AnalyticsClient {
           client.log.print(
               DEBUG, "Thread interrupted while backing off for batch %s.", batch.sequence());
           Thread.currentThread().interrupt();
+          notifyCallbacksWithException(batch, new IOException("Interrupted during shutdown", e));
           return;
         }
       }

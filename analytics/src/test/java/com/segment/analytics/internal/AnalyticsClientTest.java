@@ -910,6 +910,50 @@ public class AnalyticsClientTest {
   }
 
   @Test
+  public void shutdownReportsQueuedBatchesItDiscards() throws InterruptedException {
+    // shutdownNow() hands back tasks that were submitted and never ran. They used to
+    // be counted in a log line and otherwise forgotten, which was survivable while the
+    // network executor was never force-stopped. Now that it is, those batches are
+    // discarded on shutdown and their callers are owed a failure.
+    AnalyticsClient client = newClient();
+    TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
+    BatchUploadTask queued =
+        new BatchUploadTask(client, BACKO, batchFor(trackMessage), DEFAULT_RETRIES);
+
+    when(networkExecutor.awaitTermination(anyLong(), any(TimeUnit.class))).thenReturn(false);
+    when(networkExecutor.shutdownNow()).thenReturn(Collections.<Runnable>singletonList(queued));
+
+    client.shutdown();
+
+    verify(callback).failure(eq(trackMessage), any(IOException.class));
+  }
+
+  @Test
+  public void interruptingARetryWaitReportsTheBatch() throws InterruptedException {
+    // Every other exit from the retry loop reports the batch. The interrupt paths did
+    // not, and were unreachable for the network executor until shutdown began
+    // interrupting it — so a batch waiting out a Retry-After vanished silently.
+    AnalyticsClient client = newClient();
+    TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
+    BatchUploadTask task =
+        new BatchUploadTask(client, BACKO, batchFor(trackMessage), DEFAULT_RETRIES);
+
+    // A 429 with a long Retry-After parks the task in the sleep this test interrupts.
+    when(segmentService.upload(isNull(), any(Batch.class)))
+        .thenReturn(Calls.response(errorWithRetryAfter(429, "60")));
+
+    Thread worker = new Thread(task);
+    worker.start();
+    // Give it time to reach the sleep, then interrupt as shutdown now does.
+    Thread.sleep(500);
+    worker.interrupt();
+    worker.join(5_000);
+
+    assertThat(worker.isAlive()).isFalse();
+    verify(callback, timeout(1_000)).failure(eq(trackMessage), any(IOException.class));
+  }
+
+  @Test
   public void shutdownForcesTheNetworkExecutorThatWillNotTerminate() throws InterruptedException {
     // This used to assert verifyNoMoreInteractions(networkExecutor) — that the
     // executor was asked to stop and then left alone to "finish on its own". Its task
