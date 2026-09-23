@@ -1,3 +1,7 @@
+# Unreleased
+- [Fix] `shutdown()` now force-stops the network executor. It was asked to stop and then left to "finish on its own", but `shutdown()` does not interrupt running tasks, its task can be a whole rate-limit budget deep in a sleep, and these threads are non-daemon — so `shutdown()` returned having logged success while a live thread kept the JVM from exiting. The retry sleeps have always handled `InterruptedException` correctly; nothing was sending the interrupt. The same gap applied when shutdown was itself interrupted.
+- [New] `maxRateLimitDuration` defaults to 5 minutes rather than 12 hours, and `Retry-After` is capped at 60s rather than 300s. The 12 hour value was a backstop meant to be unreachable, but `Retry-After` retries are deliberately uncounted, so it was the only limit on that path — and with a single-threaded network executor, one stuck batch stalled every other one for the duration.
+
 # Version 3.5.5 (June 30, 2026)
 - [New](https://github.com/segmentio/analytics-java/pull/531) Unified HTTP response handling and retry behavior
   - Retryable statuses (429, 408, 410, 460, 5xx except 501/505/511) check Retry-After header first, fall back to exponential backoff

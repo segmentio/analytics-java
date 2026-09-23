@@ -54,8 +54,10 @@ public class AnalyticsClient {
   private static final int WAIT_FOR_THREAD_COMPLETE_S = 5;
   private static final int TERMINATION_TIMEOUT_S = 1;
   private static final int NETWORK_TERMINATION_TIMEOUT_S =
-      75; // base Retry-After cap is 60s + headroom
-  private static final long MAX_RATE_LIMITED_SECONDS = 300L;
+      75; // MAX_RATE_LIMITED_SECONDS (60s) plus headroom for the request itself
+  // Capped well below maxRateLimitDuration so the budget buys several attempts rather
+  // than one long sleep; at the old 300s a single sleep consumed a 5 minute budget.
+  private static final long MAX_RATE_LIMITED_SECONDS = 60L;
 
   static {
     Map<String, String> library = new LinkedHashMap<>();
@@ -338,7 +340,6 @@ public class AnalyticsClient {
   }
 
   public void shutdownAndWait(ExecutorService executor, String name) {
-    boolean isLooperExecutor = name != null && name.equalsIgnoreCase("looper");
     boolean isNetworkExecutor = name != null && name.equalsIgnoreCase("network");
     int timeoutSeconds = isNetworkExecutor ? NETWORK_TERMINATION_TIMEOUT_S : TERMINATION_TIMEOUT_S;
     try {
@@ -348,49 +349,53 @@ public class AnalyticsClient {
         log.print(VERBOSE, "%s executor terminated normally.", name);
         return;
       }
-      if (isLooperExecutor) { // Handle looper - network should finish on its own
-        // not terminated within timeout -> force shutdown
-        log.print(
-            VERBOSE,
-            "%s did not terminate in %d seconds; requesting shutdownNow().",
-            name,
-            TERMINATION_TIMEOUT_S);
-        List<Runnable> dropped = executor.shutdownNow(); // interrupts running tasks
-        log.print(
-            VERBOSE,
-            "%s shutdownNow returned %d queued tasks that never started.",
-            name,
-            dropped.size());
 
-        // optional short wait to give interrupted tasks a chance to exit
-        boolean terminatedAfterForce =
-            executor.awaitTermination(TERMINATION_TIMEOUT_S, TimeUnit.SECONDS);
-        log.print(
-            VERBOSE,
-            "%s executor %s after shutdownNow().",
-            name,
-            terminatedAfterForce ? "terminated" : "still running (did not terminate)");
+      // Both executors are force-stopped. Only the looper used to be, on the reasoning
+      // that the network executor would "finish on its own" — but its task can be a
+      // whole rate-limit budget deep in a sleep, shutdown() does not interrupt running
+      // tasks, and these threads are non-daemon. So shutdown() returned, logged success
+      // and left a thread holding the JVM open. The sleeps have always handled
+      // InterruptedException correctly; nothing was sending the interrupt.
+      log.print(
+          VERBOSE,
+          "%s did not terminate in %d seconds; requesting shutdownNow().",
+          name,
+          timeoutSeconds);
+      List<Runnable> dropped = executor.shutdownNow(); // interrupts running tasks
+      log.print(
+          VERBOSE,
+          "%s shutdownNow returned %d queued tasks that never started.",
+          name,
+          dropped.size());
 
-        if (!terminatedAfterForce) {
-          // final warning — investigate tasks that ignore interrupts
-          log.print(
-              ERROR,
-              "%s executor still did not terminate; tasks may be ignoring interrupts.",
-              name);
-        }
+      // optional short wait to give interrupted tasks a chance to exit
+      boolean terminatedAfterForce =
+          executor.awaitTermination(TERMINATION_TIMEOUT_S, TimeUnit.SECONDS);
+      log.print(
+          VERBOSE,
+          "%s executor %s after shutdownNow().",
+          name,
+          terminatedAfterForce ? "terminated" : "still running (did not terminate)");
+
+      if (!terminatedAfterForce) {
+        // final warning — investigate tasks that ignore interrupts
+        log.print(
+            ERROR,
+            "%s executor still did not terminate; tasks may be ignoring interrupts.",
+            name);
       }
     } catch (InterruptedException e) {
       // Preserve interrupt status and attempt forceful shutdown
       log.print(ERROR, e, "Interrupted while stopping %s executor.", name);
       Thread.currentThread().interrupt();
-      if (isLooperExecutor) {
-        List<Runnable> dropped = executor.shutdownNow();
-        log.print(
-            VERBOSE,
-            "%s shutdownNow invoked after interrupt; %d tasks returned.",
-            name,
-            dropped.size());
-      }
+      // Same reasoning as above: this applied to the looper only, leaving the network
+      // executor running after an interrupted shutdown.
+      List<Runnable> dropped = executor.shutdownNow();
+      log.print(
+          VERBOSE,
+          "%s shutdownNow invoked after interrupt; %d tasks returned.",
+          name,
+          dropped.size());
     }
   }
 

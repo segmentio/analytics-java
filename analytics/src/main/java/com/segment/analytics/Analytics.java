@@ -455,7 +455,12 @@ public class Analytics {
         maxTotalBackoffDurationMs = 43200 * 1000L; // 12 hours
       }
       if (maxRateLimitDurationMs == 0) {
-        maxRateLimitDurationMs = 43200 * 1000L; // 12 hours
+        // Five minutes, in line with the counted-backoff path's ~13 minute worst case.
+        // This was 12 hours, meant as a backstop a retry count would stop us reaching —
+        // but Retry-After retries are deliberately uncounted, so it was the only limit
+        // on that path, and the network executor is single-threaded, so a stuck batch
+        // stalled every other one for the duration.
+        maxRateLimitDurationMs = 300 * 1000L; // 5 minutes
       }
 
       HttpLoggingInterceptor interceptor =

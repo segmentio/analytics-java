@@ -907,7 +907,25 @@ public class AnalyticsClientTest {
     verify(messageQueue).put(STOP);
     verify(networkExecutor).shutdown();
     verify(networkExecutor).awaitTermination(75, TimeUnit.SECONDS);
-    verifyNoMoreInteractions(networkExecutor);
+  }
+
+  @Test
+  public void shutdownForcesTheNetworkExecutorThatWillNotTerminate() throws InterruptedException {
+    // This used to assert verifyNoMoreInteractions(networkExecutor) — that the
+    // executor was asked to stop and then left alone to "finish on its own". Its task
+    // can be a whole rate-limit budget deep in a sleep, shutdown() does not interrupt
+    // running tasks, and these threads are non-daemon, so shutdown() returned having
+    // logged success while a thread held the JVM open.
+    AnalyticsClient client = newClient();
+
+    // The mock reports it did not terminate within the timeout.
+    when(networkExecutor.awaitTermination(anyLong(), any(TimeUnit.class))).thenReturn(false);
+
+    client.shutdown();
+
+    verify(networkExecutor).shutdown();
+    verify(networkExecutor).awaitTermination(75, TimeUnit.SECONDS);
+    verify(networkExecutor).shutdownNow();
   }
 
   @Test
