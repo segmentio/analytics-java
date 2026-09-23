@@ -910,6 +910,24 @@ public class AnalyticsClientTest {
   }
 
   @Test
+  public void rateLimitRemainingShrinksAndGoesNonPositive() throws InterruptedException {
+    // The retry loop waits min(Retry-After, remaining), so the budget cannot be
+    // overshot by a full Retry-After the way it was when this returned a boolean and
+    // the wait was unclamped.
+    AnalyticsClient client = newClient();
+
+    long first = client.setRateLimitStateAndRemaining(1L, 200L);
+    assertThat(first).isGreaterThan(0L);
+    assertThat(first).isLessThanOrEqualTo(200L);
+
+    Thread.sleep(250);
+
+    // The episode has outlived the budget, so the caller breaks rather than waiting.
+    long second = client.setRateLimitStateAndRemaining(1L, 200L);
+    assertThat(second).isLessThanOrEqualTo(0L);
+  }
+
+  @Test
   public void shutdownReportsQueuedBatchesItDiscards() throws InterruptedException {
     // shutdownNow() hands back tasks that were submitted and never ran. They used to
     // be counted in a log line and otherwise forgotten, which was survivable while the
@@ -1418,8 +1436,8 @@ public class AnalyticsClientTest {
     BatchUploadTask batchUploadTask = new BatchUploadTask(client, BACKO, batch, DEFAULT_RETRIES);
     batchUploadTask.run();
 
-    // Verify setRateLimitStateAndCheckDuration was called (state was actually set on 429)
-    verify(client).setRateLimitStateAndCheckDuration(eq(1L), anyLong());
+    // Verify setRateLimitStateAndRemaining was called (state was actually set on 429)
+    verify(client).setRateLimitStateAndRemaining(eq(1L), anyLong());
     assertThat(client.isRateLimited()).isFalse();
     verify(segmentService, times(2)).upload(isNull(), eq(batch));
     verify(callback).success(trackMessage);

@@ -274,11 +274,22 @@ public class AnalyticsClient {
    * Sets rate-limit state and atomically checks whether maxRateLimitDuration has been exceeded.
    * Returns true if the duration has been exceeded and the batch should be dropped.
    */
-  synchronized boolean setRateLimitStateAndCheckDuration(
+  /**
+   * Sets rate-limit state and returns how much of {@code maxRateLimitDuration} is left,
+   * in milliseconds. Zero or less means the budget is spent.
+   *
+   * <p>Returning the remaining time rather than a boolean lets one clock reading serve
+   * both the budget test and the wait that follows it. Testing and then sleeping a full
+   * Retry-After on top overshoots the budget by up to that much — negligible against
+   * twelve hours, a fifth of the budget against five minutes.
+   */
+  synchronized long setRateLimitStateAndRemaining(
       long retryAfterSeconds, long maxRateLimitDurationMs) {
     setRateLimitState(retryAfterSeconds);
-    return rateLimitStartTime > 0
-        && System.currentTimeMillis() - rateLimitStartTime > maxRateLimitDurationMs;
+    if (rateLimitStartTime <= 0) {
+      return maxRateLimitDurationMs;
+    }
+    return maxRateLimitDurationMs - (System.currentTimeMillis() - rateLimitStartTime);
   }
 
   synchronized void clearRateLimitState() {
@@ -718,11 +729,11 @@ public class AnalyticsClient {
         }
 
         if (result.strategy == RetryStrategy.RATE_LIMITED) {
-          // Atomically set rate-limit state and check whether maxRateLimitDuration is exceeded.
-          boolean durationExceeded =
-              client.setRateLimitStateAndCheckDuration(
+          // Atomically set rate-limit state and take what is left of maxRateLimitDuration.
+          long remainingMs =
+              client.setRateLimitStateAndRemaining(
                   result.retryAfterSeconds, client.maxRateLimitDurationMs);
-          if (durationExceeded) {
+          if (remainingMs <= 0) {
             client.clearRateLimitState();
             break;
           }
@@ -733,7 +744,9 @@ public class AnalyticsClient {
           }
 
           try {
-            TimeUnit.SECONDS.sleep(result.retryAfterSeconds);
+            // Clamped to what is left of the budget, so the wait cannot run past it.
+            TimeUnit.MILLISECONDS.sleep(
+                Math.min(TimeUnit.SECONDS.toMillis(result.retryAfterSeconds), remainingMs));
           } catch (InterruptedException e) {
             client.log.print(
                 DEBUG,
