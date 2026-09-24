@@ -361,12 +361,15 @@ public class AnalyticsClient {
         return;
       }
 
-      // Both executors are force-stopped. Only the looper used to be, on the reasoning
-      // that the network executor would "finish on its own" — but its task can be a
-      // whole rate-limit budget deep in a sleep, shutdown() does not interrupt running
-      // tasks, and these threads are non-daemon. So shutdown() returned, logged success
-      // and left a thread holding the JVM open. The sleeps have always handled
-      // InterruptedException correctly; nothing was sending the interrupt.
+      // Both executors are force-stopped, the network one included. shutdown() does
+      // not interrupt a running task, its task can be a whole rate-limit budget deep
+      // in a sleep, and these threads are non-daemon — so leaving it to finish on its
+      // own lets shutdown() return while a thread holds the JVM open.
+      //
+      // The interrupt only reaches a thread parked in a sleep. OkHttp's reads are
+      // governed by SO_TIMEOUT, so a thread inside the HTTP call is bounded by the
+      // client's own timeouts instead, and by nothing at all if a caller supplies an
+      // OkHttpClient without them.
       log.print(
           VERBOSE,
           "%s did not terminate in %d seconds; requesting shutdownNow().",
@@ -379,10 +382,8 @@ public class AnalyticsClient {
           name,
           dropped.size());
 
-      // These were submitted and never ran, so their callbacks are still owed. Before
-      // the network executor was force-stopped they always eventually ran; now they
-      // can be discarded here, and counting them in a log line is not the same as
-      // telling the caller the messages did not go.
+      // Submitted and never run, so their callbacks are still owed. Counting them in
+      // a log line is not the same as telling the caller the messages did not go.
       for (Runnable task : dropped) {
         if (task instanceof BatchUploadTask) {
           ((BatchUploadTask) task)
@@ -754,10 +755,8 @@ public class AnalyticsClient {
                 batch.sequence());
             client.clearRateLimitState();
             Thread.currentThread().interrupt();
-            // Every other exit from this loop reports the batch. This one is now
-            // reachable — shutdown interrupts the network executor rather than
-            // leaving it running — so without this a batch interrupted mid-wait
-            // would disappear with no callback at all.
+            // Every exit from this loop reports the batch. Returning without this
+            // loses it silently, with no callback at all.
             notifyCallbacksWithException(batch, new IOException("Interrupted during shutdown", e));
             return;
           }

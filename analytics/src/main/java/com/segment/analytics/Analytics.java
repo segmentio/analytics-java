@@ -455,11 +455,9 @@ public class Analytics {
         maxTotalBackoffDurationMs = 43200 * 1000L; // 12 hours
       }
       if (maxRateLimitDurationMs == 0) {
-        // Five minutes, in line with the counted-backoff path's ~13 minute worst case.
-        // This was 12 hours, meant as a backstop a retry count would stop us reaching —
-        // but Retry-After retries are deliberately uncounted, so it was the only limit
-        // on that path, and the network executor is single-threaded, so a stuck batch
-        // stalled every other one for the duration.
+        // Retry-After retries are deliberately uncounted, so this duration is the
+        // only thing bounding them. The network executor is single-threaded, so it
+        // also bounds how long one stuck batch holds up every other one.
         maxRateLimitDurationMs = 300 * 1000L; // 5 minutes
       }
 

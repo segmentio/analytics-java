@@ -929,10 +929,9 @@ public class AnalyticsClientTest {
 
   @Test
   public void shutdownReportsQueuedBatchesItDiscards() throws InterruptedException {
-    // shutdownNow() hands back tasks that were submitted and never ran. They used to
-    // be counted in a log line and otherwise forgotten, which was survivable while the
-    // network executor was never force-stopped. Now that it is, those batches are
-    // discarded on shutdown and their callers are owed a failure.
+    // shutdownNow() hands back tasks that were submitted and never ran. Those batches
+    // are discarded, so their callers are owed a failure — a log line counting them is
+    // not a substitute.
     AnalyticsClient client = newClient();
     TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
     BatchUploadTask queued =
@@ -948,9 +947,8 @@ public class AnalyticsClientTest {
 
   @Test
   public void interruptingARetryWaitReportsTheBatch() throws InterruptedException {
-    // Every other exit from the retry loop reports the batch. The interrupt paths did
-    // not, and were unreachable for the network executor until shutdown began
-    // interrupting it — so a batch waiting out a Retry-After vanished silently.
+    // Every exit from the retry loop reports the batch, including this one. A batch
+    // interrupted while waiting out a Retry-After must not vanish silently.
     AnalyticsClient client = newClient();
     TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
     BatchUploadTask task =
@@ -973,11 +971,10 @@ public class AnalyticsClientTest {
 
   @Test
   public void shutdownForcesTheNetworkExecutorThatWillNotTerminate() throws InterruptedException {
-    // This used to assert verifyNoMoreInteractions(networkExecutor) — that the
-    // executor was asked to stop and then left alone to "finish on its own". Its task
-    // can be a whole rate-limit budget deep in a sleep, shutdown() does not interrupt
-    // running tasks, and these threads are non-daemon, so shutdown() returned having
-    // logged success while a thread held the JVM open.
+    // The network executor must be interrupted, not merely asked to stop: its task can
+    // be a whole rate-limit budget deep in a sleep, shutdown() does not interrupt
+    // running tasks, and these threads are non-daemon — so leaving it alone lets
+    // shutdown() return while a thread holds the JVM open.
     AnalyticsClient client = newClient();
 
     // The mock reports it did not terminate within the timeout.
