@@ -53,11 +53,15 @@ public class AnalyticsClient {
   private static final String instanceId = UUID.randomUUID().toString();
   private static final int WAIT_FOR_THREAD_COMPLETE_S = 5;
   private static final int TERMINATION_TIMEOUT_S = 1;
-  private static final int NETWORK_TERMINATION_TIMEOUT_S =
-      75; // MAX_RATE_LIMITED_SECONDS (60s) plus headroom for the request itself
-  // Capped well below maxRateLimitDuration so the budget buys several attempts rather
-  // than one long sleep; at the old 300s a single sleep consumed a 5 minute budget.
-  private static final long MAX_RATE_LIMITED_SECONDS = 60L;
+  // Deliberately shorter than a maximal Retry-After wait. Shutdown does not wait out
+  // the retry schedule; it interrupts it, and this is only the grace period before it
+  // does.
+  private static final int NETWORK_TERMINATION_TIMEOUT_S = 75;
+  // A guard against an absurd header, not a second budget: waiting less than the server
+  // asked for does not make the next attempt more likely to succeed, it just sends more
+  // requests at something already rate-limiting us. How long we keep trying is
+  // maxRateLimitDuration's job.
+  private static final long MAX_RATE_LIMITED_SECONDS = 300L;
 
   static {
     Map<String, String> library = new LinkedHashMap<>();
