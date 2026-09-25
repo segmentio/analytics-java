@@ -275,17 +275,12 @@ public class AnalyticsClient {
   }
 
   /**
-   * Sets rate-limit state and atomically checks whether maxRateLimitDuration has been exceeded.
-   * Returns true if the duration has been exceeded and the batch should be dropped.
-   */
-  /**
    * Sets rate-limit state and returns how much of {@code maxRateLimitDuration} is left,
    * in milliseconds. Zero or less means the budget is spent.
    *
    * <p>Returning the remaining time rather than a boolean lets one clock reading serve
    * both the budget test and the wait that follows it. Testing and then sleeping a full
-   * Retry-After on top overshoots the budget by up to that much — negligible against
-   * twelve hours, a fifth of the budget against five minutes.
+   * Retry-After on top would otherwise overshoot the budget by up to that much.
    */
   synchronized long setRateLimitStateAndRemaining(
       long retryAfterSeconds, long maxRateLimitDurationMs) {
