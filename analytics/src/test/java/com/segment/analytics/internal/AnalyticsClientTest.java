@@ -48,6 +48,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import okhttp3.ResponseBody;
 import org.junit.Before;
 import org.junit.Test;
@@ -103,6 +104,26 @@ public class AnalyticsClientTest {
 
   AnalyticsClient newClient() {
     return newClient(DEFAULT_MAX_TOTAL_BACKOFF_DURATION_MS, DEFAULT_MAX_RATE_LIMIT_DURATION_MS);
+  }
+
+  AnalyticsClient newClient(List<Callback> callbacks) {
+    return new AnalyticsClient(
+        messageQueue,
+        null,
+        segmentService,
+        50,
+        TimeUnit.HOURS.toMillis(1),
+        0,
+        MAX_BATCH_SIZE,
+        log,
+        threadFactory,
+        networkExecutor,
+        callbacks,
+        isShutDown,
+        writeKey,
+        new Gson(),
+        DEFAULT_MAX_TOTAL_BACKOFF_DURATION_MS,
+        DEFAULT_MAX_RATE_LIMIT_DURATION_MS);
   }
 
   AnalyticsClient newClient(long maxTotalBackoffDurationMs, long maxRateLimitDurationMs) {
@@ -926,6 +947,50 @@ public class AnalyticsClientTest {
     // The episode has outlived the budget, so the caller breaks rather than waiting.
     long second = client.setRateLimitStateAndRemaining(1L, 200L);
     assertThat(second).isLessThanOrEqualTo(0L);
+  }
+
+  @Test
+  public void aThrowingCallbackDoesNotEscapeTheUploadTask() throws Exception {
+    // Handing the task to execute() rather than submit() removed the FutureTask that
+    // used to absorb anything thrown here. Callback is caller-supplied and is invoked
+    // outside any try inside the retry loop, so without a guard a callback that throws
+    // would kill and replace the pool's worker and reach the application's
+    // uncaught-exception handler -- from a library that previously could not raise one.
+    final AtomicReference<Throwable> uncaught = new AtomicReference<>();
+    Callback throwing =
+        new Callback() {
+          @Override
+          public void success(Message message) {}
+
+          @Override
+          public void failure(Message message, Throwable throwable) {
+            throw new IllegalStateException("callback blew up");
+          }
+        };
+
+    AnalyticsClient client = newClient(Collections.<Callback>singletonList(throwing));
+    TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
+    BatchUploadTask task =
+        new BatchUploadTask(client, BACKO, batchFor(trackMessage), DEFAULT_RETRIES);
+
+    // A non-retryable status ends the batch and reports it through Callback.failure.
+    when(segmentService.upload(isNull(), any(Batch.class)))
+        .thenReturn(Calls.response(Response.error(400, ResponseBody.create(null, "bad"))));
+
+    Thread worker = new Thread(task);
+    worker.setUncaughtExceptionHandler(
+        new Thread.UncaughtExceptionHandler() {
+          @Override
+          public void uncaughtException(Thread t, Throwable e) {
+            uncaught.set(e);
+          }
+        });
+    worker.start();
+    worker.join(5_000);
+
+    assertThat(uncaught.get())
+        .as("a throwing callback must not escape the task and reach the handler")
+        .isNull();
   }
 
   @Test
@@ -1816,19 +1881,20 @@ public class AnalyticsClientTest {
     TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
     Batch batch = batchFor(trackMessage);
 
-    // Use Retry-After: 1 (small so the test doesn't sleep 300s) to verify the cap behavior
-    // indirectly — the key assertion is that maxRateLimitDuration kicks in.
+    // A 1 second Retry-After against a 1ms budget: the wait cannot fit.
     Response<UploadResponse> rateLimited = errorWithRetryAfter(429, "1");
-    when(segmentService.upload(isNull(), eq(batch)))
-        .thenReturn(Calls.response(rateLimited))
-        .thenReturn(Calls.response(rateLimited));
+    when(segmentService.upload(isNull(), eq(batch))).thenReturn(Calls.response(rateLimited));
 
     BatchUploadTask batchUploadTask =
         new BatchUploadTask(shortClient, BACKO, batch, DEFAULT_RETRIES);
     batchUploadTask.run();
 
-    // 2 attempts: first one sleeps 1s, second one exceeds maxRateLimitDuration → dropped
-    verify(segmentService, times(2)).upload(isNull(), eq(batch));
+    // One attempt. Shortening the wait to the 1ms that remains would resume inside the
+    // window the server named and the budget would be spent, so the batch ends here.
+    // Previously this slept the full second and made a second, doomed request — and
+    // because the budget was 1ms, whether it did so at all depended on whether the
+    // clock ticked between two reads, which made this test intermittently fail.
+    verify(segmentService, times(1)).upload(isNull(), eq(batch));
     verify(callback).failure(eq(trackMessage), any(IOException.class));
   }
 

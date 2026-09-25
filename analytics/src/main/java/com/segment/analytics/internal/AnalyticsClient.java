@@ -422,7 +422,6 @@ public class AnalyticsClient {
     } catch (InterruptedException e) {
       // Preserve interrupt status and attempt forceful shutdown
       log.print(ERROR, e, "Interrupted while stopping %s executor.", name);
-      Thread.currentThread().interrupt();
       // Same reasoning as above: this applied to the looper only, leaving the network
       // executor running after an interrupted shutdown.
       List<Runnable> dropped = executor.shutdownNow();
@@ -432,8 +431,12 @@ public class AnalyticsClient {
           name,
           dropped.size());
       // These are owed a callback just as much as the ones dropped above; an
-      // interrupted shutdown is still a shutdown.
+      // interrupted shutdown is still a shutdown. Reported before the interrupt flag
+      // goes back on: callbacks run on this thread, and with the flag already set any
+      // interruptible call inside one -- a queue put, an await, a Future.get -- throws
+      // InterruptedException the moment it starts.
       notifyDroppedBatches(dropped);
+      Thread.currentThread().interrupt();
     }
   }
 
@@ -734,6 +737,22 @@ public class AnalyticsClient {
 
     @Override
     public void run() {
+      // Handed to the executor with execute() rather than submit(), so that
+      // shutdownNow() gives back the task itself and the batch inside it can be
+      // reported. That also means nothing catches what escapes here: under submit()
+      // a FutureTask absorbed it into a result nobody read, and the worker survived.
+      // Callback and Log are supplied by the caller and are invoked below outside any
+      // try, so one that throws would now kill and replace the pool's worker and reach
+      // the application's uncaught-exception handler -- from a library that could not
+      // previously raise one. Keep that property.
+      try {
+        runUploadLoop();
+      } catch (Throwable t) {
+        client.log.print(ERROR, t, "Batch %s upload task failed unexpectedly.", batch.sequence());
+      }
+    }
+
+    private void runUploadLoop() {
       int totalAttempts = 0; // counts every HTTP attempt (for header and error message)
       int backoffAttempts = 0; // counts attempts that consume backoff-based retries
       int maxBackoffAttempts = maxRetries + 1; // preserve existing semantics
@@ -763,10 +782,18 @@ public class AnalyticsClient {
             break;
           }
 
+          long retryAfterMs = TimeUnit.SECONDS.toMillis(result.retryAfterSeconds);
+          if (retryAfterMs > remainingMs) {
+            // A wait that will not fit ends the episode. Shortening it would resume
+            // inside the window the server named -- one it has already said it will
+            // not serve -- and the budget is spent by then, so that attempt would be
+            // the last either way.
+            client.clearRateLimitState();
+            break;
+          }
+
           try {
-            // Clamped to what is left of the budget, so the wait cannot run past it.
-            TimeUnit.MILLISECONDS.sleep(
-                Math.min(TimeUnit.SECONDS.toMillis(result.retryAfterSeconds), remainingMs));
+            TimeUnit.MILLISECONDS.sleep(retryAfterMs);
           } catch (InterruptedException e) {
             client.log.print(
                 DEBUG,
