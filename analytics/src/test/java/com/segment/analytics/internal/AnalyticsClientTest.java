@@ -15,7 +15,6 @@ import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 
@@ -41,10 +40,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import okhttp3.ResponseBody;
@@ -207,7 +208,7 @@ public class AnalyticsClientTest {
     // rate-limit and submits batch with msg1. msg2 remains in queue.
     assertThat(localQueue).contains(overflowMessage);
     // Batch with msg1 was submitted on StopMessage (shutdown always flushes)
-    verify(networkExecutor).submit(any(Runnable.class));
+    verify(networkExecutor).execute(any(Runnable.class));
   }
 
   @Test
@@ -262,7 +263,7 @@ public class AnalyticsClientTest {
     looper.run();
 
     // First POISON deferred, second POISON submitted after rate limit cleared
-    verify(networkExecutor, times(1)).submit(any(Runnable.class));
+    verify(networkExecutor, times(1)).execute(any(Runnable.class));
   }
 
   /** Wait until the queue is drained. */
@@ -272,12 +273,12 @@ public class AnalyticsClientTest {
   }
 
   /**
-   * Verify that a {@link BatchUploadTask} was submitted to the executor, and return the {@link
+   * Verify that a {@link BatchUploadTask} was handed to the executor, and return the {@link
    * BatchUploadTask#batch} it was uploading..
    */
   static Batch captureBatch(ExecutorService executor) {
     final ArgumentCaptor<Runnable> runnableArgumentCaptor = ArgumentCaptor.forClass(Runnable.class);
-    verify(executor, timeout(1000)).submit(runnableArgumentCaptor.capture());
+    verify(executor, timeout(1000)).execute(runnableArgumentCaptor.capture());
     final BatchUploadTask task = (BatchUploadTask) runnableArgumentCaptor.getValue();
     return task.batch;
   }
@@ -389,7 +390,7 @@ public class AnalyticsClientTest {
 
     wait(messageQueue);
 
-    verify(networkExecutor, never()).submit(any(Runnable.class));
+    verify(networkExecutor, never()).execute(any(Runnable.class));
   }
 
   /**
@@ -443,7 +444,7 @@ public class AnalyticsClientTest {
      * message batch until the message list is empty, that was forcing the code to make one last
      * batch of 1 msg in size bumping the number of times a batch would be submitted from 3 to 4
      */
-    verify(networkExecutor, times(3)).submit(any(Runnable.class));
+    verify(networkExecutor, times(3)).execute(any(Runnable.class));
   }
 
   /**
@@ -471,7 +472,7 @@ public class AnalyticsClientTest {
     wait(messageQueue);
     client.shutdown();
     while (!isShutDown.get()) {}
-    verify(networkExecutor, times(2)).submit(any(Runnable.class));
+    verify(networkExecutor, times(2)).execute(any(Runnable.class));
   }
 
   @Test
@@ -486,7 +487,7 @@ public class AnalyticsClientTest {
     wait(messageQueue);
 
     // Verify that the executor didn't see anything.
-    verify(networkExecutor, never()).submit(any(Runnable.class));
+    verify(networkExecutor, never()).execute(any(Runnable.class));
   }
 
   static Batch batchFor(Message message) {
@@ -928,6 +929,45 @@ public class AnalyticsClientTest {
   }
 
   @Test
+  public void aRealExecutorHandsBackTheBatchTasksItQueued() throws InterruptedException {
+    // The defect this guards cannot be seen through a mock. submit() wraps a Runnable
+    // in a FutureTask and queues the wrapper, so shutdownNow() handed back FutureTasks
+    // and the batches inside them could not be identified, let alone reported. A
+    // Mockito mock does no wrapping, so it reports whatever it was given either way.
+    ThreadPoolExecutor real =
+        new ThreadPoolExecutor(
+            1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
+    final CountDownLatch occupied = new CountDownLatch(1);
+    final CountDownLatch release = new CountDownLatch(1);
+    real.execute(
+        new Runnable() {
+          @Override
+          public void run() {
+            occupied.countDown();
+            try {
+              release.await();
+            } catch (InterruptedException ignored) {
+              Thread.currentThread().interrupt();
+            }
+          }
+        });
+    occupied.await();
+
+    AnalyticsClient client = newClient();
+    TrackMessage trackMessage = TrackMessage.builder("foo").userId("bar").build();
+    // Queued behind the occupied thread, so it never starts.
+    real.execute(new BatchUploadTask(client, BACKO, batchFor(trackMessage), DEFAULT_RETRIES));
+
+    List<Runnable> dropped = real.shutdownNow();
+    release.countDown();
+
+    assertThat(dropped).hasSize(1);
+    assertThat(dropped.get(0))
+        .as("shutdownNow must hand back the batch task itself, not a wrapper around it")
+        .isInstanceOf(BatchUploadTask.class);
+  }
+
+  @Test
   public void shutdownReportsQueuedBatchesItDiscards() throws InterruptedException {
     // shutdownNow() hands back tasks that were submitted and never ran. Those batches
     // are discarded, so their callers are owed a failure — a log line counting them is
@@ -998,7 +1038,7 @@ public class AnalyticsClientTest {
     verify(messageQueue).put(STOP);
     verify(networkExecutor).shutdown();
     verify(networkExecutor).awaitTermination(75, TimeUnit.SECONDS);
-    verify(networkExecutor).submit(any(AnalyticsClient.BatchUploadTask.class));
+    verify(networkExecutor).execute(any(AnalyticsClient.BatchUploadTask.class));
   }
 
   @Test
@@ -1187,7 +1227,7 @@ public class AnalyticsClientTest {
     // Message is above MSG/BATCH size limit so it should not be put in queue
     verify(messageQueue, never()).put(message);
     // And since it was never in the queue, it was never submitted in batch
-    verify(networkExecutor, never()).submit(any(AnalyticsClient.BatchUploadTask.class));
+    verify(networkExecutor, never()).execute(any(AnalyticsClient.BatchUploadTask.class));
   }
 
   @Test
@@ -1212,7 +1252,7 @@ public class AnalyticsClientTest {
     client.shutdown();
     while (!isShutDown.get()) {}
 
-    verify(networkExecutor, times(1)).submit(any(AnalyticsClient.BatchUploadTask.class));
+    verify(networkExecutor, times(1)).execute(any(AnalyticsClient.BatchUploadTask.class));
   }
 
   /**
@@ -1261,7 +1301,7 @@ public class AnalyticsClientTest {
 
     client.shutdown();
     while (!isShutDown.get()) {}
-    verify(networkExecutor, times(1)).submit(any(Runnable.class));
+    verify(networkExecutor, times(1)).execute(any(Runnable.class));
   }
 
   /**
@@ -1304,7 +1344,7 @@ public class AnalyticsClientTest {
     client.shutdown();
     while (!isShutDown.get()) {}
 
-    verify(networkExecutor, times(8)).submit(any(Runnable.class));
+    verify(networkExecutor, times(8)).execute(any(Runnable.class));
   }
 
   @Test
@@ -1341,7 +1381,7 @@ public class AnalyticsClientTest {
     client.shutdown();
     while (!isShutDown.get()) {}
 
-    verify(networkExecutor, times(21)).submit(any(Runnable.class));
+    verify(networkExecutor, times(21)).execute(any(Runnable.class));
   }
 
   @Test

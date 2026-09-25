@@ -265,30 +265,32 @@ public class AnalyticsClient {
     }
   }
 
-  synchronized void setRateLimitState(long retryAfterSeconds) {
+  /** Returns the clock reading it used, so a caller can measure from the same instant. */
+  synchronized long setRateLimitState(long retryAfterSeconds) {
     long now = System.currentTimeMillis();
     if (rateLimitStartTime == 0) {
       rateLimitStartTime = now;
     }
     rateLimitWaitUntil = now + (retryAfterSeconds * 1000);
     rateLimited = true;
+    return now;
   }
 
   /**
-   * Sets rate-limit state and returns how much of {@code maxRateLimitDuration} is left,
-   * in milliseconds. Zero or less means the budget is spent.
+   * Sets rate-limit state and returns how much of {@code maxRateLimitDuration} is left, in
+   * milliseconds. Zero or less means the budget is spent.
    *
-   * <p>Returning the remaining time rather than a boolean lets one clock reading serve
-   * both the budget test and the wait that follows it. Testing and then sleeping a full
-   * Retry-After on top would otherwise overshoot the budget by up to that much.
+   * <p>Returning the remaining time rather than a boolean lets one clock reading serve both the
+   * budget test and the wait that follows it. Testing and then sleeping a full Retry-After on top
+   * would otherwise overshoot the budget by up to that much.
    */
   synchronized long setRateLimitStateAndRemaining(
       long retryAfterSeconds, long maxRateLimitDurationMs) {
-    setRateLimitState(retryAfterSeconds);
+    long now = setRateLimitState(retryAfterSeconds);
     if (rateLimitStartTime <= 0) {
       return maxRateLimitDurationMs;
     }
-    return maxRateLimitDurationMs - (System.currentTimeMillis() - rateLimitStartTime);
+    return maxRateLimitDurationMs - (now - rateLimitStartTime);
   }
 
   synchronized void clearRateLimitState() {
@@ -349,6 +351,24 @@ public class AnalyticsClient {
     }
   }
 
+  /**
+   * Reports batches that were queued and never attempted.
+   *
+   * <p>Only reaches tasks the executor hands back as they were submitted. A {@code ForkJoinPool}
+   * returns an empty list from {@code shutdownNow()} whatever is queued, and a {@code
+   * ScheduledThreadPoolExecutor} wraps even {@code execute()}, so a caller supplying either through
+   * {@code Analytics.Builder#networkExecutor} gets no callbacks here and a task count that reads
+   * zero.
+   */
+  private void notifyDroppedBatches(List<Runnable> dropped) {
+    for (Runnable task : dropped) {
+      if (task instanceof BatchUploadTask) {
+        ((BatchUploadTask) task)
+            .notifyDropped(new IOException("Dropped at shutdown without being attempted"));
+      }
+    }
+  }
+
   public void shutdownAndWait(ExecutorService executor, String name) {
     boolean isNetworkExecutor = name != null && name.equalsIgnoreCase("network");
     int timeoutSeconds = isNetworkExecutor ? NETWORK_TERMINATION_TIMEOUT_S : TERMINATION_TIMEOUT_S;
@@ -383,12 +403,7 @@ public class AnalyticsClient {
 
       // Submitted and never run, so their callbacks are still owed. Counting them in
       // a log line is not the same as telling the caller the messages did not go.
-      for (Runnable task : dropped) {
-        if (task instanceof BatchUploadTask) {
-          ((BatchUploadTask) task)
-              .notifyDropped(new IOException("Dropped at shutdown without being attempted"));
-        }
-      }
+      notifyDroppedBatches(dropped);
 
       // optional short wait to give interrupted tasks a chance to exit
       boolean terminatedAfterForce =
@@ -402,9 +417,7 @@ public class AnalyticsClient {
       if (!terminatedAfterForce) {
         // final warning — investigate tasks that ignore interrupts
         log.print(
-            ERROR,
-            "%s executor still did not terminate; tasks may be ignoring interrupts.",
-            name);
+            ERROR, "%s executor still did not terminate; tasks may be ignoring interrupts.", name);
       }
     } catch (InterruptedException e) {
       // Preserve interrupt status and attempt forceful shutdown
@@ -418,6 +431,9 @@ public class AnalyticsClient {
           "%s shutdownNow invoked after interrupt; %d tasks returned.",
           name,
           dropped.size());
+      // These are owed a callback just as much as the ones dropped above; an
+      // interrupted shutdown is still a shutdown.
+      notifyDroppedBatches(dropped);
     }
   }
 
@@ -495,7 +511,11 @@ public class AnalyticsClient {
                   batch.batch().size(),
                   batch.sequence());
               try {
-                networkExecutor.submit(
+                // execute, not submit: submit wraps the task in a FutureTask, and the
+                // work queue then holds that wrapper, so shutdownNow() hands back
+                // FutureTasks and the batches inside them cannot be identified or
+                // reported. The Future was discarded anyway.
+                networkExecutor.execute(
                     BatchUploadTask.create(AnalyticsClient.this, batch, maximumRetries));
               } catch (RejectedExecutionException e) {
                 log.print(
