@@ -37,7 +37,6 @@
     <retrofit.version>2.11.0</retrofit.version>
     <auto.version>1.10.1</auto.version>
 
-    <findbugs.version>3.0.1</findbugs.version>
     <gson.version>2.9.1</gson.version>
     <okhttp.version>4.12.0</okhttp.version>
     <logging.version>4.10.0</logging.version>
@@ -53,7 +52,7 @@
     <junit.version>4.13.2</junit.version>
     <burst.version>1.2.0</burst.version>
     <mockito.version>4.11.0</mockito.version>
-    <assertj.version>3.24.2</assertj.version>
+    <assertj.version>3.27.7</assertj.version>
   </properties>
 
   <scm>
@@ -102,11 +101,6 @@
         <groupId>com.google.auto.value</groupId>
         <artifactId>auto-value-annotations</artifactId>
         <version>${auto.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.google.code.findbugs</groupId>
-        <artifactId>findbugs</artifactId>
-        <version>${findbugs.version}</version>
       </dependency>
       <dependency>
         <groupId>com.google.code.gson</groupId>
@@ -193,7 +187,8 @@
           <configuration>
             <java>
               <googleJavaFormat>
-                <version>1.5</version>
+                <!-- Spotless refuses google-java-format below 1.8 on JVM 11. -->
+                <version>1.8</version>
                 <style>GOOGLE</style>
               </googleJavaFormat>
               <removeUnusedImports />
