@@ -28,9 +28,10 @@ jobs:
           cache: maven
 
       - name: Artifactory OIDC
-        uses: ./.github/actions/artifactory-oidc
+        uses: twilio/sdk-actions/artifactory-oidc@c94e420aa64ea686ff25bb03d4c66cdaf8e523e4 # main
         with:
-          artifactory_url: ${{ vars.ARTIFACTORY_URL }}
+          ecosystem: maven
+          provider-name: github-actions-segmentio
 
       - name: Run tests
         run: mvn -B test
@@ -58,9 +59,10 @@ jobs:
           gpg-passphrase: GPG_PASSPHRASE
 
       - name: Artifactory OIDC
-        uses: ./.github/actions/artifactory-oidc
+        uses: twilio/sdk-actions/artifactory-oidc@c94e420aa64ea686ff25bb03d4c66cdaf8e523e4 # main
         with:
-          artifactory_url: ${{ vars.ARTIFACTORY_URL }}
+          ecosystem: maven
+          provider-name: github-actions-segmentio
 
       - name: Deploy to Maven Central
         env:

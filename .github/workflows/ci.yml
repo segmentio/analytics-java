@@ -31,9 +31,10 @@ jobs:
 
       - name: Artifactory OIDC
         if: ${{ !github.event.pull_request.head.repo.fork }}
-        uses: ./.github/actions/artifactory-oidc
+        uses: twilio/sdk-actions/artifactory-oidc@c94e420aa64ea686ff25bb03d4c66cdaf8e523e4 # main
         with:
-          artifactory_url: ${{ vars.ARTIFACTORY_URL }}
+          ecosystem: maven
+          provider-name: github-actions-segmentio
 
       - name: Spotless check
         run: mvn -B spotless:check
@@ -66,9 +67,10 @@ jobs:
 
       - name: Artifactory OIDC
         if: ${{ !github.event.pull_request.head.repo.fork }}
-        uses: ./.github/actions/artifactory-oidc
+        uses: twilio/sdk-actions/artifactory-oidc@c94e420aa64ea686ff25bb03d4c66cdaf8e523e4 # main
         with:
-          artifactory_url: ${{ vars.ARTIFACTORY_URL }}
+          ecosystem: maven
+          provider-name: github-actions-segmentio
 
       - name: Run tests
         run: mvn -B test
@@ -91,9 +93,10 @@ jobs:
 
       - name: Artifactory OIDC
         if: ${{ !github.event.pull_request.head.repo.fork }}
-        uses: ./.github/actions/artifactory-oidc
+        uses: twilio/sdk-actions/artifactory-oidc@c94e420aa64ea686ff25bb03d4c66cdaf8e523e4 # main
         with:
-          artifactory_url: ${{ vars.ARTIFACTORY_URL }}
+          ecosystem: maven
+          provider-name: github-actions-segmentio
 
       - name: Build
         run: mvn -B package -DskipTests
