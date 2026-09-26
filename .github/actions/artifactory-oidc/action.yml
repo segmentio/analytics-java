@@ -54,6 +54,10 @@ runs:
                \"provider_name\":\"${OIDC_PROVIDER_NAME}\"}")
 
         ART_TOKEN=$(echo "$RESP" | jq -r '.access_token // empty')
+        # JFrog binds the token to the subject identity it resolved, and returns
+        # that identity alongside it. Maven basic-auth must present that exact
+        # username: a placeholder exchanges fine and then 401s on every artifact.
+        ART_USERNAME=$(echo "$RESP" | jq -r '.username // empty')
 
         if [ -z "$ART_TOKEN" ]; then
           echo "::error::OIDC token exchange failed."
@@ -62,6 +66,11 @@ runs:
           exit 1
         fi
         echo "::add-mask::$ART_TOKEN"
+
+        if [ -z "$ART_USERNAME" ]; then
+          echo "::error::Token exchange returned no username; Maven auth would 401 on every artifact."
+          exit 1
+        fi
 
         HOST=$(echo "${ARTIFACTORY_URL}" | sed -E 's#^https?://##')
 
@@ -80,7 +89,7 @@ runs:
           <servers>
             <server>
               <id>artifactory</id>
-              <username>_</username>
+              <username>${ART_USERNAME}</username>
               <password>${ART_TOKEN}</password>
             </server>
           </servers>
