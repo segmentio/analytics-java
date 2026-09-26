@@ -455,7 +455,14 @@ public class Analytics {
         maxTotalBackoffDurationMs = 43200 * 1000L; // 12 hours
       }
       if (maxRateLimitDurationMs == 0) {
-        maxRateLimitDurationMs = 43200 * 1000L; // 12 hours
+        // Retry-After retries are deliberately uncounted, so this duration is the
+        // only thing bounding them. The network executor is single-threaded, so it
+        // also bounds how long one stuck batch holds up every other one.
+        //
+        // Deliberately several times the Retry-After cap. When the two are equal a
+        // single maximal Retry-After consumes the whole budget, and because the
+        // elapsed check runs before the wait the batch is dropped after one attempt.
+        maxRateLimitDurationMs = 1800 * 1000L; // 30 minutes
       }
 
       HttpLoggingInterceptor interceptor =
