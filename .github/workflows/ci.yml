@@ -39,9 +39,11 @@ jobs:
         run: mvn -B spotless:check
 
       - name: Animal Sniffer check
-        # Needs the reactor built first: `analytics` compiles against the
+        # Needs the reactor compiled first: `analytics` builds against the
         # analytics-core SNAPSHOT, which exists nowhere until this run makes it.
-        run: mvn -B -DskipTests package animal-sniffer:check
+        # `compile` rather than `package` — linting has no use for the javadoc,
+        # source and signing plugins that packaging would drag in.
+        run: mvn -B -DskipTests compile animal-sniffer:check
 
   test:
     name: Test (Java ${{ matrix.java-version }})
