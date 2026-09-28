@@ -53,8 +53,14 @@ public class AnalyticsClient {
   private static final String instanceId = UUID.randomUUID().toString();
   private static final int WAIT_FOR_THREAD_COMPLETE_S = 5;
   private static final int TERMINATION_TIMEOUT_S = 1;
-  private static final int NETWORK_TERMINATION_TIMEOUT_S =
-      75; // base Retry-After cap is 60s + headroom
+  // Deliberately shorter than a maximal Retry-After wait. Shutdown does not wait out
+  // the retry schedule; it interrupts it, and this is only the grace period before it
+  // does.
+  private static final int NETWORK_TERMINATION_TIMEOUT_S = 75;
+  // A guard against an absurd header, not a second budget: waiting less than the server
+  // asked for does not make the next attempt more likely to succeed, it just sends more
+  // requests at something already rate-limiting us. How long we keep trying is
+  // maxRateLimitDuration's job.
   private static final long MAX_RATE_LIMITED_SECONDS = 300L;
 
   static {
@@ -259,24 +265,32 @@ public class AnalyticsClient {
     }
   }
 
-  synchronized void setRateLimitState(long retryAfterSeconds) {
+  /** Returns the clock reading it used, so a caller can measure from the same instant. */
+  synchronized long setRateLimitState(long retryAfterSeconds) {
     long now = System.currentTimeMillis();
     if (rateLimitStartTime == 0) {
       rateLimitStartTime = now;
     }
     rateLimitWaitUntil = now + (retryAfterSeconds * 1000);
     rateLimited = true;
+    return now;
   }
 
   /**
-   * Sets rate-limit state and atomically checks whether maxRateLimitDuration has been exceeded.
-   * Returns true if the duration has been exceeded and the batch should be dropped.
+   * Sets rate-limit state and returns how much of {@code maxRateLimitDuration} is left, in
+   * milliseconds. Zero or less means the budget is spent.
+   *
+   * <p>Returning the remaining time rather than a boolean lets one clock reading serve both the
+   * budget test and the wait that follows it. Testing and then sleeping a full Retry-After on top
+   * would otherwise overshoot the budget by up to that much.
    */
-  synchronized boolean setRateLimitStateAndCheckDuration(
+  synchronized long setRateLimitStateAndRemaining(
       long retryAfterSeconds, long maxRateLimitDurationMs) {
-    setRateLimitState(retryAfterSeconds);
-    return rateLimitStartTime > 0
-        && System.currentTimeMillis() - rateLimitStartTime > maxRateLimitDurationMs;
+    long now = setRateLimitState(retryAfterSeconds);
+    if (rateLimitStartTime <= 0) {
+      return maxRateLimitDurationMs;
+    }
+    return maxRateLimitDurationMs - (now - rateLimitStartTime);
   }
 
   synchronized void clearRateLimitState() {
@@ -337,8 +351,25 @@ public class AnalyticsClient {
     }
   }
 
+  /**
+   * Reports batches that were queued and never attempted.
+   *
+   * <p>Only reaches tasks the executor hands back as they were submitted. A {@code ForkJoinPool}
+   * returns an empty list from {@code shutdownNow()} whatever is queued, and a {@code
+   * ScheduledThreadPoolExecutor} wraps even {@code execute()}, so a caller supplying either through
+   * {@code Analytics.Builder#networkExecutor} gets no callbacks here and a task count that reads
+   * zero.
+   */
+  private void notifyDroppedBatches(List<Runnable> dropped) {
+    for (Runnable task : dropped) {
+      if (task instanceof BatchUploadTask) {
+        ((BatchUploadTask) task)
+            .notifyDropped(new IOException("Dropped at shutdown without being attempted"));
+      }
+    }
+  }
+
   public void shutdownAndWait(ExecutorService executor, String name) {
-    boolean isLooperExecutor = name != null && name.equalsIgnoreCase("looper");
     boolean isNetworkExecutor = name != null && name.equalsIgnoreCase("network");
     int timeoutSeconds = isNetworkExecutor ? NETWORK_TERMINATION_TIMEOUT_S : TERMINATION_TIMEOUT_S;
     try {
@@ -348,49 +379,64 @@ public class AnalyticsClient {
         log.print(VERBOSE, "%s executor terminated normally.", name);
         return;
       }
-      if (isLooperExecutor) { // Handle looper - network should finish on its own
-        // not terminated within timeout -> force shutdown
-        log.print(
-            VERBOSE,
-            "%s did not terminate in %d seconds; requesting shutdownNow().",
-            name,
-            TERMINATION_TIMEOUT_S);
-        List<Runnable> dropped = executor.shutdownNow(); // interrupts running tasks
-        log.print(
-            VERBOSE,
-            "%s shutdownNow returned %d queued tasks that never started.",
-            name,
-            dropped.size());
 
-        // optional short wait to give interrupted tasks a chance to exit
-        boolean terminatedAfterForce =
-            executor.awaitTermination(TERMINATION_TIMEOUT_S, TimeUnit.SECONDS);
-        log.print(
-            VERBOSE,
-            "%s executor %s after shutdownNow().",
-            name,
-            terminatedAfterForce ? "terminated" : "still running (did not terminate)");
+      // Both executors are force-stopped, the network one included. shutdown() does
+      // not interrupt a running task, its task can be a whole rate-limit budget deep
+      // in a sleep, and these threads are non-daemon — so leaving it to finish on its
+      // own lets shutdown() return while a thread holds the JVM open.
+      //
+      // The interrupt only reaches a thread parked in a sleep. OkHttp's reads are
+      // governed by SO_TIMEOUT, so a thread inside the HTTP call is bounded by the
+      // client's own timeouts instead, and by nothing at all if a caller supplies an
+      // OkHttpClient without them.
+      log.print(
+          VERBOSE,
+          "%s did not terminate in %d seconds; requesting shutdownNow().",
+          name,
+          timeoutSeconds);
+      List<Runnable> dropped = executor.shutdownNow(); // interrupts running tasks
+      log.print(
+          VERBOSE,
+          "%s shutdownNow returned %d queued tasks that never started.",
+          name,
+          dropped.size());
 
-        if (!terminatedAfterForce) {
-          // final warning — investigate tasks that ignore interrupts
-          log.print(
-              ERROR,
-              "%s executor still did not terminate; tasks may be ignoring interrupts.",
-              name);
-        }
+      // Submitted and never run, so their callbacks are still owed. Counting them in
+      // a log line is not the same as telling the caller the messages did not go.
+      notifyDroppedBatches(dropped);
+
+      // optional short wait to give interrupted tasks a chance to exit
+      boolean terminatedAfterForce =
+          executor.awaitTermination(TERMINATION_TIMEOUT_S, TimeUnit.SECONDS);
+      log.print(
+          VERBOSE,
+          "%s executor %s after shutdownNow().",
+          name,
+          terminatedAfterForce ? "terminated" : "still running (did not terminate)");
+
+      if (!terminatedAfterForce) {
+        // final warning — investigate tasks that ignore interrupts
+        log.print(
+            ERROR, "%s executor still did not terminate; tasks may be ignoring interrupts.", name);
       }
     } catch (InterruptedException e) {
       // Preserve interrupt status and attempt forceful shutdown
       log.print(ERROR, e, "Interrupted while stopping %s executor.", name);
+      // Same reasoning as above: this applied to the looper only, leaving the network
+      // executor running after an interrupted shutdown.
+      List<Runnable> dropped = executor.shutdownNow();
+      log.print(
+          VERBOSE,
+          "%s shutdownNow invoked after interrupt; %d tasks returned.",
+          name,
+          dropped.size());
+      // These are owed a callback just as much as the ones dropped above; an
+      // interrupted shutdown is still a shutdown. Reported before the interrupt flag
+      // goes back on: callbacks run on this thread, and with the flag already set any
+      // interruptible call inside one -- a queue put, an await, a Future.get -- throws
+      // InterruptedException the moment it starts.
+      notifyDroppedBatches(dropped);
       Thread.currentThread().interrupt();
-      if (isLooperExecutor) {
-        List<Runnable> dropped = executor.shutdownNow();
-        log.print(
-            VERBOSE,
-            "%s shutdownNow invoked after interrupt; %d tasks returned.",
-            name,
-            dropped.size());
-      }
     }
   }
 
@@ -468,7 +514,11 @@ public class AnalyticsClient {
                   batch.batch().size(),
                   batch.sequence());
               try {
-                networkExecutor.submit(
+                // execute, not submit: submit wraps the task in a FutureTask, and the
+                // work queue then holds that wrapper, so shutdownNow() hands back
+                // FutureTasks and the batches inside them cannot be identified or
+                // reported. The Future was discarded anyway.
+                networkExecutor.execute(
                     BatchUploadTask.create(AnalyticsClient.this, batch, maximumRetries));
               } catch (RejectedExecutionException e) {
                 log.print(
@@ -539,6 +589,11 @@ public class AnalyticsClient {
       this.batch = batch;
       this.backo = backo;
       this.maxRetries = maxRetries;
+    }
+
+    /** Reports a batch that was discarded from the queue without ever being attempted. */
+    void notifyDropped(Exception exception) {
+      notifyCallbacksWithException(batch, exception);
     }
 
     private void notifyCallbacksWithException(Batch batch, Exception exception) {
@@ -682,6 +737,22 @@ public class AnalyticsClient {
 
     @Override
     public void run() {
+      // Handed to the executor with execute() rather than submit(), so that
+      // shutdownNow() gives back the task itself and the batch inside it can be
+      // reported. That also means nothing catches what escapes here: under submit()
+      // a FutureTask absorbed it into a result nobody read, and the worker survived.
+      // Callback and Log are supplied by the caller and are invoked below outside any
+      // try, so one that throws would now kill and replace the pool's worker and reach
+      // the application's uncaught-exception handler -- from a library that could not
+      // previously raise one. Keep that property.
+      try {
+        runUploadLoop();
+      } catch (Throwable t) {
+        client.log.print(ERROR, t, "Batch %s upload task failed unexpectedly.", batch.sequence());
+      }
+    }
+
+    private void runUploadLoop() {
       int totalAttempts = 0; // counts every HTTP attempt (for header and error message)
       int backoffAttempts = 0; // counts attempts that consume backoff-based retries
       int maxBackoffAttempts = maxRetries + 1; // preserve existing semantics
@@ -697,11 +768,11 @@ public class AnalyticsClient {
         }
 
         if (result.strategy == RetryStrategy.RATE_LIMITED) {
-          // Atomically set rate-limit state and check whether maxRateLimitDuration is exceeded.
-          boolean durationExceeded =
-              client.setRateLimitStateAndCheckDuration(
+          // Atomically set rate-limit state and take what is left of maxRateLimitDuration.
+          long remainingMs =
+              client.setRateLimitStateAndRemaining(
                   result.retryAfterSeconds, client.maxRateLimitDurationMs);
-          if (durationExceeded) {
+          if (remainingMs <= 0) {
             client.clearRateLimitState();
             break;
           }
@@ -711,8 +782,18 @@ public class AnalyticsClient {
             break;
           }
 
+          long retryAfterMs = TimeUnit.SECONDS.toMillis(result.retryAfterSeconds);
+          if (retryAfterMs > remainingMs) {
+            // A wait that will not fit ends the episode. Shortening it would resume
+            // inside the window the server named -- one it has already said it will
+            // not serve -- and the budget is spent by then, so that attempt would be
+            // the last either way.
+            client.clearRateLimitState();
+            break;
+          }
+
           try {
-            TimeUnit.SECONDS.sleep(result.retryAfterSeconds);
+            TimeUnit.MILLISECONDS.sleep(retryAfterMs);
           } catch (InterruptedException e) {
             client.log.print(
                 DEBUG,
@@ -720,6 +801,9 @@ public class AnalyticsClient {
                 batch.sequence());
             client.clearRateLimitState();
             Thread.currentThread().interrupt();
+            // Every exit from this loop reports the batch. Returning without this
+            // loses it silently, with no callback at all.
+            notifyCallbacksWithException(batch, new IOException("Interrupted during shutdown", e));
             return;
           }
           // Retry-After does not count against maxRetries.
@@ -743,6 +827,7 @@ public class AnalyticsClient {
           client.log.print(
               DEBUG, "Thread interrupted while backing off for batch %s.", batch.sequence());
           Thread.currentThread().interrupt();
+          notifyCallbacksWithException(batch, new IOException("Interrupted during shutdown", e));
           return;
         }
       }
