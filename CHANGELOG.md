@@ -7,6 +7,13 @@
 - [Fix] A `Retry-After` that will not fit in what is left of `maxRateLimitDuration` ends the episode rather than being shortened to fit. The budget was tested and then the full `Retry-After` slept on top of it, so an episode could run past its limit by up to one wait; shortening it instead would resume inside the window the server named, which it has already declined to serve, and the budget would be spent by then regardless.
 
 # Version 3.5.5 (June 30, 2026)
+
+> **Upgrade note: new request headers and proxy allowlists.** This version sends two
+> request headers that 3.5.4 did not: `Authorization` (HTTP Basic, carrying your write
+> key) and `X-Retry-Count` (on retries only). If your traffic to Segment goes through a
+> proxy, gateway or WAF that allowlists request headers, add both or uploads will be
+> rejected.
+
 - [New](https://github.com/segmentio/analytics-java/pull/531) Unified HTTP response handling and retry behavior
   - Retryable statuses (429, 408, 410, 460, 5xx except 501/505/511) check Retry-After header first, fall back to exponential backoff
   - Retry-After supports numeric seconds and RFC 7231 HTTP-date format, capped at 300s
