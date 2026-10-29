@@ -7,4 +7,8 @@ import com.segment.analytics.gson.AutoGson;
 @AutoGson
 public abstract class UploadResponse {
   public abstract boolean success();
+
+  public static UploadResponse create(boolean success) {
+    return new AutoValue_UploadResponse(success);
+  }
 }

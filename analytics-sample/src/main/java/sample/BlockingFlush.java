@@ -55,12 +55,12 @@ public class BlockingFlush {
             new Callback() {
               @Override
               public void success(Message message) {
-                phaser.arrive();
+                phaser.arriveAndDeregister();
               }
 
               @Override
               public void failure(Message message, Throwable throwable) {
-                phaser.arrive();
+                phaser.arriveAndDeregister();
               }
             });
       }

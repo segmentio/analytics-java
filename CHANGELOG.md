@@ -1,3 +1,49 @@
+# Unreleased
+- [Change] Batch upload tasks are handed to the network executor with `execute()` rather than `submit()`, so `shutdownNow()` returns them and the batches inside can be reported. A `Callback` or `Log` implementation that throws is now caught and logged rather than being absorbed by the discarded `Future`; it no longer reaches the thread's uncaught-exception handler either. Note that a caller supplying a `ForkJoinPool` or `ScheduledThreadPoolExecutor` through `Analytics.Builder.networkExecutor` still gets no shutdown callbacks: the former returns nothing from `shutdownNow()`, the latter wraps tasks regardless.
+- [Note] `maxRateLimitDuration` is measured against the system clock, so a large clock adjustment during a rate-limit episode can shorten or extend it.
+- [Fix] Batches abandoned at shutdown now report failure through `Callback`. Note this is a failure notification for a batch that may in fact have been delivered: a batch interrupted after its request went out is reported as failed because the client cannot know the outcome. Delivery has always been at-least-once; this makes the uncertainty visible rather than silent, so a `Callback` that counts failures will see some that were not lost. A batch interrupted while waiting out a `Retry-After` or a backoff returned without notifying anyone, and batches still queued when the executor stopped were counted in a log line and otherwise discarded. Both were unreachable while the network executor was never stopped; both became reachable with the fix below.
+- [Fix] `shutdown()` now stops the network executor rather than leaving it running. It was asked to stop and then given up to 75 seconds to finish on its own; if it had not, `shutdown()` returned anyway. Because `ExecutorService.shutdown()` does not interrupt running tasks, a thread waiting out a `Retry-After` kept running, and as these threads are not daemon threads, the JVM would not exit. `shutdown()` reported success while this happened. It now interrupts the executor once the timeout elapses, including when shutdown is itself interrupted.
+- [Change] `maxRateLimitDuration` now defaults to 30 minutes, was 12 hours. Retries prompted by a `Retry-After` header do not consume the retry count, so this duration is the only limit on how long they continue; at 12 hours a server that kept sending the header could hold a batch for that long, and because uploads run on a single thread, hold every other batch behind it. Pass a longer value to `Analytics.Builder.maxRateLimitDuration` to restore the previous limit.
+- [Fix] A `Retry-After` that will not fit in what is left of `maxRateLimitDuration` ends the episode rather than being shortened to fit. The budget was tested and then the full `Retry-After` slept on top of it, so an episode could run past its limit by up to one wait; shortening it instead would resume inside the window the server named, which it has already declined to serve, and the budget would be spent by then regardless.
+
+# Version 3.5.5 (June 30, 2026)
+
+> **Upgrade note: new request headers and proxy allowlists.** This version sends two
+> request headers that 3.5.4 did not: `Authorization` (HTTP Basic, carrying your write
+> key) and `X-Retry-Count` (on retries only). If your traffic to Segment goes through a
+> proxy, gateway or WAF that allowlists request headers, add both or uploads will be
+> rejected.
+
+- [New](https://github.com/segmentio/analytics-java/pull/531) Unified HTTP response handling and retry behavior
+  - Retryable statuses (429, 408, 410, 460, 5xx except 501/505/511) check Retry-After header first, fall back to exponential backoff
+  - Retry-After supports numeric seconds and RFC 7231 HTTP-date format, capped at 300s
+  - Rate-limited retries do not count against maxRetries
+  - Looper defers batch submission while rate-limited
+  - Default backoff: 500ms base, 1min cap, 10 retries
+  - New Builder options: `maxTotalBackoffDuration()`, `maxRateLimitDuration()` (default 12h each)
+- [New](https://github.com/segmentio/analytics-java/pull/531) `offer()` non-blocking alternative to `enqueue()` with byte-size validation and backpressure handling
+- [New](https://github.com/segmentio/analytics-java/pull/531) X-Retry-Count header sent on retries
+- [New](https://github.com/segmentio/analytics-java/pull/531) Authorization header (Basic auth) added to all requests
+- [Fix](https://github.com/segmentio/analytics-java/pull/531) Network executor shutdown now waits 75s for in-flight uploads to complete
+
+# Version 3.5.4 (Dec 5, 2025)
+- Updating release for new sonatype repository
+
+# Version 3.5.3 (Dec 3, 2025)
+- [New](https://github.com/segmentio/analytics-java/pull/526) Improved shutdown process
+- [New](https://github.com/segmentio/analytics-java/pull/517) Support (de)serializing Instant objects to support newer java versions
+
+# Version 3.5.2 (May 12, 2025)
+- [Chore] Depenency upgrades
+
+# Version 3.5.1 (Feb 21, 2024)
+- [Chore] Dependency upgrades
+- [New](https://github.com/segmentio/analytics-java/pull/471) BlockingFlush, deregister parties upon message completion
+- [New](https://github.com/segmentio/analytics-java/pull/476) Added wk size to message size calc along with a buffer
+
+# Version 3.5.0 (Sept 27, 2023)
+- [New](https://github.com/segmentio/analytics-java/pull/446) Allow GsonBuilder to be passed in and used through Analytics and AnalyticsClient
+
 # Version 3.4.0 (Feb 04, 2023)
 - [Chore] Dependency upgrades
 - [New](https://github.com/segmentio/analytics-java/pull/408) Remove writeKey from header, add writeKey on payload(batch) 

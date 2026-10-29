@@ -1,9 +1,9 @@
 package com.segment.analytics.messages;
 
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.util.Date;
 import java.util.Map;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * Encapsulates properties common to all messages. Although not enforced by the compiler, either the

@@ -4,11 +4,13 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.segment.analytics.gson.AutoValueAdapterFactory;
 import com.segment.analytics.gson.ISO8601DateAdapter;
+import com.segment.analytics.gson.ISO8601InstantAdapter;
 import com.segment.analytics.http.SegmentService;
 import com.segment.analytics.internal.AnalyticsClient;
 import com.segment.analytics.internal.AnalyticsVersion;
 import com.segment.analytics.messages.Message;
 import com.segment.analytics.messages.MessageBuilder;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -149,6 +151,9 @@ public class Analytics {
     private List<Callback> callbacks;
     private int queueCapacity;
     private boolean forceTlsV1 = false;
+    private GsonBuilder gsonBuilder;
+    private long maxTotalBackoffDurationMs;
+    private long maxRateLimitDurationMs;
 
     Builder(String writeKey) {
       if (writeKey == null || writeKey.trim().length() == 0) {
@@ -248,6 +253,20 @@ public class Analytics {
       this.queueCapacity = capacity;
       return this;
     }
+
+    public Builder gsonBuilder(GsonBuilder gsonBuilder) {
+      if (gsonBuilder == null) {
+        throw new NullPointerException("Null gsonBuilder");
+      }
+
+      if (this.gsonBuilder != null) {
+        throw new IllegalStateException("gsonBuilder is already registered.");
+      }
+
+      this.gsonBuilder = gsonBuilder;
+      return this;
+    }
+
     /** Set the queueSize at which flushes should be triggered. */
     @Beta
     public Builder flushQueueSize(int flushQueueSize) {
@@ -280,7 +299,10 @@ public class Analytics {
       return this;
     }
 
-    /** Set how many retries should happen before getting exhausted */
+    /**
+     * Set how many retries should happen before getting exhausted. Default is 10 retries with
+     * exponential backoff starting at 500ms (capped at 1 minute per attempt).
+     */
     public Builder retries(int maximumRetries) {
       if (maximumRetries < 1) {
         throw new IllegalArgumentException("retries must be at least 1");
@@ -339,13 +361,44 @@ public class Analytics {
       return this;
     }
 
+    /**
+     * Set the maximum total duration for backoff-based retries before giving up on a batch. Default
+     * is 12 hours.
+     */
+    public Builder maxTotalBackoffDuration(long duration, TimeUnit unit) {
+      long seconds = unit.toSeconds(duration);
+      if (seconds < 1) {
+        throw new IllegalArgumentException("maxTotalBackoffDuration must be at least 1 second.");
+      }
+      this.maxTotalBackoffDurationMs = unit.toMillis(duration);
+      return this;
+    }
+
+    /**
+     * Set the maximum total duration for rate-limit (429) retries before giving up on a batch.
+     * Default is 12 hours.
+     */
+    public Builder maxRateLimitDuration(long duration, TimeUnit unit) {
+      long seconds = unit.toSeconds(duration);
+      if (seconds < 1) {
+        throw new IllegalArgumentException("maxRateLimitDuration must be at least 1 second.");
+      }
+      this.maxRateLimitDurationMs = unit.toMillis(duration);
+      return this;
+    }
+
     /** Create a {@link Analytics} client. */
     public Analytics build() {
-      Gson gson =
-          new GsonBuilder() //
-              .registerTypeAdapterFactory(new AutoValueAdapterFactory()) //
-              .registerTypeAdapter(Date.class, new ISO8601DateAdapter()) //
-              .create();
+      if (gsonBuilder == null) {
+        gsonBuilder = new GsonBuilder();
+      }
+
+      gsonBuilder
+          .registerTypeAdapterFactory(new AutoValueAdapterFactory())
+          .registerTypeAdapter(Instant.class, new ISO8601InstantAdapter())
+          .registerTypeAdapter(Date.class, new ISO8601DateAdapter());
+
+      Gson gson = gsonBuilder.create();
 
       if (endpoint == null) {
         if (uploadURL != null) {
@@ -375,7 +428,7 @@ public class Analytics {
         maximumQueueSizeInBytes = MESSAGE_QUEUE_MAX_BYTE_SIZE;
       }
       if (maximumFlushAttempts == 0) {
-        maximumFlushAttempts = 3;
+        maximumFlushAttempts = 10;
       }
       if (messageTransformers == null) {
         messageTransformers = Collections.emptyList();
@@ -398,6 +451,19 @@ public class Analytics {
       } else {
         callbacks = Collections.unmodifiableList(callbacks);
       }
+      if (maxTotalBackoffDurationMs == 0) {
+        maxTotalBackoffDurationMs = 43200 * 1000L; // 12 hours
+      }
+      if (maxRateLimitDurationMs == 0) {
+        // Retry-After retries are deliberately uncounted, so this duration is the
+        // only thing bounding them. The network executor is single-threaded, so it
+        // also bounds how long one stuck batch holds up every other one.
+        //
+        // Deliberately several times the Retry-After cap. When the two are equal a
+        // single maximal Retry-After consumes the whole budget, and because the
+        // elapsed check runs before the wait the batch is dropped after one attempt.
+        maxRateLimitDurationMs = 1800 * 1000L; // 30 minutes
+      }
 
       HttpLoggingInterceptor interceptor =
           new HttpLoggingInterceptor(
@@ -413,7 +479,7 @@ public class Analytics {
       OkHttpClient.Builder builder =
           client
               .newBuilder()
-              .addInterceptor(new AnalyticsRequestInterceptor(userAgent))
+              .addInterceptor(new AnalyticsRequestInterceptor(writeKey, userAgent))
               .addInterceptor(interceptor);
 
       if (forceTlsV1) {
@@ -450,7 +516,10 @@ public class Analytics {
               threadFactory,
               networkExecutor,
               callbacks,
-              writeKey);
+              writeKey,
+              gson,
+              maxTotalBackoffDurationMs,
+              maxRateLimitDurationMs);
 
       return new Analytics(analyticsClient, messageTransformers, messageInterceptors, log);
     }
