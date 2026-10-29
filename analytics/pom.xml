@@ -67,12 +67,6 @@
       <version>${retrofit.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.google.code.findbugs</groupId>
-      <artifactId>findbugs</artifactId>
-      <version>${findbugs.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
       <groupId>com.segment.backo</groupId>
       <artifactId>backo</artifactId>
       <version>${backo.version}</version>
@@ -119,7 +113,8 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>templating-maven-plugin</artifactId>
-        <version>1.0.0</version>
+        <!-- 1.0.0 resolves maven-core 2.2.1, which curation refuses. -->
+        <version>3.1.1</version>
         <executions>
           <execution>
             <goals>
